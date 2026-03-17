@@ -414,12 +414,16 @@ function showSection(id) {
   document.getElementById("nav-" + id).classList.add("active");
 }
 
-// ══ LLAMADA A APPS SCRIPT ══
 async function callScript(action, params, callback) {
   try {
     const url = APPS_SCRIPT_URL + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
-    const res = await fetch(url);
-    const data = await res.json();
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      mode: "no-cors"
+    });
+    const text = await res.text();
+    const data = JSON.parse(text);
     callback(data);
   } catch (err) {
     showToast("Error de conexión", "err");
