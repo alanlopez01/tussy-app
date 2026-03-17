@@ -455,6 +455,7 @@ function showSection(id) {
   document.querySelectorAll(".bottom-btn").forEach(b => b.classList.remove("active"));
   document.getElementById("sec-" + id).classList.add("active");
   document.getElementById("nav-" + id).classList.add("active");
+  if (id === "ventas") cargarVentas();
 }
 
 // ══ LLAMADA A APPS SCRIPT ══
