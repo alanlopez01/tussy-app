@@ -35,14 +35,17 @@ module.exports = async function handler(req, res) {
 
 async function getTNData() {
   const d = desde.split("-");
-  const inicioUTC = `${d[0]}-${d[1]}-${d[2]}T03:00:00+0000`;
+  // Cubrir todo el día en Argentina (UTC-3)
+  // Argentina empieza el día a las 03:00 UTC
+  // Argentina termina el día a las 02:59 UTC del día siguiente
+  const inicioUTC = `${d[0]}-${d[1]}-${String(parseInt(d[2])-1).padStart(2,"0")}T03:00:00+0000`;
   const fin = new Date(Date.UTC(parseInt(d[0]), parseInt(d[1])-1, parseInt(d[2])+1));
   const finUTC = `${fin.getUTCFullYear()}-${String(fin.getUTCMonth()+1).padStart(2,"0")}-${String(fin.getUTCDate()).padStart(2,"0")}T02:59:59+0000`;
 
   let page = 1, total = 0, cantidad = 0, primerPedidos = [];
   while (true) {
     const r = await fetch(
-      `https://api.tiendanube.com/v1/${TN_USER}/orders?updated_at_min=${inicioUTC}&updated_at_max=${finUTC}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number`,
+      `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${inicioUTC}&created_at_max=${finUTC}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number`,
       { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
     );
     const data = await r.json();
@@ -63,7 +66,6 @@ async function getTNData() {
     }))
   };
 }
-
   try {
     const [palermo, laplata, tn] = await Promise.all([
       getWooData(WOO_P_URL, WOO_P_KEY, WOO_P_SEC),
