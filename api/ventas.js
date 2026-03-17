@@ -40,25 +40,31 @@ export default async function handler(req, res) {
     };
   }
 
-  async function getTNData() {
-    // Traer stats de Tiendanube
+ async function getTNData() {
+  let page = 1, total = 0, cantidad = 0, primerPedidos = [];
+  while (true) {
     const r = await fetch(
-      `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${desde}&created_at_max=${hasta}&per_page=200&fields=id,total,payment_status,contact_name,number`,
+      `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${desde}&created_at_max=${hasta}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number`,
       { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
     );
     const data = await r.json();
-    const pedidos = Array.isArray(data) ? data : [];
-    return {
-      total: pedidos.reduce((s, o) => s + parseFloat(o.total || 0), 0),
-      cantidad: pedidos.length,
-      pedidos: pedidos.slice(0, 3).map(o => ({
-        numero: o.number,
-        total: parseFloat(o.total || 0),
-        estado: o.payment_status,
-        cliente: o.contact_name || "Sin nombre"
-      }))
-    };
+    if (!Array.isArray(data) || data.length === 0) break;
+    total += data.reduce((s, o) => s + parseFloat(o.total || 0), 0);
+    cantidad += data.length;
+    if (page === 1) primerPedidos = data.slice(0, 3);
+    if (data.length < 200) break;
+    page++;
   }
+  return {
+    total, cantidad,
+    pedidos: primerPedidos.map(o => ({
+      numero: o.number,
+      total: parseFloat(o.total || 0),
+      estado: o.payment_status,
+      cliente: o.contact_name || "Sin nombre"
+    }))
+  };
+}
 
   try {
     const [palermo, laplata, tn] = await Promise.all([
