@@ -12,76 +12,67 @@ export default async function handler(req, res) {
   const TN_TOKEN   = process.env.TN_ACCESS_TOKEN;
   const TN_USER    = process.env.TN_USER_ID;
 
-  async function getWooOrders(url, key, secret) {
-    let page = 1, all = [];
-    while (true) {
-      const auth = Buffer.from(`${key}:${secret}`).toString("base64");
-      const r = await fetch(
-        `${url}/wp-json/wc/v3/orders?after=${desde}T00:00:00&before=${hasta}T23:59:59&per_page=100&page=${page}&status=completed,processing`,
-        { headers: { "Authorization": `Basic ${auth}` } }
-      );
-      const data = await r.json();
-      if (!Array.isArray(data) || data.length === 0) break;
-      all = all.concat(data);
-      if (data.length < 100) break;
-      page++;
-    }
-    return all;
-  }
+  async function getWooData(url, key, secret) {
+    const auth = Buffer.from(`${key}:${secret}`).toString("base64");
+    const headers = { "Authorization": `Basic ${auth}` };
 
-  async function getTNOrders() {
-    let page = 1, all = [];
-    while (true) {
-      const r = await fetch(
-        `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${desde}&created_at_max=${hasta}&per_page=200&page=${page}`,
-        { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
-      );
-      const data = await r.json();
-      if (!Array.isArray(data) || data.length === 0) break;
-      all = all.concat(data);
-      if (data.length < 200) break;
-      page++;
-    }
-    return all;
-  }
-
-  try {
-    const [wPedidos, lpPedidos, tnPedidos] = await Promise.all([
-      getWooOrders(WOO_P_URL, WOO_P_KEY, WOO_P_SEC),
-      getWooOrders(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC),
-      TN_TOKEN ? getTNOrders() : Promise.resolve([])
+    // Reporte de ventas (total real)
+    const [reportRes, ordersRes] = await Promise.all([
+      fetch(`${url}/wp-json/wc/v3/reports/sales?date_min=${desde}&date_max=${hasta}`, { headers }),
+      fetch(`${url}/wp-json/wc/v3/orders?after=${desde}T00:00:00&before=${hasta}T23:59:59&per_page=10&page=1&status=completed,processing&orderby=date&order=desc`, { headers })
     ]);
 
-    const formatWoo = (pedidos, nombre) => ({
-      nombre,
+    const report = await reportRes.json();
+    const orders = await ordersRes.json();
+
+    const totalVentas = Array.isArray(report) && report[0] ? parseFloat(report[0].total_sales || 0) : 0;
+    const totalPedidos = Array.isArray(report) && report[0] ? parseInt(report[0].total_orders || 0) : 0;
+
+    return {
+      total: totalVentas,
+      cantidad: totalPedidos,
+      pedidos: Array.isArray(orders) ? orders.slice(0, 10).map(o => ({
+        numero: o.number,
+        total: parseFloat(o.total || 0),
+        estado: o.status,
+        cliente: `${o.billing?.first_name || ""} ${o.billing?.last_name || ""}`.trim()
+      })) : []
+    };
+  }
+
+  async function getTNData() {
+    // Traer stats de Tiendanube
+    const r = await fetch(
+      `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${desde}&created_at_max=${hasta}&per_page=200&fields=id,total,payment_status,contact_name,number`,
+      { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
+    );
+    const data = await r.json();
+    const pedidos = Array.isArray(data) ? data : [];
+    return {
       total: pedidos.reduce((s, o) => s + parseFloat(o.total || 0), 0),
       cantidad: pedidos.length,
       pedidos: pedidos.slice(0, 10).map(o => ({
         numero: o.number,
         total: parseFloat(o.total || 0),
-        estado: o.status,
-        cliente: `${o.billing?.first_name || ""} ${o.billing?.last_name || ""}`.trim()
+        estado: o.payment_status,
+        cliente: o.contact_name || "Sin nombre"
       }))
-    });
-
-    const resultados = {
-      palermo: formatWoo(wPedidos, "Local Palermo"),
-      laplata: formatWoo(lpPedidos, "Local La Plata"),
-      tiendanube: {
-        nombre: "Tiendanube",
-        total: tnPedidos.reduce((s, o) => s + parseFloat(o.total || 0), 0),
-        cantidad: tnPedidos.length,
-        pedidos: tnPedidos.slice(0, 10).map(o => ({
-          numero: o.number,
-          total: parseFloat(o.total || 0),
-          estado: o.payment_status,
-          cliente: o.contact_name || "Sin nombre"
-        }))
-      }
     };
+  }
 
-    resultados.total = resultados.palermo.total + resultados.laplata.total + resultados.tiendanube.total;
-    res.status(200).json(resultados);
+  try {
+    const [palermo, laplata, tn] = await Promise.all([
+      getWooData(WOO_P_URL, WOO_P_KEY, WOO_P_SEC),
+      getWooData(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC),
+      TN_TOKEN ? getTNData() : Promise.resolve({ total: 0, cantidad: 0, pedidos: [] })
+    ]);
+
+    res.status(200).json({
+      palermo:     { nombre: "Local Palermo",  ...palermo },
+      laplata:     { nombre: "Local La Plata", ...laplata },
+      tiendanube:  { nombre: "Tiendanube",     ...tn },
+      total: palermo.total + laplata.total + tn.total
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
