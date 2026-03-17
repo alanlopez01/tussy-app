@@ -44,7 +44,7 @@ export default async function handler(req, res) {
   let page = 1, total = 0, cantidad = 0, primerPedidos = [];
   while (true) {
     const r = await fetch(
-      `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${desde}T00:00:00-0300&created_at_max=${hasta}T23:59:59-0300&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number&payment_status=paid`,
+      `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${desde}&created_at_max=${hasta}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number&payment_status=paid`,
       { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
     );
     const data = await r.json();
