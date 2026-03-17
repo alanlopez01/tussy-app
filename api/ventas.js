@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     return {
       total: totalVentas,
       cantidad: totalPedidos,
-      pedidos: Array.isArray(orders) ? orders.slice(0, 10).map(o => ({
+      pedidos: Array.isArray(orders) ? orders.slice(0, 3).map(o => ({
         numero: o.number,
         total: parseFloat(o.total || 0),
         estado: o.status,
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     return {
       total: pedidos.reduce((s, o) => s + parseFloat(o.total || 0), 0),
       cantidad: pedidos.length,
-      pedidos: pedidos.slice(0, 10).map(o => ({
+      pedidos: pedidos.slice(0, 3).map(o => ({
         numero: o.number,
         total: parseFloat(o.total || 0),
         estado: o.payment_status,
