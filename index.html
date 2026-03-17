@@ -200,7 +200,22 @@ body{
 .canal-mini-nombre{font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:4px}
 .canal-mini-total{font-size:18px;font-weight:900;color:var(--negro)}
 .canal-mini-cant{font-size:11px;color:#aaa;margin-top:2px}
-
+/* STOCK */
+.producto-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.producto-nombre{font-size:16px;font-weight:800;color:var(--negro);margin-bottom:4px}
+.producto-sku{font-size:11px;color:#aaa;margin-bottom:12px}
+.local-titulo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:6px 10px;border-radius:8px;margin-bottom:8px;display:inline-block}
+.local-palermo{background:#D6EAF8;color:#1A5276}
+.local-laplata{background:#D5F5E3;color:#1E8449}
+.variante-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F3F4F6;font-size:13px}
+.variante-row:last-child{border-bottom:none}
+.variante-attr{font-weight:600;color:var(--texto)}
+.variante-right{display:flex;align-items:center;gap:10px}
+.variante-precio{font-weight:700;color:var(--negro)}
+.badge-stock{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
+.badge-si{background:#D5F5E3;color:#1E8449}
+.badge-no{background:#FADBD8;color:#C0392B}
+.sin-resultados{text-align:center;padding:32px;color:#aaa}
 /* TOAST */
 .toast{
   position:fixed;bottom:calc(80px + var(--safe-bottom) + 12px);
@@ -300,7 +315,17 @@ body{
           <div class="loading"><div class="spinner"></div><p>Cargando...</p></div>
         </div>
       </div>
-
+      <!-- STOCK -->
+      <div class="section" id="sec-stock">
+        <div class="card">
+          <div class="card-title">Buscar producto</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="stock-q" class="form-control" placeholder="Nombre o SKU..." style="flex:1">
+            <button class="mes-btn" onclick="buscarStock()">Buscar</button>
+          </div>
+        </div>
+        <div id="stock-content"></div>
+      </div>
       <!-- CARGAR -->
       <div class="section" id="sec-cargar">
         <div class="card">
@@ -354,6 +379,9 @@ body{
     </button>
     <button class="bottom-btn" id="nav-ventas" onclick="showSection('ventas')">
       <span class="icon">🛍️</span>Ventas
+    </button>
+    <button class="bottom-btn" id="nav-stock" onclick="showSection('stock')">
+      <span class="icon">📦</span>Stock
     </button>
     <button class="bottom-btn" id="nav-cargar" onclick="showSection('cargar')">
       <span class="icon">➕</span>Cargar
@@ -456,6 +484,7 @@ function showSection(id) {
   document.getElementById("sec-" + id).classList.add("active");
   document.getElementById("nav-" + id).classList.add("active");
   if (id === "ventas") cargarVentas();
+  if (id === "stock") document.getElementById("stock-q").focus();
 }
 // ══ LLAMADA A APPS SCRIPT ══
 async function callScript(action, params, callback) {
@@ -740,7 +769,62 @@ function mostrarVentas(data, periodo) {
 
   document.getElementById("ventas-content").innerHTML = html;
 }
+// ══ STOCK ══
+async function buscarStock() {
+  const q = document.getElementById("stock-q").value.trim();
+  if (q.length < 2) { showToast("Ingresá al menos 2 caracteres", "err"); return; }
 
+  document.getElementById("stock-content").innerHTML =
+    '<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
+
+  try {
+    const res = await fetch(`/api/stock?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    mostrarStock(data);
+  } catch(err) {
+    document.getElementById("stock-content").innerHTML =
+      '<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>';
+  }
+}
+
+function mostrarStock(data) {
+  if (!data.resultados || data.resultados.length === 0) {
+    document.getElementById("stock-content").innerHTML =
+      '<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "' + data.query + '"</p></div>';
+    return;
+  }
+
+  let html = "";
+  data.resultados.forEach(p => {
+    html += `<div class="producto-card">
+      <div class="producto-nombre">${p.nombre}</div>
+      <div class="producto-sku">${p.sku ? "SKU: " + p.sku : ""}</div>`;
+
+    const locales = [
+      { key: "palermo", label: "Local Palermo", clase: "local-palermo" },
+      { key: "laplata", label: "Local La Plata", clase: "local-laplata" }
+    ];
+
+    locales.forEach(({ key, label, clase }) => {
+      if (!p.locales[key]) return;
+      html += `<div class="local-titulo ${clase}">${label}</div>`;
+      p.locales[key].forEach(v => {
+        html += `<div class="variante-row">
+          <span class="variante-attr">${v.atributos}</span>
+          <div class="variante-right">
+            <span class="variante-precio">$${Math.round(v.precio).toLocaleString("es-AR")}</span>
+            <span class="badge-stock ${v.tiene_stock ? 'badge-si' : 'badge-no'}">${v.tiene_stock ? "✓ Stock" : "Sin stock"}</span>
+          </div>
+        </div>`;
+      });
+      html += `<div style="margin-bottom:10px"></div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById("stock-content").innerHTML = html;
+}
 // ══ TOAST ══
 function showToast(msg, tipo) {
   const t = document.getElementById("toast");
