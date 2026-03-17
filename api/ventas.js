@@ -36,7 +36,9 @@ module.exports = async function handler(req, res) {
 async function getTNData() {
   const d = desde.split("-");
   const inicioUTC = `${d[0]}-${d[1]}-${d[2]}T03:00:00+0000`;
-  const fin = new Date(Date.UTC(parseInt(d[0]), parseInt(d[1])-1, parseInt(d[2])+1));
+  
+  const dHasta = hasta.split("-");
+  const fin = new Date(Date.UTC(parseInt(dHasta[0]), parseInt(dHasta[1])-1, parseInt(dHasta[2])+1));
   const finUTC = `${fin.getUTCFullYear()}-${String(fin.getUTCMonth()+1).padStart(2,"0")}-${String(fin.getUTCDate()).padStart(2,"0")}T02:59:59+0000`;
 
   let page = 1, total = 0, cantidad = 0, primerPedidos = [];
