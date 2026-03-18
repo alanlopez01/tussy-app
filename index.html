@@ -504,10 +504,20 @@ function goTo(sectionId, title){
 }
 
 function goBack(){
+  // Si estamos en una sub-sección de producción, volver al home de producción
+  var prodContent=document.getElementById("prod-content");
+  if(prodContent&&prodContent.style.display!=="none"){
+    prodContent.style.display="none";
+    prodContent.innerHTML="";
+    document.getElementById("prod-home").style.display="grid";
+    document.getElementById("header-title").textContent="Produccion";
+    return;
+  }
+  // Si estamos en home, no hacer nada
   if(navStack.length<=1){ navStack=[]; showSection("home",""); return; }
   navStack.pop();
   var prev=navStack[navStack.length-1];
-  showSection(prev.sectionId, prev.title);
+  showSection(prev.sectionId,prev.title);
 }
 
 function showSection(id, title){
