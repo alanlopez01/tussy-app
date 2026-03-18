@@ -17,13 +17,19 @@ module.exports = async function handler(req, res) {
   function toUTC(fecha, esInicio) {
     const [y, m, d] = fecha.split("-").map(Number);
     if (esInicio) {
+      // 00:00 Argentina = 03:00 UTC
       return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}T03:00:00+0000`;
     } else {
-      // 23:59:59 ARG = 02:59:59 UTC del dia siguiente
-      const siguiente = new Date(Date.UTC(y, m-1, d+1));
-      return `${siguiente.getUTCFullYear()}-${String(siguiente.getUTCMonth()+1).padStart(2,"0")}-${String(siguiente.getUTCDate()).padStart(2,"0")}T02:59:59+0000`;
+      // 23:59 Argentina = 02:59 UTC del día siguiente
+      const sig = new Date(Date.UTC(y, m-1, d+1));
+      return `${sig.getUTCFullYear()}-${String(sig.getUTCMonth()+1).padStart(2,"0")}-${String(sig.getUTCDate()).padStart(2,"0")}T02:59:59+0000`;
     }
   }
+```
+
+Y en `getTNData` asegurate que el filtro de payment_status sea solo pedidos pagados — buscá la URL de Tiendanube y fijate que tenga esto al final:
+```
+&payment_status=paid
 
   const inicioUTC = toUTC(desde, true);
   const finUTC    = toUTC(hasta, false);
