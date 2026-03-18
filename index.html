@@ -16,13 +16,10 @@
   --negro:#1A1A2E;--verde:#1E8449;--rojo:#C0392B;
   --azul:#1A5276;--amar:#D4AC0D;--gris:#F0F2F5;
   --blanco:#fff;--texto:#2C3E50;--borde:#E5E7EB;
-  --safe-top:env(safe-area-inset-top);
-  --safe-bottom:env(safe-area-inset-bottom);
+  --safe-top:env(safe-area-inset-top);--safe-bottom:env(safe-area-inset-bottom);
 }
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gris);color:var(--texto);display:flex;flex-direction:column}
-
-/* LOGIN */
 .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--negro);padding:32px;padding-top:calc(32px + var(--safe-top))}
 .login-logo{width:200px;margin-bottom:32px}
 .login-card{background:rgba(255,255,255,0.06);border-radius:20px;padding:28px;width:100%;max-width:340px}
@@ -34,16 +31,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer}
 .login-remember input{width:18px;height:18px;cursor:pointer;accent-color:white}
 .login-remember span{color:rgba(255,255,255,0.6);font-size:13px}
-.login-btn{width:100%;padding:16px;background:white;color:var(--negro);border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:opacity 0.2s}
+.login-btn{width:100%;padding:16px;background:white;color:var(--negro);border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer}
 .login-btn:disabled{opacity:0.5}
 .login-error{color:#E74C3C;font-size:13px;margin-top:12px;min-height:20px;font-weight:600;text-align:center}
-
-/* APP */
 .app{display:none;flex-direction:column;height:100%}
 .header{background:var(--negro);color:white;padding:12px 20px;padding-top:calc(12px + var(--safe-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .header-left{display:flex;align-items:center;gap:10px}
 .header-back{background:none;border:none;color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;padding:4px;display:none;line-height:1}
-.header-title{color:white;font-size:16px;font-weight:800;letter-spacing:0.5px;display:none}
+.header-title{color:white;font-size:15px;font-weight:800;display:none}
 .header-right{display:flex;align-items:center;gap:10px}
 .rol-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700}
 .rol-badge.admin{background:#F39C12;color:#000}
@@ -54,8 +49,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .content{padding:16px;max-width:480px;margin:0 auto;padding-bottom:24px}
 .section{display:none}.section.active{display:block}
-
-/* HOME */
 .home-header{background:linear-gradient(135deg,var(--negro),#2C3E6E);padding:24px 20px 28px;color:white;margin:-16px -16px 20px;border-radius:0 0 24px 24px}
 .home-saludo{font-size:13px;opacity:0.6;margin-bottom:4px}
 .home-nombre{font-size:24px;font-weight:900}
@@ -70,22 +63,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .home-card-title{font-size:15px;font-weight:800;color:var(--negro);margin-bottom:2px}
 .home-card-sub{font-size:11px;color:#aaa;font-weight:600}
 .home-card-arrow{font-size:18px;color:#ddd;margin-left:auto}
-
-/* CARDS */
 .card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .card-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#aaa;margin-bottom:16px}
 .mes-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
 .mes-row select,.form-control{width:100%;padding:13px 14px;border:1.5px solid var(--borde);border-radius:12px;font-size:15px;background:white;-webkit-appearance:none;color:var(--texto);font-weight:600;transition:border-color 0.2s}
 .form-control:focus{outline:none;border-color:var(--negro)}
 .mes-btn{padding:12px 18px;background:var(--negro);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
-
-/* SALDO */
 .saldo-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);color:white;border-radius:16px;padding:22px 20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(26,26,46,0.3)}
 .saldo-label{font-size:12px;opacity:0.55;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .saldo-value{font-size:36px;font-weight:900;letter-spacing:-1px}
 .saldo-neg{color:#E74C3C}
-
-/* STATS */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat{background:white;border-radius:14px;padding:16px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .stat.full{grid-column:1/-1}
@@ -105,14 +92,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .cat-monto{font-size:15px;font-weight:800}
 .bar-wrap{height:5px;background:#F0F0F0;border-radius:3px}
 .bar{height:5px;border-radius:3px;transition:width 0.6s ease}
-.tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F3F4F6}
+.tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F3F4F6;cursor:pointer}
 .tx-item:last-child{border-bottom:none}
 .tx-left{flex:1;min-width:0}
 .tx-desc{font-size:14px;font-weight:700;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tx-cat{font-size:12px;color:#aaa;margin-top:2px}
 .tx-monto{font-size:16px;font-weight:900;margin-left:12px;white-space:nowrap}
-
-/* VENTAS */
 .consolidado{background:linear-gradient(135deg,#1E8449,#27AE60);color:white;border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(30,132,73,0.3)}
 .consolidado-label{font-size:12px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .consolidado-value{font-size:36px;font-weight:900;letter-spacing:-1px}
@@ -133,8 +118,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .pedido-cliente{font-weight:600;color:var(--texto)}
 .pedido-estado{font-size:11px;color:#aaa;margin-top:1px}
 .pedido-monto{font-weight:800;color:var(--verde)}
-
-/* STOCK */
 .producto-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .producto-nombre{font-size:16px;font-weight:800;color:var(--negro);margin-bottom:4px}
 .producto-sku{font-size:11px;color:#aaa;margin-bottom:12px}
@@ -149,8 +132,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .badge-stock{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
 .badge-si{background:#D5F5E3;color:#1E8449}
 .badge-no{background:#FADBD8;color:#C0392B}
-
-/* REPORTES */
 .ranking-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F3F4F6}
 .ranking-item:last-child{border-bottom:none}
 .ranking-pos{font-size:20px;width:32px;text-align:center}
@@ -159,18 +140,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ranking-detalle{font-size:11px;color:#aaa;margin-top:2px}
 .ranking-cant{font-size:18px;font-weight:900;color:var(--negro);text-align:right}
 .ranking-cant span{font-size:11px;color:#aaa;font-weight:600;display:block}
-
-/* PRODUCCION */
 .prod-tab-bar{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
-.prod-tab{padding:8px 16px;border:2px solid var(--borde);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:white;color:#aaa;white-space:nowrap;transition:all 0.2s}
+.prod-tab{padding:8px 16px;border:2px solid var(--borde);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:white;color:#aaa;white-space:nowrap;transition:all 0.2s;flex-shrink:0}
 .prod-tab.active{background:var(--negro);border-color:var(--negro);color:white}
-.corte-card{background:white;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.corte-card{background:white;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);cursor:pointer}
 .corte-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
 .corte-num{font-size:15px;font-weight:800;color:var(--negro)}
 .corte-estado{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
 .estado-espera{background:#FEF9E7;color:#D4AC0D}
 .estado-taller{background:#EBF5FB;color:#1A5276}
-.corte-tela{font-size:13px;color:#666;margin-bottom:6px}
+.estado-listo{background:#EAFAF1;color:#1E8449}
+.corte-tela{font-size:12px;color:#666;margin-bottom:8px}
 .corte-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .corte-dato{background:#F8F9FA;border-radius:8px;padding:6px 8px;text-align:center}
 .corte-dato-label{font-size:9px;color:#aaa;font-weight:700;text-transform:uppercase}
@@ -180,10 +160,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tela-nombre{font-size:14px;font-weight:700;color:var(--texto)}
 .tela-tipo{font-size:11px;color:#aaa;margin-top:2px}
 .tela-stock{font-size:16px;font-weight:900}
-.tela-stock.bajo{color:var(--rojo)}
-.tela-stock.ok{color:var(--verde)}
-
-/* FORM */
+.tela-stock.bajo{color:var(--rojo)}.tela-stock.ok{color:var(--verde)}
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;font-weight:800;color:#666;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.3px}
 .tipo-toggle{display:flex;gap:10px}
@@ -192,8 +169,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tipo-btn.ingreso.active{background:#F0FFF4;border-color:var(--verde);color:var(--verde)}
 .btn-submit{width:100%;padding:18px;background:var(--negro);color:white;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;margin-top:8px}
 .btn-submit:disabled{opacity:0.4}
-
-/* MISC */
+.btn-secondary{width:100%;padding:14px;background:var(--gris);color:var(--texto);border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn-back{background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block;padding:0}
 .empty{text-align:center;padding:40px 20px;color:#bbb}
 .empty .e-icon{font-size:48px;margin-bottom:12px}
 .empty p{font-size:15px;font-weight:600}
@@ -207,7 +184,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </head>
 <body>
 
-<!-- LOGIN -->
 <div class="login-screen" id="login-screen">
   <img src="logo.png" class="login-logo" alt="Tussy">
   <div class="login-card">
@@ -216,8 +192,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <input type="text" id="login-user" class="login-input" placeholder="Tu usuario" autocomplete="username" autocapitalize="none">
     </div>
     <div class="login-field">
-      <label class="login-label">Contraseña</label>
-      <input type="password" id="login-pass" class="login-input" placeholder="Tu contraseña" autocomplete="current-password">
+      <label class="login-label">Contrasena</label>
+      <input type="password" id="login-pass" class="login-input" placeholder="Tu contrasena" autocomplete="current-password">
     </div>
     <label class="login-remember">
       <input type="checkbox" id="login-remember">
@@ -228,7 +204,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
 </div>
 
-<!-- APP -->
 <div class="app" id="app">
   <div class="header">
     <div class="header-left">
@@ -241,11 +216,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <button class="logout-btn" onclick="logout()">↩</button>
     </div>
   </div>
-
   <div class="scroll-area">
     <div class="content">
 
-      <!-- HOME -->
       <div class="section active" id="sec-home">
         <div class="home-header">
           <div class="home-saludo">Bienvenido,</div>
@@ -255,73 +228,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div class="home-grid" id="home-grid"></div>
       </div>
 
-      <!-- RESUMEN (Finanzas: Info + Cargar) -->
       <div class="section" id="sec-resumen">
         <div style="display:flex;gap:8px;margin-bottom:16px">
-          <button class="prod-tab active" id="fin-tab-info" onclick="finTab('info')">📊 Info</button>
-          <button class="prod-tab" id="fin-tab-cargar" onclick="finTab('cargar')">➕ Cargar</button>
+          <button class="prod-tab active" id="fin-tab-info" onclick="finTab('info')">Informacion</button>
+          <button class="prod-tab" id="fin-tab-cargar" onclick="finTab('cargar')">Cargar</button>
         </div>
-
-        <!-- Info -->
         <div id="fin-info">
           <div class="mes-row">
             <select id="sel-mes">
-              <option value="1">Enero</option><option value="2">Febrero</option>
-              <option value="3">Marzo</option><option value="4">Abril</option>
-              <option value="5">Mayo</option><option value="6">Junio</option>
-              <option value="7">Julio</option><option value="8">Agosto</option>
-              <option value="9">Septiembre</option><option value="10">Octubre</option>
-              <option value="11">Noviembre</option><option value="12">Diciembre</option>
+              <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+              <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+              <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
             </select>
             <select id="sel-anio" style="width:90px;flex:none"></select>
             <button class="mes-btn" onclick="cargarDashboard()">Ver</button>
           </div>
           <div id="dashboard-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
         </div>
-
-        <!-- Cargar -->
         <div id="fin-cargar" style="display:none">
           <div class="card">
-            <div class="card-title">Nueva transacción</div>
+            <div class="card-title">Nueva transaccion</div>
             <div class="form-group">
               <label class="form-label">Tipo</label>
               <div class="tipo-toggle">
-                <button class="tipo-btn gasto active" id="btn-gasto" onclick="setTipo('Gasto')">📤 Gasto</button>
-                <button class="tipo-btn ingreso" id="btn-ingreso" onclick="setTipo('Ingreso')">📥 Ingreso</button>
+                <button class="tipo-btn gasto active" id="btn-gasto" onclick="setTipo('Gasto')">Gasto</button>
+                <button class="tipo-btn ingreso" id="btn-ingreso" onclick="setTipo('Ingreso')">Ingreso</button>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Fecha</label>
-              <input type="date" id="f-fecha" class="form-control">
+            <div class="form-group"><label class="form-label">Fecha</label><input type="date" id="f-fecha" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Descripcion</label><input type="text" id="f-desc" class="form-control" placeholder="Ej: Tela Juan, Sueldo Maria..."></div>
+            <div class="form-group"><label class="form-label">Categoria</label><select id="f-cat" class="form-control"></select></div>
+            <div class="form-group"><label class="form-label">Medio de pago</label>
+              <select id="f-medio" class="form-control"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select>
             </div>
-            <div class="form-group">
-              <label class="form-label">Descripción</label>
-              <input type="text" id="f-desc" class="form-control" placeholder="Ej: Tela Juan, Sueldo María...">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Categoría</label>
-              <select id="f-cat" class="form-control"></select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Medio de pago</label>
-              <select id="f-medio" class="form-control">
-                <option>Efectivo</option><option>Transferencia</option><option>Cheque</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Monto ($)</label>
-              <input type="number" id="f-monto" class="form-control" placeholder="0" inputmode="numeric">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Notas (opcional)</label>
-              <input type="text" id="f-notas" class="form-control" placeholder="Aclaraciones...">
-            </div>
-            <button class="btn-submit" id="btn-guardar" onclick="guardarTransaccion()">Guardar transacción</button>
+            <div class="form-group"><label class="form-label">Monto ($)</label><input type="number" id="f-monto" class="form-control" placeholder="0" inputmode="numeric"></div>
+            <div class="form-group"><label class="form-label">Notas (opcional)</label><input type="text" id="f-notas" class="form-control" placeholder="Aclaraciones..."></div>
+            <button class="btn-submit" id="btn-guardar" onclick="guardarTransaccion()">Guardar transaccion</button>
           </div>
         </div>
       </div>
 
-      <!-- VENTAS -->
       <div class="section" id="sec-ventas">
         <div class="mes-row">
           <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
@@ -339,7 +286,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="ventas-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
-      <!-- STOCK -->
       <div class="section" id="sec-stock">
         <div class="card">
           <div class="card-title">Buscar producto</div>
@@ -351,17 +297,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="stock-content"></div>
       </div>
 
-      <!-- LOCALES -->
       <div class="section" id="sec-comparacion">
         <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
-      <!-- REPORTES -->
       <div class="section" id="sec-reportes">
         <div class="mes-row">
           <select id="rep-canal" class="form-control" style="flex:1">
-            <option value="online">🌐 Online (Tiendanube)</option>
-            <option value="fisico">🏪 Físico (Locales)</option>
+            <option value="online">Online (Tiendanube)</option>
+            <option value="fisico">Fisico (Locales)</option>
           </select>
         </div>
         <div class="mes-row">
@@ -375,51 +319,56 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
           <input type="date" id="rep-desde" class="form-control">
           <input type="date" id="rep-hasta" class="form-control">
         </div>
-        <div id="reportes-content"><div class="empty"><div class="e-icon">📊</div><p>Seleccioná canal y período</p></div></div>
+        <div id="reportes-content"><div class="empty"><div class="e-icon">📊</div><p>Selecciona canal y periodo</p></div></div>
       </div>
 
-      <!-- PRODUCCION -->
-<div class="section" id="sec-produccion">
-  <!-- Nav principal producción -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="prod-home">
-    <button class="home-card" onclick="prodSeccion('telas')">
-      <div class="home-icon">🧵</div>
-      <div class="home-card-info"><div class="home-card-title">Telas</div><div class="home-card-sub">Stock e ingresos</div></div>
-    </button>
-    <button class="home-card" onclick="prodSeccion('cortes')">
-      <div class="home-icon">✂️</div>
-      <div class="home-card-info"><div class="home-card-title">Cortes</div><div class="home-card-sub">Registro y seguimiento</div></div>
-    </button>
-    <button class="home-card" onclick="prodSeccion('talleres')">
-      <div class="home-icon">👥</div>
-      <div class="home-card-info"><div class="home-card-title">Talleres</div><div class="home-card-sub">Gestión de talleres</div></div>
-    </button>
-    <button class="home-card" id="btn-prod-stats" onclick="prodSeccion('estadisticas')">
-      <div class="home-icon">📊</div>
-      <div class="home-card-info"><div class="home-card-title">Estadísticas</div><div class="home-card-sub">Prendas y kg cortados</div></div>
-    </button>
+      <div class="section" id="sec-produccion">
+        <div class="home-grid" id="prod-home" style="margin-bottom:16px">
+          <button class="home-card" onclick="prodSeccion('telas')">
+            <div class="home-icon">🧵</div>
+            <div class="home-card-info"><div class="home-card-title">Telas</div><div class="home-card-sub">Stock e ingresos</div></div>
+          </button>
+          <button class="home-card" onclick="prodSeccion('cortes')">
+            <div class="home-icon">✂️</div>
+            <div class="home-card-info"><div class="home-card-title">Cortes</div><div class="home-card-sub">Registro y seguimiento</div></div>
+          </button>
+          <button class="home-card" onclick="prodSeccion('talleres')">
+            <div class="home-icon">👥</div>
+            <div class="home-card-info"><div class="home-card-title">Talleres</div><div class="home-card-sub">Gestion de talleres</div></div>
+          </button>
+          <button class="home-card" id="btn-prod-stats" onclick="prodSeccion('estadisticas')">
+            <div class="home-icon">📊</div>
+            <div class="home-card-info"><div class="home-card-title">Estadisticas</div><div class="home-card-sub">Prendas y kg cortados</div></div>
+          </button>
+        </div>
+        <div id="prod-content"></div>
+      </div>
+
+    </div>
   </div>
-  <!-- Contenido dinámico -->
-  <div id="prod-content"></div>
 </div>
-// ══ ESTADO ══
-let rolActual = "";
-let nombreActual = "";
-let catsGasto = [], catsIngreso = [];
-let tipoActual = "Gasto";
-let chartGasto = null, chartIngreso = null;
-let prodTabActual = "stock-tela";
+<div class="toast" id="toast"></div>
 
-// ══ INIT ══
+<script>
+var APPS_SCRIPT_URL = "/api/proxy";
+var rolActual = "";
+var nombreActual = "";
+var catsGasto = [];
+var catsIngreso = [];
+var tipoActual = "Gasto";
+var chartGasto = null;
+var chartIngreso = null;
+var cortesData = [];
+var prodSeccionActual = "";
+
 document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById("login-pass").addEventListener("keydown", e => { if (e.key === "Enter") hacerLogin(); });
-  document.getElementById("login-user").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("login-pass").focus(); });
-  document.getElementById("stock-q").addEventListener("keydown", e => { if (e.key === "Enter") buscarStock(); });
-
-  const recuerda = localStorage.getItem("tussy_remember");
+  document.getElementById("login-pass").addEventListener("keydown", function(e) { if (e.key === "Enter") hacerLogin(); });
+  document.getElementById("login-user").addEventListener("keydown", function(e) { if (e.key === "Enter") document.getElementById("login-pass").focus(); });
+  document.getElementById("stock-q").addEventListener("keydown", function(e) { if (e.key === "Enter") buscarStock(); });
+  var recuerda = localStorage.getItem("tussy_remember");
   if (recuerda === "1") {
-    const u = localStorage.getItem("tussy_user");
-    const p = localStorage.getItem("tussy_pass");
+    var u = localStorage.getItem("tussy_user");
+    var p = localStorage.getItem("tussy_pass");
     if (u && p) {
       document.getElementById("login-user").value = u;
       document.getElementById("login-pass").value = p;
@@ -429,18 +378,17 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-// ══ LOGIN ══
 async function hacerLogin() {
-  const user = document.getElementById("login-user").value.trim().toLowerCase();
-  const pass = document.getElementById("login-pass").value.trim();
-  const recordar = document.getElementById("login-remember").checked;
-  const btn = document.getElementById("login-btn");
-  const err = document.getElementById("login-error");
-  if (!user || !pass) { err.textContent = "Completá usuario y contraseña"; return; }
+  var user = document.getElementById("login-user").value.trim().toLowerCase();
+  var pass = document.getElementById("login-pass").value.trim();
+  var recordar = document.getElementById("login-remember").checked;
+  var btn = document.getElementById("login-btn");
+  var err = document.getElementById("login-error");
+  if (!user || !pass) { err.textContent = "Completa usuario y contrasena"; return; }
   btn.disabled = true; btn.textContent = "Ingresando..."; err.textContent = "";
   try {
-    const res = await fetch("/api/auth?usuario=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass));
-    const data = await res.json();
+    var res = await fetch("/api/auth?usuario=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass));
+    var data = await res.json();
     if (data.ok) {
       if (recordar) {
         localStorage.setItem("tussy_user", user);
@@ -453,114 +401,105 @@ async function hacerLogin() {
       }
       entrarApp(data.rol, data.nombre);
     } else {
-      err.textContent = data.error || "Usuario o contraseña incorrectos";
+      err.textContent = data.error || "Usuario o contrasena incorrectos";
       btn.disabled = false; btn.textContent = "Ingresar";
     }
   } catch(e) {
-    err.textContent = "Error de conexión. Intentá de nuevo.";
+    err.textContent = "Error de conexion. Intenta de nuevo.";
     btn.disabled = false; btn.textContent = "Ingresar";
   }
 }
 
-// ══ APP ══
-const SECCIONES = {
+var SECCIONES = {
   admin: [
-    { id:"resumen",     icon:"📊", title:"Finanzas",   sub:"Info y cargar transacciones", color:"#1A1A2E" },
-    { id:"ventas",      icon:"🛍️", title:"Ventas",     sub:"Hoy, ayer y este mes",        color:"#1E8449" },
-    { id:"stock",       icon:"📦", title:"Stock",      sub:"Buscar por local y talle",    color:"#1A5276" },
-    { id:"comparacion", icon:"📈", title:"Locales",    sub:"Ranking y proyección",        color:"#D4AC0D" },
-    { id:"reportes",    icon:"🏆", title:"Reportes",   sub:"Mejores productos",           color:"#8E44AD" },
-    { id:"produccion",  icon:"✂️", title:"Producción", sub:"Cortes, telas y talleres",   color:"#C0392B" },
+    { id:"resumen", icon:"📊", title:"Finanzas", sub:"Info y cargar transacciones" },
+    { id:"ventas", icon:"🛍️", title:"Ventas", sub:"Hoy, ayer y este mes" },
+    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle" },
+    { id:"comparacion", icon:"📈", title:"Locales", sub:"Ranking y proyeccion" },
+    { id:"reportes", icon:"🏆", title:"Reportes", sub:"Mejores productos" },
+    { id:"produccion", icon:"✂️", title:"Produccion", sub:"Cortes, telas y talleres" }
   ],
   socio: [
-    { id:"resumen",     icon:"📊", title:"Finanzas",   sub:"Gastos e ingresos del mes",   color:"#1A1A2E" },
-    { id:"ventas",      icon:"🛍️", title:"Ventas",     sub:"Hoy, ayer y este mes",        color:"#1E8449" },
-    { id:"stock",       icon:"📦", title:"Stock",      sub:"Buscar por local y talle",    color:"#1A5276" },
-    { id:"comparacion", icon:"📈", title:"Locales",    sub:"Ranking y proyección",        color:"#D4AC0D" },
-    { id:"reportes",    icon:"🏆", title:"Reportes",   sub:"Mejores productos",           color:"#8E44AD" },
+    { id:"resumen", icon:"📊", title:"Finanzas", sub:"Info del mes" },
+    { id:"ventas", icon:"🛍️", title:"Ventas", sub:"Hoy, ayer y este mes" },
+    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle" },
+    { id:"comparacion", icon:"📈", title:"Locales", sub:"Ranking y proyeccion" },
+    { id:"reportes", icon:"🏆", title:"Reportes", sub:"Mejores productos" },
+    { id:"produccion", icon:"✂️", title:"Produccion", sub:"Cortes, telas y talleres" }
   ],
   encargado: [
-    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle", color:"#1A5276", full:true },
+    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle", full:true }
   ],
   produccion: [
-    { id:"produccion", icon:"✂️", title:"Producción", sub:"Cortes, telas y talleres", color:"#C0392B", full:true },
-  ],
+    { id:"produccion", icon:"✂️", title:"Produccion", sub:"Cortes, telas y talleres", full:true }
+  ]
 };
 
 function entrarApp(rol, nombre) {
   rolActual = rol; nombreActual = nombre || "";
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("app").style.display = "flex";
-
-  const badge = document.getElementById("rol-badge");
+  var badge = document.getElementById("rol-badge");
   badge.textContent = rol === "admin" ? "Admin" : rol === "socio" ? "Socio" : nombreActual;
   badge.className = "rol-badge " + rol;
-
-  const hoy = new Date();
+  var hoy = new Date();
   document.getElementById("home-nombre").textContent = nombreActual;
   document.getElementById("home-fecha").textContent = hoy.toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" });
-
-  const selAnio = document.getElementById("sel-anio");
+  var selAnio = document.getElementById("sel-anio");
   selAnio.innerHTML = "";
-  for (let y = hoy.getFullYear(); y >= 2023; y--) {
-    const o = document.createElement("option");
+  for (var y = hoy.getFullYear(); y >= 2023; y--) {
+    var o = document.createElement("option");
     o.value = y; o.text = y; selAnio.appendChild(o);
   }
   document.getElementById("sel-mes").value = hoy.getMonth() + 1;
   document.getElementById("f-fecha").value = hoy.toISOString().split("T")[0];
-
   construirHome(rol);
-
-  // Socios no pueden cargar (ocultar tab)
   if (rol === "socio") {
     document.getElementById("fin-tab-cargar").style.display = "none";
+    document.getElementById("btn-prod-stats").style.display = "";
   }
-
+  if (rol === "produccion") {
+    document.getElementById("btn-prod-stats").style.display = "none";
+  }
   if (rol !== "encargado" && rol !== "produccion") {
-    callScript("getCategorias", {}, data => {
+    callScript("getCategorias", {}, function(data) {
       catsGasto = data.gasto; catsIngreso = data.ingreso; updateCatSelect();
     });
   }
-
-  if (rol === "produccion") { showSection("produccion"); }
-// Ocultar stats si es produccion
-if (rol === "produccion") document.getElementById("btn-prod-stats").style.display = "none";
+  if (rol === "produccion") showSection("produccion");
   else if (rol === "encargado") showSection("stock");
 }
 
 function construirHome(rol) {
-  const grid = document.getElementById("home-grid");
-  const items = SECCIONES[rol] || SECCIONES.encargado;
-  grid.innerHTML = items.map(s => `
-    <button class="home-card${s.full ? " full" : ""}" onclick="showSection('${s.id}')">
-      <div class="home-icon">${s.icon}</div>
-      <div class="home-card-info">
-        <div class="home-card-title">${s.title}</div>
-        <div class="home-card-sub">${s.sub}</div>
-      </div>
-      ${s.full ? '<div class="home-card-arrow">→</div>' : ""}
-    </button>
-  `).join("");
+  var grid = document.getElementById("home-grid");
+  var items = SECCIONES[rol] || SECCIONES.encargado;
+  grid.innerHTML = items.map(function(s) {
+    return '<button class="home-card' + (s.full ? " full" : "") + '" onclick="showSection(\'' + s.id + '\')">' +
+      '<div class="home-icon">' + s.icon + '</div>' +
+      '<div class="home-card-info"><div class="home-card-title">' + s.title + '</div><div class="home-card-sub">' + s.sub + '</div></div>' +
+      (s.full ? '<div class="home-card-arrow">→</div>' : '') +
+      '</button>';
+  }).join("");
 }
 
-// ══ NAVEGACION ══
 function showSection(id) {
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(function(s) { s.classList.remove("active"); });
   document.getElementById("sec-" + id).classList.add("active");
-
-  const esHome = id === "home";
+  var esHome = id === "home";
   document.getElementById("btn-back").style.display = esHome ? "none" : "block";
   document.getElementById("header-logo").style.display = esHome ? "block" : "none";
-  const titles = { resumen:"Finanzas", ventas:"Ventas", stock:"Stock", comparacion:"Locales", reportes:"Reportes", produccion:"Producción" };
-  const titleEl = document.getElementById("header-title");
+  var titles = { resumen:"Finanzas", ventas:"Ventas", stock:"Stock", comparacion:"Locales", reportes:"Reportes", produccion:"Produccion" };
+  var titleEl = document.getElementById("header-title");
   titleEl.style.display = esHome ? "none" : "block";
   titleEl.textContent = titles[id] || "";
-
   if (id === "resumen") cargarDashboard();
   if (id === "ventas") cargarVentas();
   if (id === "comparacion") cargarComparacion();
-  if (id === "stock") setTimeout(() => document.getElementById("stock-q").focus(), 100);
-  if (id === "produccion") prodTab(prodTabActual || "stock-tela");
+  if (id === "stock") setTimeout(function() { document.getElementById("stock-q").focus(); }, 100);
+  if (id === "produccion") {
+    document.getElementById("prod-home").style.display = "grid";
+    document.getElementById("prod-content").innerHTML = "";
+  }
 }
 
 function volverHome() { showSection("home"); }
@@ -573,11 +512,12 @@ function logout() {
   document.getElementById("login-error").textContent = "";
   document.getElementById("login-btn").disabled = false;
   document.getElementById("login-btn").textContent = "Ingresar";
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.getElementById("fin-tab-cargar").style.display = "";
+  document.getElementById("btn-prod-stats").style.display = "";
+  document.querySelectorAll(".section").forEach(function(s) { s.classList.remove("active"); });
   document.getElementById("sec-home").classList.add("active");
 }
 
-// ══ FINANZAS TABS ══
 function finTab(tab) {
   document.getElementById("fin-tab-info").classList.toggle("active", tab === "info");
   document.getElementById("fin-tab-cargar").classList.toggle("active", tab === "cargar");
@@ -585,107 +525,106 @@ function finTab(tab) {
   document.getElementById("fin-cargar").style.display = tab === "cargar" ? "" : "none";
 }
 
-// ══ APPS SCRIPT ══
 async function callScript(action, params, callback) {
   try {
-    const url = APPS_SCRIPT_URL + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
-    const res = await fetch(url, { redirect:"follow" });
-    const text = await res.text();
+    var url = APPS_SCRIPT_URL + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
+    var res = await fetch(url, { redirect:"follow" });
+    var text = await res.text();
     try { callback(JSON.parse(text)); } catch(e) { console.error("Parse error", text); }
   } catch(err) { console.error("Script error:", err); }
 }
 
-// ══ DASHBOARD ══
 function cargarDashboard() {
-  const mes = parseInt(document.getElementById("sel-mes").value);
-  const anio = parseInt(document.getElementById("sel-anio").value);
+  var mes = parseInt(document.getElementById("sel-mes").value);
+  var anio = parseInt(document.getElementById("sel-anio").value);
   document.getElementById("dashboard-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
   if (chartGasto) { chartGasto.destroy(); chartGasto = null; }
   if (chartIngreso) { chartIngreso.destroy(); chartIngreso = null; }
-  callScript("getDashboard", { mes, anio }, data => mostrarDashboard(data));
+  callScript("getDashboard", { mes:mes, anio:anio }, function(data) { mostrarDashboard(data); });
 }
 
 function fmt(n) { return "$" + Math.round(n).toLocaleString("es-AR"); }
 function deltaHtml(actual, ant) {
   if (!ant || ant === 0) return "";
-  const d = ((actual - ant) / ant * 100).toFixed(1);
-  const cls = d >= 0 ? "up" : "down";
-  return `<div class="stat-delta ${cls}">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}% vs mes ant.</div>`;
+  var d = ((actual - ant) / ant * 100).toFixed(1);
+  var cls = d >= 0 ? "up" : "down";
+  return '<div class="stat-delta ' + cls + '">' + (d >= 0 ? "▲" : "▼") + " " + Math.abs(d) + "% vs mes ant.</div>";
 }
 
 function mostrarDashboard(data) {
-  const netoClass = data.neto >= 0 ? "pos" : "neg";
-  let html = "";
-  html += `<div class="saldo-card"><div class="saldo-label">💵 Saldo acumulado en caja</div><div class="saldo-value ${data.saldoActual < 0 ? "saldo-neg" : ""}">${fmt(data.saldoActual || 0)}</div></div>`;
-  html += `<div class="stats">
-    <div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">${fmt(data.totalGasto)}</div>${deltaHtml(data.totalGasto, data.totalGastoAnt)}</div>
-    <div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">${fmt(data.totalIngreso)}</div>${deltaHtml(data.totalIngreso, data.totalIngresoAnt)}</div>
-    <div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value ${netoClass}">${fmt(data.neto)}</div>${deltaHtml(data.neto, data.netoAnt)}</div>
-  </div>`;
-  const gEntries = Object.entries(data.porCatGasto || {}).sort((a,b) => b[1]-a[1]).slice(0,8);
+  var netoClass = data.neto >= 0 ? "pos" : "neg";
+  var html = "";
+  html += '<div class="saldo-card"><div class="saldo-label">Saldo acumulado en caja</div><div class="saldo-value ' + (data.saldoActual < 0 ? "saldo-neg" : "") + '">' + fmt(data.saldoActual || 0) + "</div></div>";
+  html += '<div class="stats">' +
+    '<div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">' + fmt(data.totalGasto) + "</div>" + deltaHtml(data.totalGasto, data.totalGastoAnt) + "</div>" +
+    '<div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">' + fmt(data.totalIngreso) + "</div>" + deltaHtml(data.totalIngreso, data.totalIngresoAnt) + "</div>" +
+    '<div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value ' + netoClass + '">' + fmt(data.neto) + "</div>" + deltaHtml(data.neto, data.netoAnt) + "</div>" +
+    "</div>";
+  var gEntries = Object.entries(data.porCatGasto || {}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
   if (gEntries.length > 0) {
-    const maxG = gEntries[0][1];
-    html += `<div class="card"><div class="card-title">📤 Gastos por categoría</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">`;
-    gEntries.forEach(([cat, monto]) => {
-      const pct = (monto / data.totalGasto * 100).toFixed(1);
-      html += `<li class="cat-item"><div class="cat-row"><span class="cat-name">${cat}</span><div class="cat-right"><span class="cat-pct">${pct}%</span><span class="cat-monto gasto">${fmt(monto)}</span></div></div><div class="bar-wrap"><div class="bar" style="width:${Math.round(monto/maxG*100)}%;background:#E74C3C"></div></div></li>`;
+    var maxG = gEntries[0][1];
+    html += '<div class="card"><div class="card-title">Gastos por categoria</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">';
+    gEntries.forEach(function(e) {
+      var pct = (e[1] / data.totalGasto * 100).toFixed(1);
+      html += '<li class="cat-item"><div class="cat-row"><span class="cat-name">' + e[0] + '</span><div class="cat-right"><span class="cat-pct">' + pct + '%</span><span class="cat-monto gasto">' + fmt(e[1]) + '</span></div></div><div class="bar-wrap"><div class="bar" style="width:' + Math.round(e[1]/maxG*100) + '%;background:#E74C3C"></div></div></li>';
     });
-    html += `</ul></div>`;
+    html += "</ul></div>";
   }
-  const iEntries = Object.entries(data.porCatIngreso || {}).sort((a,b) => b[1]-a[1]).slice(0,8);
+  var iEntries = Object.entries(data.porCatIngreso || {}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
   if (iEntries.length > 0) {
-    const maxI = iEntries[0][1];
-    html += `<div class="card"><div class="card-title">📥 Ingresos por categoría</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">`;
-    iEntries.forEach(([cat, monto]) => {
-      const pct = (monto / data.totalIngreso * 100).toFixed(1);
-      html += `<li class="cat-item"><div class="cat-row"><span class="cat-name">${cat}</span><div class="cat-right"><span class="cat-pct">${pct}%</span><span class="cat-monto ingreso">${fmt(monto)}</span></div></div><div class="bar-wrap"><div class="bar" style="width:${Math.round(monto/maxI*100)}%;background:#27AE60"></div></div></li>`;
+    var maxI = iEntries[0][1];
+    html += '<div class="card"><div class="card-title">Ingresos por categoria</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">';
+    iEntries.forEach(function(e) {
+      var pct = (e[1] / data.totalIngreso * 100).toFixed(1);
+      html += '<li class="cat-item"><div class="cat-row"><span class="cat-name">' + e[0] + '</span><div class="cat-right"><span class="cat-pct">' + pct + '%</span><span class="cat-monto ingreso">' + fmt(e[1]) + '</span></div></div><div class="bar-wrap"><div class="bar" style="width:' + Math.round(e[1]/maxI*100) + '%;background:#27AE60"></div></div></li>';
     });
-    html += `</ul></div>`;
+    html += "</ul></div>";
   }
   if (data.txHoy && data.txHoy.length > 0) {
-    html += `<div class="card"><div class="card-title">🕐 Movimientos de hoy</div>`;
-    data.txHoy.forEach(tx => { html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${tx.desc}</div><div class="tx-cat">${tx.cat}</div></div><div class="tx-monto ${tx.monto < 0 ? "gasto" : "ingreso"}">${fmt(Math.abs(tx.monto))}</div></div>`; });
-    html += `</div>`;
+    html += '<div class="card"><div class="card-title">Movimientos de hoy</div>';
+    data.txHoy.forEach(function(tx) {
+      html += '<div class="tx-item"><div class="tx-left"><div class="tx-desc">' + tx.desc + '</div><div class="tx-cat">' + tx.cat + '</div></div><div class="tx-monto ' + (tx.monto < 0 ? "gasto" : "ingreso") + '">' + fmt(Math.abs(tx.monto)) + "</div></div>";
+    });
+    html += "</div>";
   }
-  if (gEntries.length === 0 && iEntries.length === 0) html += `<div class="empty"><div class="e-icon">📭</div><p>Sin movimientos este mes</p></div>`;
+  if (gEntries.length === 0 && iEntries.length === 0) html += '<div class="empty"><div class="e-icon">📭</div><p>Sin movimientos este mes</p></div>';
   document.getElementById("dashboard-content").innerHTML = html;
-  setTimeout(() => {
-    const CG = ["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
-    const CI = ["#27AE60","#1E8449","#2ECC71","#16A085","#1ABC9C","#3498DB","#2980B9","#1A5276"];
-    if (gEntries.length > 0) { const cg = document.getElementById("cg"); if (cg) chartGasto = new Chart(cg, { type:"doughnut", data:{ labels: gEntries.map(e=>e[0]), datasets:[{ data: gEntries.map(e=>e[1]), backgroundColor: CG, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } }); }
-    if (iEntries.length > 0) { const ci = document.getElementById("ci"); if (ci) chartIngreso = new Chart(ci, { type:"doughnut", data:{ labels: iEntries.map(e=>e[0]), datasets:[{ data: iEntries.map(e=>e[1]), backgroundColor: CI, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } }); }
+  setTimeout(function() {
+    var CG = ["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
+    var CI = ["#27AE60","#1E8449","#2ECC71","#16A085","#1ABC9C","#3498DB","#2980B9","#1A5276"];
+    if (gEntries.length > 0) { var cg = document.getElementById("cg"); if (cg) chartGasto = new Chart(cg, { type:"doughnut", data:{ labels:gEntries.map(function(e){return e[0];}), datasets:[{ data:gEntries.map(function(e){return e[1];}), backgroundColor:CG, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } }); }
+    if (iEntries.length > 0) { var ci = document.getElementById("ci"); if (ci) chartIngreso = new Chart(ci, { type:"doughnut", data:{ labels:iEntries.map(function(e){return e[0];}), datasets:[{ data:iEntries.map(function(e){return e[1];}), backgroundColor:CI, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } }); }
   }, 100);
 }
 
-// ══ VENTAS ══
 function toggleFechaCustom() {
   document.getElementById("custom-fechas").style.display = document.getElementById("v-periodo").value === "custom" ? "flex" : "none";
 }
 
 async function cargarVentas() {
-  const periodo = document.getElementById("v-periodo").value;
+  var periodo = document.getElementById("v-periodo").value;
   document.getElementById("ventas-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando ventas...</p></div>';
-  const ahora = new Date();
-  const argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
-  const pad = n => String(n).padStart(2, "0");
-  const fmtDate = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
-  let desde, hasta;
+  var ahora = new Date();
+  var argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
+  var pad = function(n) { return String(n).padStart(2, "0"); };
+  var fmtDate = function(d) { return d.getUTCFullYear() + "-" + pad(d.getUTCMonth()+1) + "-" + pad(d.getUTCDate()); };
+  var desde, hasta;
   hasta = fmtDate(argTime);
   if (periodo === "hoy") {
     desde = fmtDate(argTime);
   } else if (periodo === "ayer") {
-    const ayer = new Date(argTime.getTime() - 24 * 60 * 60 * 1000);
+    var ayer = new Date(argTime.getTime() - 24 * 60 * 60 * 1000);
     desde = fmtDate(ayer); hasta = fmtDate(ayer);
   } else if (periodo === "custom") {
     desde = document.getElementById("v-desde").value;
     hasta = document.getElementById("v-hasta").value;
-    if (!desde || !hasta) { showToast("Seleccioná las fechas", "err"); return; }
+    if (!desde || !hasta) { showToast("Selecciona las fechas", "err"); return; }
   } else {
-    desde = `${argTime.getUTCFullYear()}-${pad(argTime.getUTCMonth()+1)}-01`;
+    desde = argTime.getUTCFullYear() + "-" + pad(argTime.getUTCMonth()+1) + "-01";
   }
   try {
-    const res = await fetch(`/api/ventas?desde=${desde}&hasta=${hasta}`);
-    const data = await res.json();
+    var res = await fetch("/api/ventas?desde=" + desde + "&hasta=" + hasta);
+    var data = await res.json();
     mostrarVentas(data, periodo);
   } catch(err) {
     document.getElementById("ventas-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar ventas</p></div>';
@@ -693,38 +632,41 @@ async function cargarVentas() {
 }
 
 function mostrarVentas(data, periodo) {
-  const textos = { hoy:"hoy", ayer:"ayer", mes:"este mes", custom:"el período" };
-  const periodoTexto = textos[periodo] || "el período";
-  let html = "";
-  html += `<div class="consolidado"><div class="consolidado-label">💰 Total vendido ${periodoTexto}</div><div class="consolidado-value">${fmt(data.total || 0)}</div></div>`;
-  const canales = ["tiendanube","palermo","laplata"];
-  const nombres = { tiendanube:"Tiendanube", palermo:"Palermo", laplata:"La Plata" };
-  html += `<div class="canales-grid">`;
-  canales.forEach(c => { if (data[c]) html += `<div class="canal-mini"><div class="canal-mini-nombre">${nombres[c]}</div><div class="canal-mini-total">${fmt(data[c].total || 0)}</div><div class="canal-mini-cant">${data[c].cantidad || 0} pedidos</div></div>`; });
-  html += `</div>`;
-  canales.forEach(c => {
+  var textos = { hoy:"hoy", ayer:"ayer", mes:"este mes", custom:"el periodo" };
+  var pt = textos[periodo] || "el periodo";
+  var html = "";
+  html += '<div class="consolidado"><div class="consolidado-label">Total vendido ' + pt + '</div><div class="consolidado-value">' + fmt(data.total || 0) + "</div></div>";
+  var canales = ["tiendanube","palermo","laplata"];
+  var nombres = { tiendanube:"Tiendanube", palermo:"Palermo", laplata:"La Plata" };
+  html += '<div class="canales-grid">';
+  canales.forEach(function(c) {
+    if (data[c]) html += '<div class="canal-mini"><div class="canal-mini-nombre">' + nombres[c] + '</div><div class="canal-mini-total">' + fmt(data[c].total || 0) + '</div><div class="canal-mini-cant">' + (data[c].cantidad || 0) + " pedidos</div></div>";
+  });
+  html += "</div>";
+  canales.forEach(function(c) {
     if (!data[c]) return;
-    const canal = data[c];
-    html += `<div class="canal-card"><div class="canal-header"><span class="canal-nombre">${canal.nombre}</span><span class="canal-badge">${canal.cantidad} pedidos</span></div><div class="canal-total">${fmt(canal.total || 0)}</div>`;
+    var canal = data[c];
+    html += '<div class="canal-card"><div class="canal-header"><span class="canal-nombre">' + canal.nombre + '</span><span class="canal-badge">' + canal.cantidad + ' pedidos</span></div><div class="canal-total">' + fmt(canal.total || 0) + "</div>";
     if (canal.pedidos && canal.pedidos.length > 0) {
-      html += `<div class="canal-divider"></div>`;
-      canal.pedidos.forEach(p => { html += `<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">${p.cliente || "Cliente"}</div><div class="pedido-estado">#${p.numero} · ${p.estado}</div></div><div class="pedido-monto">${fmt(p.total)}</div></div>`; });
+      html += '<div class="canal-divider"></div>';
+      canal.pedidos.forEach(function(p) {
+        html += '<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">' + (p.cliente || "Cliente") + '</div><div class="pedido-estado">#' + p.numero + " · " + p.estado + "</div></div><div class=\"pedido-monto\">" + fmt(p.total) + "</div></div>";
+      });
     } else {
-      html += `<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas ${periodoTexto}</div>`;
+      html += '<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas ' + pt + "</div>";
     }
-    html += `</div>`;
+    html += "</div>";
   });
   document.getElementById("ventas-content").innerHTML = html;
 }
 
-// ══ STOCK ══
 async function buscarStock() {
-  const q = document.getElementById("stock-q").value.trim();
-  if (q.length < 2) { showToast("Ingresá al menos 2 caracteres", "err"); return; }
+  var q = document.getElementById("stock-q").value.trim();
+  if (q.length < 2) { showToast("Ingresa al menos 2 caracteres", "err"); return; }
   document.getElementById("stock-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
   try {
-    const res = await fetch(`/api/stock?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
+    var res = await fetch("/api/stock?q=" + encodeURIComponent(q));
+    var data = await res.json();
     mostrarStock(data);
   } catch(err) {
     document.getElementById("stock-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>';
@@ -733,30 +675,31 @@ async function buscarStock() {
 
 function mostrarStock(data) {
   if (!data.resultados || data.resultados.length === 0) {
-    document.getElementById("stock-content").innerHTML = `<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "${data.query}"</p></div>`;
+    document.getElementById("stock-content").innerHTML = '<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "' + data.query + '"</p></div>';
     return;
   }
-  let html = "";
-  data.resultados.forEach(p => {
-    html += `<div class="producto-card"><div class="producto-nombre">${p.nombre}</div><div class="producto-sku">${p.sku ? "SKU: " + p.sku : ""}</div>`;
-    const locales = [{ key:"palermo", label:"Local Palermo", clase:"local-palermo" }, { key:"laplata", label:"Local La Plata", clase:"local-laplata" }];
-    locales.forEach(({ key, label, clase }) => {
-      if (!p.locales[key]) return;
-      html += `<div class="local-titulo ${clase}">${label}</div>`;
-      p.locales[key].forEach(v => { html += `<div class="variante-row"><span class="variante-attr">${v.atributos}</span><div class="variante-right"><span class="variante-precio">$${Math.round(v.precio).toLocaleString("es-AR")}</span><span class="badge-stock ${v.tiene_stock ? "badge-si" : "badge-no"}">${v.tiene_stock ? "✓ Stock" : "Sin stock"}</span></div></div>`; });
-      html += `<div style="margin-bottom:8px"></div>`;
+  var html = "";
+  data.resultados.forEach(function(p) {
+    html += '<div class="producto-card"><div class="producto-nombre">' + p.nombre + '</div><div class="producto-sku">' + (p.sku ? "SKU: " + p.sku : "") + "</div>";
+    var locales = [{ key:"palermo", label:"Local Palermo", clase:"local-palermo" }, { key:"laplata", label:"Local La Plata", clase:"local-laplata" }];
+    locales.forEach(function(loc) {
+      if (!p.locales[loc.key]) return;
+      html += '<div class="local-titulo ' + loc.clase + '">' + loc.label + "</div>";
+      p.locales[loc.key].forEach(function(v) {
+        html += '<div class="variante-row"><span class="variante-attr">' + v.atributos + '</span><div class="variante-right"><span class="variante-precio">$' + Math.round(v.precio).toLocaleString("es-AR") + '</span><span class="badge-stock ' + (v.tiene_stock ? "badge-si" : "badge-no") + '">' + (v.tiene_stock ? "✓ Stock" : "Sin stock") + "</span></div></div>";
+      });
+      html += '<div style="margin-bottom:8px"></div>';
     });
-    html += `</div>`;
+    html += "</div>";
   });
   document.getElementById("stock-content").innerHTML = html;
 }
 
-// ══ COMPARACION ══
 async function cargarComparacion() {
   document.getElementById("comparacion-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
   try {
-    const res = await fetch("/api/comparacion");
-    const data = await res.json();
+    var res = await fetch("/api/comparacion");
+    var data = await res.json();
     mostrarComparacion(data);
   } catch(err) {
     document.getElementById("comparacion-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
@@ -764,71 +707,70 @@ async function cargarComparacion() {
 }
 
 function mostrarComparacion(data) {
-  const delta = (actual, ant) => {
+  var delta = function(actual, ant) {
     if (!ant || ant === 0) return "";
-    const d = ((actual - ant) / ant * 100).toFixed(1);
-    const cls = d >= 0 ? "up" : "down";
-    return `<span class="stat-delta ${cls}" style="font-size:12px">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}% vs mes ant.</span>`;
+    var d = ((actual - ant) / ant * 100).toFixed(1);
+    var cls = d >= 0 ? "up" : "down";
+    return '<span class="stat-delta ' + cls + '" style="font-size:12px">' + (d >= 0 ? "▲" : "▼") + " " + Math.abs(d) + "% vs mes ant.</span>";
   };
-  let html = "";
-  html += `<div class="saldo-card"><div class="saldo-label">💰 Total vendido hoy</div><div class="saldo-value">${fmt(data.totalHoy)}</div></div>`;
-  html += `<div class="card"><div class="card-title">📅 Hoy por local</div>`;
-  data.locales.forEach(l => { html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${l.nombre}</div><div class="tx-cat">${l.hoy.cantidad} pedidos</div></div><div class="tx-monto ingreso">${fmt(l.hoy.total)}</div></div>`; });
-  html += `</div>`;
-  html += `<div class="card"><div class="card-title">🏆 Ranking del mes</div>`;
-  const medallas = ["🥇","🥈","🥉"];
-  const maxMes = data.ranking[0]?.mes.total || 1;
-  data.ranking.forEach((l, i) => {
-    const pct = Math.round(l.mes.total / data.totalMes * 100);
-    const w = Math.round(l.mes.total / maxMes * 100);
-    html += `<div class="cat-item"><div class="cat-row"><span class="cat-name">${medallas[i] || "  "} ${l.nombre}</span><div class="cat-right"><span class="cat-pct">${pct}%</span><span class="cat-monto ingreso">${fmt(l.mes.total)}</span></div></div><div class="bar-wrap"><div class="bar" style="width:${w}%;background:#27AE60"></div></div></div>`;
+  var html = "";
+  html += '<div class="saldo-card"><div class="saldo-label">Total vendido hoy</div><div class="saldo-value">' + fmt(data.totalHoy) + "</div></div>";
+  html += '<div class="card"><div class="card-title">Hoy por local</div>';
+  data.locales.forEach(function(l) {
+    html += '<div class="tx-item"><div class="tx-left"><div class="tx-desc">' + l.nombre + '</div><div class="tx-cat">' + l.hoy.cantidad + ' pedidos</div></div><div class="tx-monto ingreso">' + fmt(l.hoy.total) + "</div></div>";
   });
-  html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:13px;font-weight:700;color:var(--texto)">Total del mes</span>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:900;color:var(--negro)">${fmt(data.totalMes)}</div>${delta(data.totalMes, data.totalAnt)}</div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px">
-      <span style="font-size:12px;font-weight:700;color:#1E8449">🎯 Proyección del mes</span>
-      <span style="font-size:16px;font-weight:900;color:#1E8449">${fmt(data.proyeccionTotal)}</span>
-    </div>
-    <div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">Basado en ${data.diaDelMes} días · Comparado con primeros ${data.diasComparados} días del mes ant.</div>
-  </div></div>`;
-  html += `<div class="card"><div class="card-title">📊 Este mes vs mes anterior (mismos días)</div>`;
-  data.locales.forEach(l => {
-    const d = l.ant.total > 0 ? ((l.mes.total - l.ant.total) / l.ant.total * 100).toFixed(1) : null;
-    const cls = d >= 0 ? "up" : "down";
-    html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${l.nombre}</div><div class="tx-cat">Ant: ${fmt(l.ant.total)} · 🎯 Proy: ${fmt(l.proyeccion)} ${d !== null ? `<span class="stat-delta ${cls}">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}%</span>` : ""}</div></div><div class="tx-monto ingreso">${fmt(l.mes.total)}</div></div>`;
+  html += "</div>";
+  html += '<div class="card"><div class="card-title">Ranking del mes</div>';
+  var medallas = ["🥇","🥈","🥉"];
+  var maxMes = data.ranking[0] ? data.ranking[0].mes.total : 1;
+  data.ranking.forEach(function(l, i) {
+    var pct = Math.round(l.mes.total / data.totalMes * 100);
+    var w = Math.round(l.mes.total / maxMes * 100);
+    html += '<div class="cat-item"><div class="cat-row"><span class="cat-name">' + (medallas[i] || "") + " " + l.nombre + '</span><div class="cat-right"><span class="cat-pct">' + pct + '%</span><span class="cat-monto ingreso">' + fmt(l.mes.total) + '</span></div></div><div class="bar-wrap"><div class="bar" style="width:' + w + '%;background:#27AE60"></div></div></div>';
   });
-  html += `</div>`;
+  html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+    '<span style="font-size:13px;font-weight:700">Total del mes</span>' +
+    '<div style="text-align:right"><div style="font-size:18px;font-weight:900">' + fmt(data.totalMes) + "</div>" + delta(data.totalMes, data.totalAnt) + "</div></div>" +
+    '<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px">' +
+    '<span style="font-size:12px;font-weight:700;color:#1E8449">Proyeccion del mes</span>' +
+    '<span style="font-size:16px;font-weight:900;color:#1E8449">' + fmt(data.proyeccionTotal) + "</span></div>" +
+    '<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">Basado en ' + data.diaDelMes + " dias - Comparado con primeros " + data.diasComparados + " dias del mes ant.</div>" +
+    "</div></div>";
+  html += '<div class="card"><div class="card-title">Este mes vs mes anterior (mismos dias)</div>';
+  data.locales.forEach(function(l) {
+    var d = l.ant.total > 0 ? ((l.mes.total - l.ant.total) / l.ant.total * 100).toFixed(1) : null;
+    var cls = d >= 0 ? "up" : "down";
+    html += '<div class="tx-item"><div class="tx-left"><div class="tx-desc">' + l.nombre + '</div><div class="tx-cat">Ant: ' + fmt(l.ant.total) + " - Proy: " + fmt(l.proyeccion) + (d !== null ? ' <span class="stat-delta ' + cls + '">' + (d >= 0 ? "▲" : "▼") + " " + Math.abs(d) + "%</span>" : "") + '</div></div><div class="tx-monto ingreso">' + fmt(l.mes.total) + "</div></div>";
+  });
+  html += "</div>";
   document.getElementById("comparacion-content").innerHTML = html;
 }
 
-// ══ REPORTES ══
 function toggleRepCustom() {
   document.getElementById("rep-custom").style.display = document.getElementById("rep-periodo").value === "custom" ? "flex" : "none";
 }
 
 async function cargarReportes() {
-  const canal = document.getElementById("rep-canal").value;
-  const periodo = document.getElementById("rep-periodo").value;
+  var canal = document.getElementById("rep-canal").value;
+  var periodo = document.getElementById("rep-periodo").value;
   document.getElementById("reportes-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando productos...</p></div>';
-  const ahora = new Date();
-  const argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
-  const pad = n => String(n).padStart(2, "0");
-  const fmtDate = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
-  let desde, hasta;
+  var ahora = new Date();
+  var argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
+  var pad = function(n) { return String(n).padStart(2, "0"); };
+  var fmtDate = function(d) { return d.getUTCFullYear() + "-" + pad(d.getUTCMonth()+1) + "-" + pad(d.getUTCDate()); };
+  var desde, hasta;
   if (periodo === "custom") {
     desde = document.getElementById("rep-desde").value;
     hasta = document.getElementById("rep-hasta").value;
-    if (!desde || !hasta) { showToast("Seleccioná las fechas", "err"); return; }
+    if (!desde || !hasta) { showToast("Selecciona las fechas", "err"); return; }
   } else {
-    desde = `${argTime.getUTCFullYear()}-${pad(argTime.getUTCMonth()+1)}-01`;
+    desde = argTime.getUTCFullYear() + "-" + pad(argTime.getUTCMonth()+1) + "-01";
     hasta = fmtDate(argTime);
   }
   try {
-    const res = await fetch(`/api/reportes?desde=${desde}&hasta=${hasta}&canal=${canal}`);
-    const data = await res.json();
+    var res = await fetch("/api/reportes?desde=" + desde + "&hasta=" + hasta + "&canal=" + canal);
+    var data = await res.json();
     mostrarReportes(data, canal);
   } catch(err) {
     document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar reportes</p></div>';
@@ -837,58 +779,46 @@ async function cargarReportes() {
 
 function mostrarReportes(data, canal) {
   if (!data.productos || data.productos.length === 0) {
-    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el período</p></div>';
+    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el periodo</p></div>';
     return;
   }
-  const titulo = canal === "online" ? "🌐 Más vendidos Online (Tiendanube)" : "🏪 Más vendidos Físico (Locales)";
-  const medallas = ["🥇","🥈","🥉"];
-  let html = `<div class="card"><div class="card-title">${titulo}</div>`;
-  data.productos.forEach((p, i) => {
-    html += `<div class="ranking-item">
-      <div class="ranking-pos">${medallas[i] || `${i+1}`}</div>
-      <div class="ranking-info">
-        <div class="ranking-nombre">${p.nombre}</div>
-        <div class="ranking-detalle">${p.fuentes}</div>
-      </div>
-      <div class="ranking-cant">${p.cantidad}<span>unidades</span></div>
-    </div>`;
+  var titulo = canal === "online" ? "Mas vendidos Online (Tiendanube)" : "Mas vendidos Fisico (Locales)";
+  var medallas = ["🥇","🥈","🥉"];
+  var html = '<div class="card"><div class="card-title">' + titulo + "</div>";
+  data.productos.forEach(function(p, i) {
+    html += '<div class="ranking-item"><div class="ranking-pos">' + (medallas[i] || (i+1)) + '</div><div class="ranking-info"><div class="ranking-nombre">' + p.nombre + '</div><div class="ranking-detalle">' + p.fuentes + '</div></div><div class="ranking-cant">' + p.cantidad + '<span>unidades</span></div></div>';
   });
-  html += `</div>`;
+  html += "</div>";
   document.getElementById("reportes-content").innerHTML = html;
 }
 
 // ══ PRODUCCION ══
 function prodSeccion(sec) {
-  prodTabActual = sec;
+  prodSeccionActual = sec;
   document.getElementById("prod-home").style.display = "none";
-  const titles = { telas:"🧵 Telas", cortes:"✂️ Cortes", talleres:"👥 Talleres", estadisticas:"📊 Estadísticas" };
-  document.getElementById("header-title").textContent = "Producción · " + (titles[sec] || sec);
-  cargarProdSeccion(sec);
+  var titles = { telas:"Telas", cortes:"Cortes", talleres:"Talleres", estadisticas:"Estadisticas" };
+  document.getElementById("header-title").textContent = "Produccion - " + (titles[sec] || sec);
+  if (sec === "telas") mostrarSeccionTelas();
+  else if (sec === "cortes") mostrarSeccionCortes();
+  else if (sec === "talleres") mostrarSeccionTalleres();
+  else if (sec === "estadisticas") mostrarSeccionEstadisticas();
 }
 
 function volverProdHome() {
   document.getElementById("prod-home").style.display = "grid";
   document.getElementById("prod-content").innerHTML = "";
-  document.getElementById("header-title").textContent = "Producción";
+  document.getElementById("header-title").textContent = "Produccion";
 }
 
-async function cargarProdSeccion(sec) {
-  document.getElementById("prod-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
-  if (sec === "telas")        mostrarSeccionTelas();
-  else if (sec === "cortes")  mostrarSeccionCortes();
-  else if (sec === "talleres") mostrarSeccionTalleres();
-  else if (sec === "estadisticas") cargarEstadisticas();
-}
-
-// ─── TELAS ───
+// TELAS
 function mostrarSeccionTelas() {
-  document.getElementById("prod-content").innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="prod-tab active" id="ptab-stock" onclick="telaTab('stock')">📦 Stock</button>
-      <button class="prod-tab" id="ptab-ingreso" onclick="telaTab('ingreso')">➕ Ingreso</button>
-    </div>
-    <div id="tela-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
-    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+  document.getElementById("prod-content").innerHTML =
+    '<div style="display:flex;gap:8px;margin-bottom:16px">' +
+    '<button class="prod-tab active" id="ptab-stock" onclick="telaTab(\'stock\')">Stock</button>' +
+    '<button class="prod-tab" id="ptab-ingreso" onclick="telaTab(\'ingreso\')">Ingreso</button>' +
+    '</div>' +
+    '<div id="tela-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>' +
+    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
   telaTab("stock");
 }
 
@@ -902,132 +832,115 @@ function telaTab(tab) {
 async function cargarStockTelas() {
   document.getElementById("tela-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
   try {
-    const res = await fetch("/api/produccion?tab=stock-tela");
-    const data = await res.json();
+    var res = await fetch("/api/produccion?tab=stock-tela");
+    var data = await res.json();
     if (!data.telas || data.telas.length === 0) {
       document.getElementById("tela-content").innerHTML = '<div class="empty"><div class="e-icon">🧵</div><p>Sin telas registradas</p></div>';
       return;
     }
-    let html = `<div class="card"><div class="card-title">Stock actual</div>`;
-    data.telas.forEach(t => {
-      const s = parseFloat(t.stock || 0);
-      const cls = s < 50 ? "bajo" : "ok";
-      html += `<div class="tela-item"><div><div class="tela-nombre">${t.nombre}</div><div class="tela-tipo">${t.tipo||""}</div></div><div class="tela-stock ${cls}">${s.toFixed(1)} kg</div></div>`;
+    var html = '<div class="card"><div class="card-title">Stock actual</div>';
+    data.telas.forEach(function(t) {
+      var s = parseFloat(t.stock || 0);
+      var cls = s < 50 ? "bajo" : "ok";
+      html += '<div class="tela-item"><div><div class="tela-nombre">' + t.nombre + '</div><div class="tela-tipo">' + (t.tipo || "") + '</div></div><div class="tela-stock ' + cls + '">' + s.toFixed(1) + ' kg</div></div>';
     });
-    html += `</div>`;
+    html += "</div>";
     document.getElementById("tela-content").innerHTML = html;
   } catch(e) {
     document.getElementById("tela-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
   }
 }
 
-function mostrarFormIngreso() {
-  fetch("/api/produccion?tab=stock-tela").then(r => r.json()).then(data => {
-    const opts = data.telas ? data.telas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("") : "";
-    document.getElementById("tela-content").innerHTML = `
-      <div class="card">
-        <div class="card-title">📦 Ingreso de tela</div>
-        <div class="form-group"><label class="form-label">Tela</label><select id="pi-tela" class="form-control">${opts}</select></div>
-        <div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pi-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>
-        <div class="form-group"><label class="form-label">Marca</label><select id="pi-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>
-        <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pi-notas" class="form-control" placeholder="Opcional"></div>
-        <button class="btn-submit" id="btn-gi" onclick="guardarIngreso()">Guardar ingreso</button>
-      </div>`;
-  });
+async function mostrarFormIngreso() {
+  var data = await fetch("/api/produccion?tab=stock-tela").then(function(r){return r.json();});
+  var opts = data.telas ? data.telas.map(function(t){return '<option value="' + t.id + '">' + t.nombre + '</option>';}).join("") : "";
+  document.getElementById("tela-content").innerHTML =
+    '<div class="card"><div class="card-title">Ingreso de tela</div>' +
+    '<div class="form-group"><label class="form-label">Tela</label><select id="pi-tela" class="form-control">' + opts + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pi-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>' +
+    '<div class="form-group"><label class="form-label">Marca</label><select id="pi-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>' +
+    '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pi-notas" class="form-control" placeholder="Opcional"></div>' +
+    '<button class="btn-submit" id="btn-gi" onclick="guardarIngreso()">Guardar ingreso</button></div>';
 }
 
 async function guardarIngreso() {
-  const btn = document.getElementById("btn-gi");
-  const tela = document.getElementById("pi-tela").value;
-  const kg = document.getElementById("pi-kg").value;
-  if (!tela || !kg) { showToast("Completá tela y kg", "err"); return; }
+  var btn = document.getElementById("btn-gi");
+  var tela = document.getElementById("pi-tela").value;
+  var kg = document.getElementById("pi-kg").value;
+  if (!tela || !kg) { showToast("Completa tela y kg", "err"); return; }
   btn.disabled = true; btn.textContent = "Guardando...";
   try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action:"guardarIngreso", telaId:tela, kg, marca:document.getElementById("pi-marca").value, notas:document.getElementById("pi-notas").value }) });
-    const data = await res.json();
-    if (data.ok) { showToast("✅ Ingreso guardado", "ok"); telaTab("stock"); }
+    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"guardarIngreso", telaId:tela, kg:kg, marca:document.getElementById("pi-marca").value, notas:document.getElementById("pi-notas").value }) });
+    var data = await res.json();
+    if (data.ok) { showToast("Ingreso guardado", "ok"); telaTab("stock"); }
     else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
-  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
+  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
 }
 
-// ─── CORTES ───
-let cortesData = [];
-let tallesData = [];
-
+// CORTES
 function mostrarSeccionCortes() {
-  document.getElementById("prod-content").innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-      <button class="prod-tab active" id="ctab-lista" onclick="corteTab('lista')">📋 Cortes</button>
-      <button class="prod-tab" id="ctab-nuevo" onclick="corteTab('nuevo')">➕ Nuevo</button>
-      <button class="prod-tab" id="ctab-peticion" onclick="corteTab('peticion')">📝 Petición</button>
-    </div>
-    <div id="corte-filtros" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
-    <div id="corte-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
-    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+  document.getElementById("prod-content").innerHTML =
+    '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
+    '<button class="prod-tab active" id="ctab-lista" onclick="corteTab(\'lista\')">Lista</button>' +
+    '<button class="prod-tab" id="ctab-nuevo" onclick="corteTab(\'nuevo\')">Nuevo</button>' +
+    '<button class="prod-tab" id="ctab-peticion" onclick="corteTab(\'peticion\')">Peticion</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="corte-filtros"></div>' +
+    '<div id="corte-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>' +
+    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
   corteTab("lista");
 }
 
 async function corteTab(tab) {
-  ["lista","nuevo","peticion"].forEach(t => document.getElementById("ctab-"+t)?.classList.toggle("active", t === tab));
+  ["lista","nuevo","peticion"].forEach(function(t) {
+    var el = document.getElementById("ctab-" + t);
+    if (el) el.classList.toggle("active", t === tab);
+  });
   document.getElementById("corte-filtros").innerHTML = "";
-
   if (tab === "lista") {
-    // Mostrar filtros
-    const filtros = `
-      <select id="fil-estado" class="form-control" style="flex:1;padding:8px" onchange="cargarCortes()">
-        <option value="">Todos los estados</option>
-        <option value="En Taller">En Taller</option>
-        <option value="Esperando Taller">Esperando Taller</option>
-        <option value="Terminado">Terminado</option>
-        <option value="Entregado">Entregado</option>
-      </select>
-      <select id="fil-marca" class="form-control" style="flex:1;padding:8px" onchange="cargarCortes()">
-        <option value="">Todas las marcas</option>
-        <option value="Tussy">Tussy</option><option value="Shato">Shato</option><option value="Blanks">Blanks</option>
-      </select>`;
-    document.getElementById("corte-filtros").innerHTML = filtros;
+    document.getElementById("corte-filtros").innerHTML =
+      '<select id="fil-estado" class="form-control" style="flex:1;padding:8px;font-size:13px" onchange="cargarCortes()">' +
+      '<option value="">Todos los estados</option><option value="En Taller">En Taller</option>' +
+      '<option value="Esperando Taller">Esperando Taller</option><option value="Terminado">Terminado</option>' +
+      '</select>' +
+      '<select id="fil-marca" class="form-control" style="flex:1;padding:8px;font-size:13px" onchange="cargarCortes()">' +
+      '<option value="">Todas las marcas</option><option value="Tussy">Tussy</option><option value="Shato">Shato</option><option value="Blanks">Blanks</option>' +
+      '</select>';
     cargarCortes();
   } else if (tab === "nuevo") {
-    mostrarFormCorte();
+    await mostrarFormCorte();
   } else if (tab === "peticion") {
-    mostrarFormPeticion();
+    await mostrarFormPeticion();
   }
 }
 
 async function cargarCortes() {
   document.getElementById("corte-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div>';
-  const estado = document.getElementById("fil-estado")?.value || "";
-  const marca = document.getElementById("fil-marca")?.value || "";
+  var estado = (document.getElementById("fil-estado") && document.getElementById("fil-estado").value) || "";
+  var marca = (document.getElementById("fil-marca") && document.getElementById("fil-marca").value) || "";
   try {
-    const res = await fetch(`/api/produccion?tab=cortes&estado=${estado}&marca=${marca}`);
-    const data = await res.json();
+    var res = await fetch("/api/produccion?tab=cortes&estado=" + encodeURIComponent(estado) + "&marca=" + encodeURIComponent(marca));
+    var data = await res.json();
     cortesData = data.cortes || [];
     if (cortesData.length === 0) {
       document.getElementById("corte-content").innerHTML = '<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes registrados</p></div>';
       return;
     }
-    let html = "";
-    cortesData.forEach(c => {
-      const estadoColor = {
-        "En Taller": "estado-taller",
-        "Esperando Taller": "estado-espera",
-        "Terminado": "estado-listo",
-        "Entregado": "estado-listo"
-      }[c.estado] || "estado-espera";
-      html += `<div class="corte-card" onclick="verDetalleCorte('${c.id}')">
-        <div class="corte-header">
-          <div class="corte-num">Corte #${c.numero || "—"} <span style="font-size:11px;color:#aaa;font-weight:500">${c.marca||""}</span></div>
-          <span class="corte-estado ${estadoColor}">${c.estado||"—"}</span>
-        </div>
-        <div class="corte-tela">🧵 ${c.telaId||"—"} · 📅 ${c.fecha||"—"} · 👤 ${c.taller||"Sin asignar"}</div>
-        <div class="corte-grid">
-          <div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">${c.kg||"—"}</div></div>
-          <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.totalPrendas||c.qPrendas||"—"}</div></div>
-          <div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">${c.rinde||"—"}</div></div>
-        </div>
-        ${c.descripcion ? `<div style="font-size:12px;color:#888;margin-top:6px">📦 ${c.descripcion}</div>` : ""}
-      </div>`;
+    var html = "";
+    cortesData.forEach(function(c, idx) {
+      var estadoColor = { "En Taller":"estado-taller", "Esperando Taller":"estado-espera", "Terminado":"estado-listo", "Entregado":"estado-listo" }[c.estado] || "estado-espera";
+      html += '<div class="corte-card" onclick="verDetalleCorte(' + idx + ')">' +
+        '<div class="corte-header"><div class="corte-num">Corte #' + (c.numero||"—") + ' <span style="font-size:11px;color:#aaa">' + (c.marca||"") + '</span></div>' +
+        '<span class="corte-estado ' + estadoColor + '">' + (c.estado||"—") + '</span></div>' +
+        '<div class="corte-tela">' + (c.telaId||"—") + ' · ' + (c.fecha||"—") + ' · ' + (c.taller||"Sin asignar") + '</div>' +
+        '<div class="corte-grid">' +
+        '<div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">' + (c.kg||"—") + '</div></div>' +
+        '<div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">' + (c.totalPrendas||c.qPrendas||"—") + '</div></div>' +
+        '<div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">' + (c.rinde||"—") + '</div></div>' +
+        '</div>' +
+        (c.descripcion ? '<div style="font-size:12px;color:#888;margin-top:6px">' + c.descripcion + '</div>' : '') +
+        '</div>';
     });
     document.getElementById("corte-content").innerHTML = html;
   } catch(e) {
@@ -1035,165 +948,140 @@ async function cargarCortes() {
   }
 }
 
-function verDetalleCorte(id) {
-  const c = cortesData.find(x => x.id === id);
+function verDetalleCorte(idx) {
+  var c = cortesData[idx];
   if (!c) return;
-  const estadoOpts = ["En Taller","Esperando Taller","Terminado","Entregado"].map(e =>
-    `<option ${c.estado === e ? "selected" : ""}>${e}</option>`).join("");
-
-  document.getElementById("corte-content").innerHTML = `
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div class="card-title" style="margin:0">Corte #${c.numero}</div>
-        <button onclick="cargarCortes()" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer">← Volver</button>
-      </div>
-      <div class="corte-grid" style="margin-bottom:12px">
-        <div class="corte-dato"><div class="corte-dato-label">Kg tela</div><div class="corte-dato-val">${c.kg||"—"}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.totalPrendas||"—"}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">${c.rinde||"—"}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">TU</div><div class="corte-dato-val">${c.tu||0}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">S</div><div class="corte-dato-val">${c.s||0}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">M</div><div class="corte-dato-val">${c.m||0}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">L</div><div class="corte-dato-val">${c.l||0}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">XL</div><div class="corte-dato-val">${c.xl||0}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">${c.faltantes||0}</div></div>
-      </div>
-      <div style="font-size:13px;color:#666;margin-bottom:12px">
-        🧵 ${c.telaId||"—"} · 🏷️ ${c.marca||"—"} · 👤 ${c.taller||"—"} · 📅 ${c.fecha||"—"}
-      </div>
-      ${c.descripcion ? `<div style="font-size:13px;color:#666;margin-bottom:12px">📦 ${c.descripcion}</div>` : ""}
-      ${c.precioCostura ? '<div style="font-size:13px;color:#666;margin-bottom:12px">💰 Precio costura: $' + c.precioCostura + '</div>' : ""}
-      ${c.notas ? `<div style="font-size:13px;color:#888;margin-bottom:12px">📝 ${c.notas}</div>` : ""}
-      <div class="form-group" style="margin-top:8px">
-        <label class="form-label">Actualizar estado</label>
-        <select id="det-estado" class="form-control">${estadoOpts}</select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Precio costura ($)</label>
-        <input type="number" id="det-precio" class="form-control" value="${c.precioCostura||0}" placeholder="0">
-      </div>
-      <button class="btn-submit" onclick="actualizarCorte('${c.id}')">Guardar cambios</button>
-    </div>`;
+  var estadoOpts = ["En Taller","Esperando Taller","Terminado","Entregado"].map(function(e) {
+    return '<option' + (c.estado === e ? " selected" : "") + ">" + e + "</option>";
+  }).join("");
+  document.getElementById("corte-content").innerHTML =
+    '<div class="card">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+    '<div class="card-title" style="margin:0">Corte #' + (c.numero||"") + '</div>' +
+    '<button onclick="cargarCortes()" class="btn-back">← Volver</button></div>' +
+    '<div class="corte-grid" style="margin-bottom:12px">' +
+    '<div class="corte-dato"><div class="corte-dato-label">Kg tela</div><div class="corte-dato-val">' + (c.kg||"—") + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">' + (c.totalPrendas||"—") + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">' + (c.rinde||"—") + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">TU</div><div class="corte-dato-val">' + (c.tu||0) + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">S</div><div class="corte-dato-val">' + (c.s||0) + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">M</div><div class="corte-dato-val">' + (c.m||0) + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">L</div><div class="corte-dato-val">' + (c.l||0) + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">XL</div><div class="corte-dato-val">' + (c.xl||0) + '</div></div>' +
+    '<div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">' + (c.faltantes||0) + '</div></div>' +
+    '</div>' +
+    '<div style="font-size:13px;color:#666;margin-bottom:12px">' + (c.telaId||"—") + ' · ' + (c.marca||"—") + ' · ' + (c.taller||"—") + ' · ' + (c.fecha||"—") + '</div>' +
+    (c.descripcion ? '<div style="font-size:13px;color:#666;margin-bottom:12px">' + c.descripcion + '</div>' : '') +
+    (c.notas ? '<div style="font-size:13px;color:#888;margin-bottom:12px">' + c.notas + '</div>' : '') +
+    '<div class="form-group"><label class="form-label">Actualizar estado</label><select id="det-estado" class="form-control">' + estadoOpts + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="det-precio" class="form-control" value="' + (c.precioCostura||0) + '" placeholder="0"></div>' +
+    '<button class="btn-submit" onclick="actualizarCorte(\'' + c.id + '\')">Guardar cambios</button>' +
+    '</div>';
 }
 
 async function actualizarCorte(id) {
-  const estado = document.getElementById("det-estado").value;
-  const precio = document.getElementById("det-precio").value;
+  var estado = document.getElementById("det-estado").value;
+  var precio = document.getElementById("det-precio").value;
   try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action:"actualizarEstado", id, estado, precioCostura:precio }) });
-    const data = await res.json();
-    if (data.ok) { showToast("✅ Actualizado", "ok"); cargarCortes(); }
+    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"actualizarEstado", id:id, estado:estado, precioCostura:precio }) });
+    var data = await res.json();
+    if (data.ok) { showToast("Actualizado", "ok"); cargarCortes(); }
     else showToast("Error: " + (data.error||""), "err");
-  } catch(e) { showToast("Error de conexión", "err"); }
+  } catch(e) { showToast("Error de conexion", "err"); }
 }
 
 async function mostrarFormCorte() {
-  const telaRes = await fetch("/api/produccion?tab=stock-tela").then(r => r.json());
-  const tallRes = await fetch("/api/produccion?tab=talleres").then(r => r.json());
-  const telaOpts = telaRes.telas ? telaRes.telas.map(t => `<option value="${t.id}">${t.nombre} (${parseFloat(t.stock||0).toFixed(1)} kg)</option>`).join("") : "";
-  const tallOpts = tallRes.talleres ? tallRes.talleres.map(t => `<option>${t.nombre}</option>`).join("") : "";
-
-  document.getElementById("corte-content").innerHTML = `
-    <div class="card">
-      <div class="card-title">✂️ Nuevo corte</div>
-      <div class="form-group"><label class="form-label">N° de Corte</label><input type="number" id="pc-num" class="form-control" placeholder="Ej: 125"></div>
-      <div class="form-group"><label class="form-label">Producto / Descripción</label><input type="text" id="pc-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>
-      <div class="form-group"><label class="form-label">Tela</label><select id="pc-tela" class="form-control">${telaOpts}</select></div>
-      <div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pc-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>
-      <div class="form-group"><label class="form-label">Marca</label><select id="pc-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>
-      <div class="form-group"><label class="form-label">N° Partida</label><input type="text" id="pc-partida" class="form-control" placeholder="Opcional"></div>
-      <div class="form-group"><label class="form-label">Taller</label><select id="pc-taller" class="form-control">${tallOpts}</select></div>
-      <div class="form-group"><label class="form-label">Estado</label>
-        <select id="pc-estado" class="form-control">
-          <option>Esperando Taller</option><option>En Taller</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="pc-precio" class="form-control" placeholder="0" inputmode="numeric"></div>
-      <div class="form-group"><label class="form-label">Talles</label>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
-          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">TU</label><input type="number" id="pc-tu" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">S</label><input type="number" id="pc-s" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">M</label><input type="number" id="pc-m" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">L</label><input type="number" id="pc-l" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">XL</label><input type="number" id="pc-xl" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-        </div>
-      </div>
-      <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pc-notas" class="form-control" placeholder="Opcional"></div>
-      <button class="btn-submit" id="btn-gc" onclick="guardarCorte()">Guardar corte</button>
-    </div>`;
+  var telaRes = await fetch("/api/produccion?tab=stock-tela").then(function(r){return r.json();});
+  var tallRes = await fetch("/api/produccion?tab=talleres").then(function(r){return r.json();});
+  var telaOpts = telaRes.telas ? telaRes.telas.map(function(t){return '<option value="' + t.id + '">' + t.nombre + ' (' + parseFloat(t.stock||0).toFixed(1) + ' kg)</option>';}).join("") : "";
+  var tallOpts = tallRes.talleres ? tallRes.talleres.map(function(t){return '<option>' + t.nombre + '</option>';}).join("") : "";
+  document.getElementById("corte-content").innerHTML =
+    '<div class="card"><div class="card-title">Nuevo corte</div>' +
+    '<div class="form-group"><label class="form-label">N de Corte</label><input type="number" id="pc-num" class="form-control" placeholder="Ej: 125"></div>' +
+    '<div class="form-group"><label class="form-label">Producto / Descripcion</label><input type="text" id="pc-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>' +
+    '<div class="form-group"><label class="form-label">Tela</label><select id="pc-tela" class="form-control">' + telaOpts + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pc-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>' +
+    '<div class="form-group"><label class="form-label">Marca</label><select id="pc-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>' +
+    '<div class="form-group"><label class="form-label">N Partida</label><input type="text" id="pc-partida" class="form-control" placeholder="Opcional"></div>' +
+    '<div class="form-group"><label class="form-label">Taller</label><select id="pc-taller" class="form-control">' + tallOpts + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Estado</label><select id="pc-estado" class="form-control"><option>Esperando Taller</option><option>En Taller</option></select></div>' +
+    '<div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="pc-precio" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+    '<div class="form-group"><label class="form-label">Talles</label>' +
+    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">' +
+    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">TU</label><input type="number" id="pc-tu" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
+    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">S</label><input type="number" id="pc-s" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
+    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">M</label><input type="number" id="pc-m" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
+    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">L</label><input type="number" id="pc-l" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
+    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">XL</label><input type="number" id="pc-xl" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
+    '</div></div>' +
+    '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pc-notas" class="form-control" placeholder="Opcional"></div>' +
+    '<button class="btn-submit" id="btn-gc" onclick="guardarCorte()">Guardar corte</button></div>';
 }
 
 async function guardarCorte() {
-  const btn = document.getElementById("btn-gc");
-  const num = document.getElementById("pc-num").value;
-  const tela = document.getElementById("pc-tela").value;
-  const kg = document.getElementById("pc-kg").value;
-  const prod = document.getElementById("pc-prod").value;
-  if (!num || !tela || !kg || !prod) { showToast("Completá número, producto, tela y kg", "err"); return; }
+  var btn = document.getElementById("btn-gc");
+  var num = document.getElementById("pc-num").value;
+  var tela = document.getElementById("pc-tela").value;
+  var kg = document.getElementById("pc-kg").value;
+  var prod = document.getElementById("pc-prod").value;
+  if (!num || !tela || !kg || !prod) { showToast("Completa numero, producto, tela y kg", "err"); return; }
   btn.disabled = true; btn.textContent = "Guardando...";
-  const payload = {
-    action:"guardarCorte", numero:num, producto:prod, telaId:tela, kg,
-    marca:document.getElementById("pc-marca").value,
-    partida:document.getElementById("pc-partida").value,
-    taller:document.getElementById("pc-taller").value,
-    estado:document.getElementById("pc-estado").value,
-    precioCostura:document.getElementById("pc-precio").value||0,
-    tu:document.getElementById("pc-tu").value||0, s:document.getElementById("pc-s").value||0,
-    m:document.getElementById("pc-m").value||0, l:document.getElementById("pc-l").value||0,
-    xl:document.getElementById("pc-xl").value||0, notas:document.getElementById("pc-notas").value
-  };
   try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
-    const data = await res.json();
-    if (data.ok) { showToast("✅ Corte guardado", "ok"); corteTab("lista"); }
+    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"guardarCorte", numero:num, producto:prod, telaId:tela, kg:kg,
+        marca:document.getElementById("pc-marca").value, partida:document.getElementById("pc-partida").value,
+        taller:document.getElementById("pc-taller").value, estado:document.getElementById("pc-estado").value,
+        precioCostura:document.getElementById("pc-precio").value||0,
+        tu:document.getElementById("pc-tu").value||0, s:document.getElementById("pc-s").value||0,
+        m:document.getElementById("pc-m").value||0, l:document.getElementById("pc-l").value||0,
+        xl:document.getElementById("pc-xl").value||0, notas:document.getElementById("pc-notas").value }) });
+    var data = await res.json();
+    if (data.ok) { showToast("Corte guardado", "ok"); corteTab("lista"); }
     else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
-  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
+  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
 }
 
 async function mostrarFormPeticion() {
-  const telaRes = await fetch("/api/produccion?tab=stock-tela").then(r => r.json());
-  const tallRes = await fetch("/api/produccion?tab=talleres").then(r => r.json());
-  const telaOpts = telaRes.telas ? telaRes.telas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("") : "";
-  const tallOpts = tallRes.talleres ? tallRes.talleres.map(t => `<option>${t.nombre}</option>`).join("") : "";
-
-  document.getElementById("corte-content").innerHTML = `
-    <div class="card">
-      <div class="card-title">📝 Petición de corte</div>
-      <div class="form-group"><label class="form-label">Producto</label><input type="text" id="pet-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>
-      <div class="form-group"><label class="form-label">Tela</label><select id="pet-tela" class="form-control">${telaOpts}</select></div>
-      <div class="form-group"><label class="form-label">Kg estimados</label><input type="number" id="pet-kg" class="form-control" placeholder="0.0" step="0.1"></div>
-      <div class="form-group"><label class="form-label">Taller sugerido</label><select id="pet-taller" class="form-control"><option value="">Sin asignar</option>${tallOpts}</select></div>
-      <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pet-notas" class="form-control" placeholder="Detalles adicionales..."></div>
-      <button class="btn-submit" id="btn-pet" onclick="guardarPeticion()">Enviar petición</button>
-    </div>`;
+  var telaRes = await fetch("/api/produccion?tab=stock-tela").then(function(r){return r.json();});
+  var tallRes = await fetch("/api/produccion?tab=talleres").then(function(r){return r.json();});
+  var telaOpts = telaRes.telas ? telaRes.telas.map(function(t){return '<option value="' + t.id + '">' + t.nombre + '</option>';}).join("") : "";
+  var tallOpts = tallRes.talleres ? tallRes.talleres.map(function(t){return '<option>' + t.nombre + '</option>';}).join("") : "";
+  document.getElementById("corte-content").innerHTML =
+    '<div class="card"><div class="card-title">Peticion de corte</div>' +
+    '<div class="form-group"><label class="form-label">Producto</label><input type="text" id="pet-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>' +
+    '<div class="form-group"><label class="form-label">Tela</label><select id="pet-tela" class="form-control">' + telaOpts + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Kg estimados</label><input type="number" id="pet-kg" class="form-control" placeholder="0.0" step="0.1"></div>' +
+    '<div class="form-group"><label class="form-label">Taller sugerido</label><select id="pet-taller" class="form-control"><option value="">Sin asignar</option>' + tallOpts + '</select></div>' +
+    '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pet-notas" class="form-control" placeholder="Detalles adicionales..."></div>' +
+    '<button class="btn-submit" id="btn-pet" onclick="guardarPeticion()">Enviar peticion</button></div>';
 }
 
 async function guardarPeticion() {
-  const btn = document.getElementById("btn-pet");
-  const prod = document.getElementById("pet-prod").value;
-  if (!prod) { showToast("Ingresá el producto", "err"); return; }
+  var btn = document.getElementById("btn-pet");
+  var prod = document.getElementById("pet-prod").value;
+  if (!prod) { showToast("Ingresa el producto", "err"); return; }
   btn.disabled = true; btn.textContent = "Guardando...";
   try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ action:"peticionCorte", producto:prod, telaId:document.getElementById("pet-tela").value,
-        kg:document.getElementById("pet-kg").value, taller:document.getElementById("pet-taller").value,
-        notas:document.getElementById("pet-notas").value }) });
-    const data = await res.json();
-    if (data.ok) { showToast("✅ Petición enviada", "ok"); corteTab("lista"); }
-    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Enviar petición"; }
-  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Enviar petición"; }
+    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"peticionCorte", producto:prod,
+        telaId:document.getElementById("pet-tela").value, kg:document.getElementById("pet-kg").value,
+        taller:document.getElementById("pet-taller").value, notas:document.getElementById("pet-notas").value }) });
+    var data = await res.json();
+    if (data.ok) { showToast("Peticion enviada", "ok"); corteTab("lista"); }
+    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Enviar peticion"; }
+  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Enviar peticion"; }
 }
 
-// ─── TALLERES ───
-async function mostrarSeccionTalleres() {
-  document.getElementById("prod-content").innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="prod-tab active" id="ttab-lista" onclick="tallerTab('lista')">👥 Talleres</button>
-      <button class="prod-tab" id="ttab-nuevo" onclick="tallerTab('nuevo')">➕ Nuevo</button>
-    </div>
-    <div id="taller-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
-    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+// TALLERES
+function mostrarSeccionTalleres() {
+  document.getElementById("prod-content").innerHTML =
+    '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+    '<button class="prod-tab active" id="ttab-lista" onclick="tallerTab(\'lista\')">Talleres</button>' +
+    '<button class="prod-tab" id="ttab-nuevo" onclick="tallerTab(\'nuevo\')">Nuevo</button>' +
+    '</div>' +
+    '<div id="taller-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>' +
+    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
   tallerTab("lista");
 }
 
@@ -1202,58 +1090,54 @@ async function tallerTab(tab) {
   document.getElementById("ttab-nuevo").classList.toggle("active", tab === "nuevo");
   if (tab === "lista") {
     try {
-      const res = await fetch("/api/produccion?tab=talleres");
-      const data = await res.json();
+      var res = await fetch("/api/produccion?tab=talleres");
+      var data = await res.json();
       if (!data.talleres || data.talleres.length === 0) {
         document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">👥</div><p>Sin talleres registrados</p></div>';
         return;
       }
-      let html = `<div class="card"><div class="card-title">Talleres activos</div>`;
-      data.talleres.forEach(t => {
-        html += `<div class="tx-item" onclick="verCortesTaller('${t.nombre}')">
-          <div class="tx-left"><div class="tx-desc">👤 ${t.nombre}</div><div class="tx-cat">${t.telefono||"Sin teléfono"}</div></div>
-          <div style="font-size:12px;color:#aaa">Ver cortes →</div>
-        </div>`;
+      var html = '<div class="card"><div class="card-title">Talleres activos</div>';
+      data.talleres.forEach(function(t) {
+        html += '<div class="tx-item" onclick="verCortesTaller(\'' + t.nombre.replace(/'/g,"") + '\')">' +
+          '<div class="tx-left"><div class="tx-desc">👤 ' + t.nombre + '</div><div class="tx-cat">' + (t.telefono||"Sin telefono") + '</div></div>' +
+          '<div style="font-size:12px;color:#aaa">Ver cortes →</div></div>';
       });
-      html += `</div>`;
+      html += "</div>";
       document.getElementById("taller-content").innerHTML = html;
     } catch(e) {
       document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
     }
   } else {
-    document.getElementById("taller-content").innerHTML = `
-      <div class="card">
-        <div class="card-title">➕ Nuevo taller</div>
-        <div class="form-group"><label class="form-label">Nombre</label><input type="text" id="nt-nombre" class="form-control" placeholder="Nombre del taller"></div>
-        <div class="form-group"><label class="form-label">Teléfono</label><input type="tel" id="nt-tel" class="form-control" placeholder="Opcional"></div>
-        <div class="form-group"><label class="form-label">Notas</label><input type="text" id="nt-notas" class="form-control" placeholder="Opcional"></div>
-        <button class="btn-submit" id="btn-nt" onclick="guardarTaller()">Guardar taller</button>
-      </div>`;
+    document.getElementById("taller-content").innerHTML =
+      '<div class="card"><div class="card-title">Nuevo taller</div>' +
+      '<div class="form-group"><label class="form-label">Nombre</label><input type="text" id="nt-nombre" class="form-control" placeholder="Nombre del taller"></div>' +
+      '<div class="form-group"><label class="form-label">Telefono</label><input type="tel" id="nt-tel" class="form-control" placeholder="Opcional"></div>' +
+      '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="nt-notas" class="form-control" placeholder="Opcional"></div>' +
+      '<button class="btn-submit" id="btn-nt" onclick="guardarTaller()">Guardar taller</button></div>';
   }
 }
 
 async function verCortesTaller(taller) {
   document.getElementById("taller-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div>';
   try {
-    const res = await fetch(`/api/produccion?tab=cortes&taller=${encodeURIComponent(taller)}`);
-    const data = await res.json();
+    var res = await fetch("/api/produccion?tab=cortes&taller=" + encodeURIComponent(taller));
+    var data = await res.json();
     cortesData = data.cortes || [];
-    let html = `<button onclick="tallerTab('lista')" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">← Volver a talleres</button>`;
-    html += `<div class="card-title">✂️ Cortes de ${taller} (${cortesData.length})</div>`;
+    var html = '<button onclick="tallerTab(\'lista\')" class="btn-back">← Volver a talleres</button>';
+    html += '<div class="card-title" style="margin-bottom:12px">Cortes de ' + taller + ' (' + cortesData.length + ')</div>';
     if (cortesData.length === 0) {
       html += '<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes asignados</p></div>';
     } else {
-      cortesData.forEach(c => {
-        const estadoColor = { "En Taller":"estado-taller", "Esperando Taller":"estado-espera", "Terminado":"estado-listo" }[c.estado] || "estado-espera";
-        html += `<div class="corte-card" onclick="verDetalleCorte('${c.id}')">
-          <div class="corte-header"><div class="corte-num">Corte #${c.numero||"—"}</div><span class="corte-estado ${estadoColor}">${c.estado||"—"}</span></div>
-          <div class="corte-tela">${c.descripcion||"—"} · ${c.fecha||"—"}</div>
-          <div class="corte-grid">
-            <div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">${c.kg||"—"}</div></div>
-            <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.totalPrendas||"—"}</div></div>
-            <div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">${c.faltantes||0}</div></div>
-          </div>
-        </div>`;
+      cortesData.forEach(function(c, idx) {
+        var estadoColor = { "En Taller":"estado-taller", "Esperando Taller":"estado-espera", "Terminado":"estado-listo" }[c.estado] || "estado-espera";
+        html += '<div class="corte-card" onclick="verDetalleCorte(' + idx + ')">' +
+          '<div class="corte-header"><div class="corte-num">Corte #' + (c.numero||"—") + '</div><span class="corte-estado ' + estadoColor + '">' + (c.estado||"—") + '</span></div>' +
+          '<div class="corte-tela">' + (c.descripcion||"—") + ' · ' + (c.fecha||"—") + '</div>' +
+          '<div class="corte-grid">' +
+          '<div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">' + (c.kg||"—") + '</div></div>' +
+          '<div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">' + (c.totalPrendas||"—") + '</div></div>' +
+          '<div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">' + (c.faltantes||0) + '</div></div>' +
+          '</div></div>';
       });
     }
     document.getElementById("taller-content").innerHTML = html;
@@ -1263,40 +1147,41 @@ async function verCortesTaller(taller) {
 }
 
 async function guardarTaller() {
-  const btn = document.getElementById("btn-nt");
-  const nombre = document.getElementById("nt-nombre").value;
-  if (!nombre) { showToast("Ingresá el nombre", "err"); return; }
+  var btn = document.getElementById("btn-nt");
+  var nombre = document.getElementById("nt-nombre").value;
+  if (!nombre) { showToast("Ingresa el nombre", "err"); return; }
   btn.disabled = true; btn.textContent = "Guardando...";
   try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ action:"guardarTaller", nombre, telefono:document.getElementById("nt-tel").value, notas:document.getElementById("nt-notas").value }) });
-    const data = await res.json();
-    if (data.ok) { showToast("✅ Taller guardado", "ok"); tallerTab("lista"); }
+    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"guardarTaller", nombre:nombre,
+        telefono:document.getElementById("nt-tel").value, notas:document.getElementById("nt-notas").value }) });
+    var data = await res.json();
+    if (data.ok) { showToast("Taller guardado", "ok"); tallerTab("lista"); }
     else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar taller"; }
-  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Guardar taller"; }
+  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Guardar taller"; }
 }
 
-// ─── ESTADÍSTICAS ───
-async function cargarEstadisticas() {
-  document.getElementById("prod-content").innerHTML = `
-    <div class="mes-row" style="margin-bottom:16px">
-      <input type="date" id="stat-desde" class="form-control">
-      <input type="date" id="stat-hasta" class="form-control">
-      <button class="mes-btn" onclick="fetchEstadisticas()">Ver</button>
-    </div>
-    <div id="stat-content"><div class="loading"><div class="spinner"></div><p>Cargando estadísticas...</p></div></div>
-    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+// ESTADISTICAS
+function mostrarSeccionEstadisticas() {
+  document.getElementById("prod-content").innerHTML =
+    '<div class="mes-row" style="margin-bottom:16px">' +
+    '<input type="date" id="stat-desde" class="form-control">' +
+    '<input type="date" id="stat-hasta" class="form-control">' +
+    '<button class="mes-btn" onclick="fetchEstadisticas()">Ver</button>' +
+    '</div>' +
+    '<div id="stat-content"><div class="loading"><div class="spinner"></div><p>Calculando...</p></div></div>' +
+    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
   fetchEstadisticas();
 }
 
 async function fetchEstadisticas() {
   document.getElementById("stat-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Calculando...</p></div>';
-  const desde = document.getElementById("stat-desde").value;
-  const hasta = document.getElementById("stat-hasta").value;
+  var desde = document.getElementById("stat-desde").value;
+  var hasta = document.getElementById("stat-hasta").value;
   try {
-    const url = `/api/produccion?tab=estadisticas${desde ? "&desde="+desde : ""}${hasta ? "&hasta="+hasta : ""}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    var url = "/api/produccion?tab=estadisticas" + (desde ? "&desde="+desde : "") + (hasta ? "&hasta="+hasta : "");
+    var res = await fetch(url);
+    var data = await res.json();
     mostrarEstadisticas(data);
   } catch(e) {
     document.getElementById("stat-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
@@ -1304,34 +1189,31 @@ async function fetchEstadisticas() {
 }
 
 function mostrarEstadisticas(data) {
-  let html = "";
-  // Totales
-  html += `<div class="stats">
-    <div class="stat"><div class="stat-label">Total prendas</div><div class="stat-value">${(data.totalPrendas||0).toLocaleString("es-AR")}</div></div>
-    <div class="stat"><div class="stat-label">Total kg tela</div><div class="stat-value">${parseFloat(data.totalKg||0).toFixed(1)}</div></div>
-  </div>`;
-
-  const renderBar = (obj, titulo, unit) => {
+  var html = "";
+  html += '<div class="stats">' +
+    '<div class="stat"><div class="stat-label">Total prendas</div><div class="stat-value">' + ((data.totalPrendas||0)).toLocaleString("es-AR") + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Total kg tela</div><div class="stat-value">' + parseFloat(data.totalKg||0).toFixed(1) + '</div></div>' +
+    '</div>';
+  var renderBar = function(obj, titulo, unit) {
     if (!obj || Object.keys(obj).length === 0) return "";
-    const entries = Object.entries(obj).sort((a,b) => b[1]-a[1]);
-    const max = entries[0][1];
-    let h = `<div class="card"><div class="card-title">${titulo}</div>`;
-    entries.forEach(([key, val]) => {
-      const w = Math.round(val / max * 100);
-      h += `<div class="cat-item"><div class="cat-row"><span class="cat-name">${key}</span><span class="cat-monto">${typeof val === "number" && val % 1 !== 0 ? val.toFixed(1) : val} ${unit}</span></div><div class="bar-wrap"><div class="bar" style="width:${w}%;background:var(--negro)"></div></div></div>`;
+    var entries = Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
+    var max = entries[0][1];
+    var h = '<div class="card"><div class="card-title">' + titulo + '</div>';
+    entries.forEach(function(e) {
+      var w = Math.round(e[1] / max * 100);
+      var val = typeof e[1] === "number" && e[1] % 1 !== 0 ? e[1].toFixed(1) : e[1];
+      h += '<div class="cat-item"><div class="cat-row"><span class="cat-name">' + e[0] + '</span><span class="cat-monto">' + val + ' ' + unit + '</span></div><div class="bar-wrap"><div class="bar" style="width:' + w + '%;background:var(--negro)"></div></div></div>';
     });
-    return h + `</div>`;
+    return h + '</div>';
   };
-
-  html += renderBar(data.porTipoTela, "🧵 Prendas por tipo de tela", "prendas");
-  html += renderBar(data.porProducto, "👕 Prendas por tipo de producto", "prendas");
-  html += renderBar(data.porKgTela, "⚖️ Kg cortados por tela", "kg");
-  html += renderBar(data.porTaller, "👥 Prendas por taller", "prendas");
-
+  html += renderBar(data.porTipoTela, "Prendas por tipo de tela", "prendas");
+  html += renderBar(data.porProducto, "Prendas por tipo de producto", "prendas");
+  html += renderBar(data.porKgTela, "Kg cortados por tela", "kg");
+  html += renderBar(data.porTaller, "Prendas por taller", "prendas");
   document.getElementById("stat-content").innerHTML = html || '<div class="empty"><div class="e-icon">📊</div><p>Sin datos</p></div>';
 }
 
-// ══ FORM ══
+// FORM
 function setTipo(tipo) {
   tipoActual = tipo;
   document.getElementById("btn-gasto").classList.toggle("active", tipo === "Gasto");
@@ -1339,36 +1221,35 @@ function setTipo(tipo) {
   updateCatSelect();
 }
 function updateCatSelect() {
-  const sel = document.getElementById("f-cat");
-  const cats = tipoActual === "Gasto" ? catsGasto : catsIngreso;
-  if (cats && cats.length > 0) sel.innerHTML = cats.map(c => `<option>${c}</option>`).join("");
+  var sel = document.getElementById("f-cat");
+  var cats = tipoActual === "Gasto" ? catsGasto : catsIngreso;
+  if (cats && cats.length > 0) sel.innerHTML = cats.map(function(c){return '<option>' + c + '</option>';}).join("");
 }
 
 async function guardarTransaccion() {
-  const fecha = document.getElementById("f-fecha").value;
-  const desc  = document.getElementById("f-desc").value.trim();
-  const cat   = document.getElementById("f-cat").value;
-  const medio = document.getElementById("f-medio").value;
-  const monto = document.getElementById("f-monto").value;
-  const notas = document.getElementById("f-notas").value.trim();
-  if (!fecha || !desc || !monto || parseFloat(monto) <= 0) { showToast("Completá fecha, descripción y monto", "err"); return; }
-  const btn = document.getElementById("btn-guardar");
+  var fecha = document.getElementById("f-fecha").value;
+  var desc = document.getElementById("f-desc").value.trim();
+  var cat = document.getElementById("f-cat").value;
+  var medio = document.getElementById("f-medio").value;
+  var monto = document.getElementById("f-monto").value;
+  var notas = document.getElementById("f-notas").value.trim();
+  if (!fecha || !desc || !monto || parseFloat(monto) <= 0) { showToast("Completa fecha, descripcion y monto", "err"); return; }
+  var btn = document.getElementById("btn-guardar");
   btn.disabled = true; btn.textContent = "Guardando...";
-  callScript("agregarTransaccion", { fecha, descripcion:desc, categoria:cat, tipo:tipoActual, medio, monto, notas }, () => {
-    showToast("✅ Guardado correctamente", "ok");
-    btn.disabled = false; btn.textContent = "Guardar transacción";
+  callScript("agregarTransaccion", { fecha:fecha, descripcion:desc, categoria:cat, tipo:tipoActual, medio:medio, monto:monto, notas:notas }, function() {
+    showToast("Guardado correctamente", "ok");
+    btn.disabled = false; btn.textContent = "Guardar transaccion";
     document.getElementById("f-desc").value = "";
     document.getElementById("f-monto").value = "";
     document.getElementById("f-notas").value = "";
   });
 }
 
-// ══ TOAST ══
 function showToast(msg, tipo) {
-  const t = document.getElementById("toast");
+  var t = document.getElementById("toast");
   t.textContent = msg; t.className = "toast " + (tipo||"");
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
+  setTimeout(function() { t.classList.remove("show"); }, 3000);
 }
 </script>
 </body>
