@@ -16,6 +16,7 @@ module.exports = async function handler(req, res) {
     pablo:     { pass: process.env.PASS_PABLO,     rol: "encargado", nombre: "Pablo" },
     noah:      { pass: process.env.PASS_NOAH,      rol: "encargado", nombre: "Noah" },
     sebastian: { pass: process.env.PASS_SEBASTIAN, rol: "encargado", nombre: "Sebastian" },
+    marianela: { pass: process.env.PASS_MARIANELA, rol: "produccion", nombre: "Marianela" },
   };
 
   const u = (usuario || "").toLowerCase().trim();
