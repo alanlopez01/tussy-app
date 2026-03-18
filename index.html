@@ -709,7 +709,6 @@ async function cargarComparacion() {
       '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
   }
 }
-
 function mostrarComparacion(data) {
   const delta = (actual, ant) => {
     if (!ant || ant === 0) return "";
@@ -717,7 +716,6 @@ function mostrarComparacion(data) {
     const cls = d >= 0 ? "up" : "down";
     return `<span class="stat-delta ${cls}" style="font-size:12px">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}% vs mes ant.</span>`;
   };
-
   let html = "";
 
   // Total del día
@@ -754,23 +752,30 @@ function mostrarComparacion(data) {
       <div class="bar-wrap"><div class="bar" style="width:${w}%;background:#27AE60"></div></div>
     </div>`;
   });
-  html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center">
-    <span style="font-size:13px;font-weight:700;color:var(--texto)">Total del mes</span>
-    <div style="text-align:right">
-      <div style="font-size:18px;font-weight:900;color:var(--negro)">${fmt(data.totalMes)}</div>
-      ${delta(data.totalMes, data.totalAnt)}
+  html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:700;color:var(--texto)">Total del mes</span>
+      <div style="text-align:right">
+        <div style="font-size:18px;font-weight:900;color:var(--negro)">${fmt(data.totalMes)}</div>
+        ${delta(data.totalMes, data.totalAnt)}
+      </div>
     </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px">
+      <span style="font-size:12px;font-weight:700;color:#1E8449">🎯 Proyección del mes</span>
+      <span style="font-size:16px;font-weight:900;color:#1E8449">${fmt(data.proyeccionTotal)}</span>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">Basado en ${data.diaDelMes} días · Comparado con primeros ${data.diasComparados} días del mes ant.</div>
   </div></div>`;
 
   // Comparación mes anterior por local
-  html += `<div class="card"><div class="card-title">📊 Este mes vs mes anterior</div>`;
+  html += `<div class="card"><div class="card-title">📊 Este mes vs mes anterior (mismos días)</div>`;
   data.locales.forEach(l => {
     const d = l.ant.total > 0 ? ((l.mes.total - l.ant.total) / l.ant.total * 100).toFixed(1) : null;
     const cls = d >= 0 ? "up" : "down";
     html += `<div class="tx-item">
       <div class="tx-left">
         <div class="tx-desc">${l.nombre}</div>
-        <div class="tx-cat">Ant: ${fmt(l.ant.total)} ${d !== null ? `<span class="stat-delta ${cls}">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}%</span>` : ""}</div>
+        <div class="tx-cat">Ant: ${fmt(l.ant.total)} · 🎯 Proy: ${fmt(l.proyeccion)} ${d !== null ? `<span class="stat-delta ${cls}">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}%</span>` : ""}</div>
       </div>
       <div class="tx-monto ingreso">${fmt(l.mes.total)}</div>
     </div>`;
@@ -779,6 +784,7 @@ function mostrarComparacion(data) {
 
   document.getElementById("comparacion-content").innerHTML = html;
 }
+
 // ══ FORM ══
 function setTipo(tipo) {
   tipoActual = tipo;
