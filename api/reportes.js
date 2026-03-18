@@ -29,6 +29,7 @@ module.exports = async function handler(req, res) {
     const mapa = {};
     let page = 1;
     while (true) {
+      // Sin &fields= para que devuelva line_items completo
       const r = await fetch(
         `${url}/wp-json/wc/v3/orders?after=${inicioUTC}&before=${finUTC}&per_page=50&page=${page}&status=completed,processing`,
         { headers }
@@ -37,13 +38,13 @@ module.exports = async function handler(req, res) {
       if (!Array.isArray(orders) || orders.length === 0) break;
       orders.forEach(o => {
         (o.line_items || []).forEach(item => {
-          const nombre = (item.name || "").trim().toUpperCase();
-          const sku = (item.sku || "").trim();
+          // Usar product_id como key para agrupar variantes del mismo producto
+          const productId = item.product_id || item.name;
+          const nombre = (item.name || "").trim();
           if (!nombre) return;
-          const key = sku || nombre;
-          if (!mapa[key]) mapa[key] = { nombre: item.name.trim(), sku, cantidad: 0, locales: [] };
-          mapa[key].cantidad += parseInt(item.quantity || 0);
-          if (!mapa[key].locales.includes(localNombre)) mapa[key].locales.push(localNombre);
+          if (!mapa[productId]) mapa[productId] = { nombre, cantidad: 0, locales: [] };
+          mapa[productId].cantidad += parseInt(item.quantity || 0);
+          if (!mapa[productId].locales.includes(localNombre)) mapa[productId].locales.push(localNombre);
         });
       });
       if (orders.length < 50) break;
@@ -64,13 +65,15 @@ module.exports = async function handler(req, res) {
       if (!Array.isArray(orders) || orders.length === 0) break;
       orders.forEach(o => {
         (o.products || []).forEach(item => {
-          const nombre = (item.name || "").trim().toUpperCase();
-          const sku = (item.sku || "").trim();
-          if (!nombre) return;
-          const key = sku || nombre;
-          if (!mapa[key]) mapa[key] = { nombre: item.name?.trim() || nombre, sku, cantidad: 0, locales: [] };
-          mapa[key].cantidad += parseInt(item.quantity || 0);
-          if (!mapa[key].locales.includes("Tiendanube")) mapa[key].locales.push("Tiendanube");
+          // Usar product_id para agrupar variantes del mismo producto
+          const productId = item.product_id;
+          // El nombre en TN puede ser "Remera Roots - Negro / M", tomar solo la parte antes del " - "
+          const nombreCompleto = (item.name || "").trim();
+          const nombreBase = nombreCompleto.split(" - ")[0].trim();
+          if (!nombreBase) return;
+          if (!mapa[productId]) mapa[productId] = { nombre: nombreBase, cantidad: 0, locales: [] };
+          mapa[productId].cantidad += parseInt(item.quantity || 0);
+          if (!mapa[productId].locales.includes("Tiendanube")) mapa[productId].locales.push("Tiendanube");
         });
       });
       if (orders.length < 50) break;
@@ -83,16 +86,13 @@ module.exports = async function handler(req, res) {
     let productos = [];
 
     if (canal === "online") {
-      // Solo Tiendanube
       const tn = await getTNProducts();
       productos = Object.values(tn);
     } else {
-      // Solo físicos — Palermo + La Plata (unificados por SKU)
       const [wooP, wooLP] = await Promise.all([
         getWooProducts(WOO_P_URL, WOO_P_KEY, WOO_P_SEC, "Palermo"),
         getWooProducts(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC, "La Plata")
       ]);
-      // Unificar por SKU/nombre
       const merged = { ...wooP };
       Object.entries(wooLP).forEach(([key, val]) => {
         if (merged[key]) {
