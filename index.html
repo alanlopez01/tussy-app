@@ -766,7 +766,19 @@ function cargarProdSub(sub){
 var origGoBack=null;
 function navigate(sub){
   var titles={telas:"Telas",cortes:"Cortes",talleres:"Talleres",estadisticas:"Estadisticas"};
-  prodNavigate(sub,titles[sub]||sub);
+  var title=titles[sub]||sub;
+  document.getElementById("prod-home").style.display="none";
+  document.getElementById("prod-content").style.display="block";
+  document.getElementById("prod-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  document.getElementById("header-title").textContent="Produccion - "+title;
+  document.getElementById("btn-back").style.display="block";
+  document.getElementById("header-logo").style.display="none";
+  // Guardar sub para poder volver
+  document.getElementById("prod-content").setAttribute("data-sub",sub);
+  if(sub==="telas") mostrarTelas();
+  else if(sub==="cortes") mostrarCortes();
+  else if(sub==="talleres") mostrarTalleres();
+  else if(sub==="estadisticas") mostrarEstadisticas();
 }
 
 // ─── TELAS ───
