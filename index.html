@@ -758,7 +758,45 @@ function mostrarVentas(data, periodo) {
 
   document.getElementById("ventas-content").innerHTML = html;
 }
+async function hacerLogin() {
+  const user = document.getElementById("login-user").value.trim().toLowerCase();
+  const pass = document.getElementById("login-pass").value.trim();
+  const recordar = document.getElementById("login-remember").checked;
+  const btn = document.getElementById("login-btn");
+  const err = document.getElementById("login-error");
 
+  if (!user || !pass) { err.textContent = "Completá usuario y contraseña"; return; }
+
+  btn.disabled = true;
+  btn.textContent = "Ingresando...";
+  err.textContent = "";
+
+  try {
+    const url = "/api/auth?usuario=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass);
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.ok) {
+      if (recordar) {
+        localStorage.setItem("tussy_user", user);
+        localStorage.setItem("tussy_pass", pass);
+        localStorage.setItem("tussy_remember", "1");
+      } else {
+        localStorage.removeItem("tussy_user");
+        localStorage.removeItem("tussy_pass");
+        localStorage.removeItem("tussy_remember");
+      }
+      entrarApp(data.rol, data.nombre);
+    } else {
+      err.textContent = data.error || "Usuario o contraseña incorrectos";
+      btn.disabled = false;
+      btn.textContent = "Ingresar";
+    }
+  } catch(e) {
+    err.textContent = "Error de conexion. Intentá de nuevo.";
+    btn.disabled = false;
+    btn.textContent = "Ingresar";
+  }
+}
 // ══ TOAST ══
 function showToast(msg, tipo) {
   const t = document.getElementById("toast");
