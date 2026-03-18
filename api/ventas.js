@@ -12,12 +12,28 @@ module.exports = async function handler(req, res) {
   const TN_TOKEN   = process.env.TN_ACCESS_TOKEN;
   const TN_USER    = process.env.TN_USER_ID;
 
+  // Convertir fecha Argentina a UTC
+  // Argentina = UTC-3, entonces 00:00 ARG = 03:00 UTC
+  function toUTC(fecha, esInicio) {
+    const [y, m, d] = fecha.split("-").map(Number);
+    if (esInicio) {
+      return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}T03:00:00+0000`;
+    } else {
+      // 23:59:59 ARG = 02:59:59 UTC del dia siguiente
+      const siguiente = new Date(Date.UTC(y, m-1, d+1));
+      return `${siguiente.getUTCFullYear()}-${String(siguiente.getUTCMonth()+1).padStart(2,"0")}-${String(siguiente.getUTCDate()).padStart(2,"0")}T02:59:59+0000`;
+    }
+  }
+
+  const inicioUTC = toUTC(desde, true);
+  const finUTC    = toUTC(hasta, false);
+
   async function getWooData(url, key, secret) {
     const auth = Buffer.from(`${key}:${secret}`).toString("base64");
     const headers = { "Authorization": `Basic ${auth}` };
     const [reportRes, ordersRes] = await Promise.all([
       fetch(`${url}/wp-json/wc/v3/reports/sales?date_min=${desde}&date_max=${hasta}`, { headers }),
-      fetch(`${url}/wp-json/wc/v3/orders?after=${desde}T00:00:00&before=${hasta}T23:59:59&per_page=3&page=1&status=completed,processing&orderby=date&order=desc`, { headers })
+      fetch(`${url}/wp-json/wc/v3/orders?after=${inicioUTC}&before=${finUTC}&per_page=3&status=completed,processing&orderby=date&order=desc`, { headers })
     ]);
     const report = await reportRes.json();
     const orders = await ordersRes.json();
@@ -33,38 +49,32 @@ module.exports = async function handler(req, res) {
     };
   }
 
-async function getTNData() {
-  const d = desde.split("-");
-  const inicioUTC = `${d[0]}-${d[1]}-${d[2]}T03:00:00+0000`;
-  
-  const dHasta = hasta.split("-");
-  const fin = new Date(Date.UTC(parseInt(dHasta[0]), parseInt(dHasta[1])-1, parseInt(dHasta[2])+1));
-  const finUTC = `${fin.getUTCFullYear()}-${String(fin.getUTCMonth()+1).padStart(2,"0")}-${String(fin.getUTCDate()).padStart(2,"0")}T02:59:59+0000`;
-
-  let page = 1, total = 0, cantidad = 0, primerPedidos = [];
-  while (true) {
-    const r = await fetch(
-      `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${inicioUTC}&created_at_max=${finUTC}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number&payment_status=paid`,
-      { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
-    );
-    const data = await r.json();
-    if (!Array.isArray(data) || data.length === 0) break;
-    total += data.reduce((s, o) => s + parseFloat(o.total || 0), 0);
-    cantidad += data.length;
-    if (page === 1) primerPedidos = data.slice(0, 3);
-    if (data.length < 200) break;
-    page++;
+  async function getTNData() {
+    let page = 1, total = 0, cantidad = 0, primerPedidos = [];
+    while (true) {
+      const r = await fetch(
+        `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${inicioUTC}&created_at_max=${finUTC}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number`,
+        { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
+      );
+      const data = await r.json();
+      if (!Array.isArray(data) || data.length === 0) break;
+      total += data.reduce((s, o) => s + parseFloat(o.total || 0), 0);
+      cantidad += data.length;
+      if (page === 1) primerPedidos = data.slice(0, 3);
+      if (data.length < 200) break;
+      page++;
+    }
+    return {
+      total, cantidad,
+      pedidos: primerPedidos.map(o => ({
+        numero: o.number,
+        total: parseFloat(o.total || 0),
+        estado: o.payment_status,
+        cliente: o.contact_name || "Sin nombre"
+      }))
+    };
   }
-  return {
-    total, cantidad,
-    pedidos: primerPedidos.map(o => ({
-      numero: o.number,
-      total: parseFloat(o.total || 0),
-      estado: o.payment_status,
-      cliente: o.contact_name || "Sin nombre"
-    }))
-  };
-}
+
   try {
     const [palermo, laplata, tn] = await Promise.all([
       getWooData(WOO_P_URL, WOO_P_KEY, WOO_P_SEC),
