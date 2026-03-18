@@ -310,22 +310,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
-      <!-- REPORTES -->
-      <div class="section" id="sec-reportes">
-        <div class="mes-row">
-          <select id="rep-periodo" class="form-control" style="flex:1">
-            <option value="mes">Este mes</option>
-            <option value="custom">Personalizado</option>
-          </select>
-          <button class="mes-btn" onclick="cargarReportes()">Ver</button>
-        </div>
-        <div id="rep-custom" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
-          <input type="date" id="rep-desde" class="form-control">
-          <input type="date" id="rep-hasta" class="form-control">
-        </div>
-        <div id="reportes-content"><div class="empty"><div class="e-icon">📊</div><p>Seleccioná un período y tocá Ver</p></div></div>
-      </div>
-
+       <!-- REPORTES -->
+<div class="section" id="sec-reportes">
+  <div class="mes-row">
+    <select id="rep-canal" class="form-control" style="flex:1">
+      <option value="online">🌐 Online (Tiendanube)</option>
+      <option value="fisico">🏪 Físico (Locales)</option>
+    </select>
+  </div>
+  <div class="mes-row">
+    <select id="rep-periodo" class="form-control" style="flex:1" onchange="toggleRepCustom()">
+      <option value="mes">Este mes</option>
+      <option value="custom">Personalizado</option>
+    </select>
+    <button class="mes-btn" onclick="cargarReportes()">Ver</button>
+  </div>
+  <div id="rep-custom" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
+    <input type="date" id="rep-desde" class="form-control">
+    <input type="date" id="rep-hasta" class="form-control">
+  </div>
+  <div id="reportes-content">
+    <div class="empty"><div class="e-icon">📊</div><p>Seleccioná canal y período</p></div>
+  </div>
+</div>
       <!-- CARGAR -->
       <div class="section" id="sec-cargar">
         <div class="card">
