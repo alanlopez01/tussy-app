@@ -379,27 +379,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       </div>
 
       <!-- PRODUCCION -->
-      <div class="section" id="sec-produccion">
-        <div class="prod-tab-bar">
-          <button class="prod-tab active" onclick="prodTab('stock-tela')">🧵 Stock Tela</button>
-          <button class="prod-tab" onclick="prodTab('cortes-espera')">⏳ En Espera</button>
-          <button class="prod-tab" onclick="prodTab('cortes-taller')">✂️ En Taller</button>
-          <button class="prod-tab" onclick="prodTab('nuevo-corte')">➕ Nuevo Corte</button>
-          <button class="prod-tab" onclick="prodTab('ingreso-tela')">📦 Ingreso Tela</button>
-          <button class="prod-tab" onclick="prodTab('historial')">📜 Historial</button>
-        </div>
-        <div id="prod-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
-      </div>
-
-    </div>
+<div class="section" id="sec-produccion">
+  <!-- Nav principal producción -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="prod-home">
+    <button class="home-card" onclick="prodSeccion('telas')">
+      <div class="home-icon">🧵</div>
+      <div class="home-card-info"><div class="home-card-title">Telas</div><div class="home-card-sub">Stock e ingresos</div></div>
+    </button>
+    <button class="home-card" onclick="prodSeccion('cortes')">
+      <div class="home-icon">✂️</div>
+      <div class="home-card-info"><div class="home-card-title">Cortes</div><div class="home-card-sub">Registro y seguimiento</div></div>
+    </button>
+    <button class="home-card" onclick="prodSeccion('talleres')">
+      <div class="home-icon">👥</div>
+      <div class="home-card-info"><div class="home-card-title">Talleres</div><div class="home-card-sub">Gestión de talleres</div></div>
+    </button>
+    <button class="home-card" id="btn-prod-stats" onclick="prodSeccion('estadisticas')">
+      <div class="home-icon">📊</div>
+      <div class="home-card-info"><div class="home-card-title">Estadísticas</div><div class="home-card-sub">Prendas y kg cortados</div></div>
+    </button>
   </div>
+  <!-- Contenido dinámico -->
+  <div id="prod-content"></div>
 </div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-const APPS_SCRIPT_URL = "/api/proxy";
-
 // ══ ESTADO ══
 let rolActual = "";
 let nombreActual = "";
@@ -520,7 +522,9 @@ function entrarApp(rol, nombre) {
     });
   }
 
-  if (rol === "produccion") showSection("produccion");
+  if (rol === "produccion") { showSection("produccion"); }
+// Ocultar stats si es produccion
+if (rol === "produccion") document.getElementById("btn-prod-stats").style.display = "none";
   else if (rol === "encargado") showSection("stock");
 }
 
@@ -854,166 +858,477 @@ function mostrarReportes(data, canal) {
 }
 
 // ══ PRODUCCION ══
-function prodTab(tab) {
-  prodTabActual = tab;
-  document.querySelectorAll(".prod-tab").forEach(b => b.classList.remove("active"));
-  const tabs = ["stock-tela","cortes-espera","cortes-taller","nuevo-corte","ingreso-tela","historial"];
-  const idx = tabs.indexOf(tab);
-  if (idx >= 0) document.querySelectorAll(".prod-tab")[idx].classList.add("active");
-  cargarProdTab(tab);
+function prodSeccion(sec) {
+  prodTabActual = sec;
+  document.getElementById("prod-home").style.display = "none";
+  const titles = { telas:"🧵 Telas", cortes:"✂️ Cortes", talleres:"👥 Talleres", estadisticas:"📊 Estadísticas" };
+  document.getElementById("header-title").textContent = "Producción · " + (titles[sec] || sec);
+  cargarProdSeccion(sec);
 }
 
-async function cargarProdTab(tab) {
+function volverProdHome() {
+  document.getElementById("prod-home").style.display = "grid";
+  document.getElementById("prod-content").innerHTML = "";
+  document.getElementById("header-title").textContent = "Producción";
+}
+
+async function cargarProdSeccion(sec) {
   document.getElementById("prod-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
-  try {
-    if (tab === "nuevo-corte") { mostrarFormCorte(); return; }
-    if (tab === "ingreso-tela") { mostrarFormIngreso(); return; }
-    const res = await fetch(`/api/produccion?tab=${tab}`);
-    const data = await res.json();
-    if (tab === "stock-tela") mostrarStockTela(data);
-    else if (tab === "cortes-espera" || tab === "cortes-taller") mostrarCortes(data, tab);
-    else if (tab === "historial") mostrarHistorial(data);
-  } catch(err) {
-    document.getElementById("prod-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
-  }
+  if (sec === "telas")        mostrarSeccionTelas();
+  else if (sec === "cortes")  mostrarSeccionCortes();
+  else if (sec === "talleres") mostrarSeccionTalleres();
+  else if (sec === "estadisticas") cargarEstadisticas();
 }
 
-function mostrarStockTela(data) {
-  if (!data.telas || data.telas.length === 0) {
-    document.getElementById("prod-content").innerHTML = '<div class="empty"><div class="e-icon">🧵</div><p>Sin telas registradas</p></div>';
-    return;
-  }
-  let html = `<div class="card"><div class="card-title">🧵 Stock de telas disponible</div>`;
-  data.telas.forEach(t => {
-    const stockNum = parseFloat(t.stock || 0);
-    const cls = stockNum < 50 ? "bajo" : "ok";
-    html += `<div class="tela-item"><div><div class="tela-nombre">${t.nombre}</div><div class="tela-tipo">${t.tipo || ""}</div></div><div class="tela-stock ${cls}">${stockNum.toFixed(1)} kg</div></div>`;
-  });
-  html += `</div>`;
-  document.getElementById("prod-content").innerHTML = html;
-}
-
-function mostrarCortes(data, tab) {
-  if (!data.cortes || data.cortes.length === 0) {
-    document.getElementById("prod-content").innerHTML = `<div class="empty"><div class="e-icon">${tab === "cortes-espera" ? "⏳" : "✂️"}</div><p>Sin cortes en este estado</p></div>`;
-    return;
-  }
-  let html = "";
-  data.cortes.forEach(c => {
-    const estadoCls = tab === "cortes-espera" ? "estado-espera" : "estado-taller";
-    html += `<div class="corte-card">
-      <div class="corte-header"><div class="corte-num">Corte #${c.numero || "—"}</div><span class="corte-estado ${estadoCls}">${tab === "cortes-espera" ? "En espera" : "En taller"}</span></div>
-      <div class="corte-tela">🧵 ${c.tela || "—"} · 📅 ${c.fecha || "—"}</div>
-      <div class="corte-grid">
-        <div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">${c.kg || "—"}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.prendas || "—"}</div></div>
-        <div class="corte-dato"><div class="corte-dato-label">Taller</div><div class="corte-dato-val">${c.taller || "—"}</div></div>
-      </div>
-    </div>`;
-  });
-  document.getElementById("prod-content").innerHTML = html;
-}
-
-function mostrarHistorial(data) {
-  if (!data.movimientos || data.movimientos.length === 0) {
-    document.getElementById("prod-content").innerHTML = '<div class="empty"><div class="e-icon">📜</div><p>Sin movimientos registrados</p></div>';
-    return;
-  }
-  let html = `<div class="card"><div class="card-title">📜 Últimos movimientos</div>`;
-  data.movimientos.slice(0, 50).forEach(m => {
-    const esEntrada = m.tipo === "Entrada";
-    html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${m.tela || "—"}</div><div class="tx-cat">${m.fecha || ""} · ${m.descripcion || ""}</div></div><div class="tx-monto ${esEntrada ? "ingreso" : "gasto"}">${esEntrada ? "+" : "−"}${m.kg || 0} kg</div></div>`;
-  });
-  html += `</div>`;
-  document.getElementById("prod-content").innerHTML = html;
-}
-
-function mostrarFormCorte() {
-  const html = `<div class="card">
-    <div class="card-title">✂️ Nuevo corte</div>
-    <div class="form-group"><label class="form-label">N° de Corte</label><input type="number" id="pc-num" class="form-control" placeholder="Ej: 125"></div>
-    <div class="form-group"><label class="form-label">Tela</label><select id="pc-tela" class="form-control"><option value="">Cargando...</option></select></div>
-    <div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pc-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>
-    <div class="form-group"><label class="form-label">N° Partida</label><input type="text" id="pc-partida" class="form-control" placeholder="Opcional"></div>
-    <div class="form-group"><label class="form-label">Taller</label><select id="pc-taller" class="form-control">
-      <option>Tania</option><option>Ricardo</option><option>Mirta</option><option>Alicia</option>
-      <option>Hernan</option><option>Eva Peron</option><option>Clismer</option><option>Margot</option><option>Yazmin</option><option>Gladys</option>
-    </select></div>
-    <div class="form-group"><label class="form-label">Estado</label><select id="pc-estado" class="form-control"><option>Esperando Taller</option><option>En Taller</option></select></div>
-    <div class="form-group"><label class="form-label">Talles (opcional)</label>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
-        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">TU</label><input type="number" id="pc-tu" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">S</label><input type="number" id="pc-s" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">M</label><input type="number" id="pc-m" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">L</label><input type="number" id="pc-l" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">XL</label><input type="number" id="pc-xl" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
-      </div>
+// ─── TELAS ───
+function mostrarSeccionTelas() {
+  document.getElementById("prod-content").innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="prod-tab active" id="ptab-stock" onclick="telaTab('stock')">📦 Stock</button>
+      <button class="prod-tab" id="ptab-ingreso" onclick="telaTab('ingreso')">➕ Ingreso</button>
     </div>
-    <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pc-notas" class="form-control" placeholder="Opcional"></div>
-    <button class="btn-submit" id="btn-guardar-corte" onclick="guardarCorte()">Guardar corte</button>
-  </div>`;
-  document.getElementById("prod-content").innerHTML = html;
-  fetch("/api/produccion?tab=stock-tela").then(r => r.json()).then(data => {
-    const sel = document.getElementById("pc-tela");
-    if (sel && data.telas) sel.innerHTML = data.telas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("");
-  });
+    <div id="tela-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+  telaTab("stock");
+}
+
+function telaTab(tab) {
+  document.getElementById("ptab-stock").classList.toggle("active", tab === "stock");
+  document.getElementById("ptab-ingreso").classList.toggle("active", tab === "ingreso");
+  if (tab === "stock") cargarStockTelas();
+  else mostrarFormIngreso();
+}
+
+async function cargarStockTelas() {
+  document.getElementById("tela-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  try {
+    const res = await fetch("/api/produccion?tab=stock-tela");
+    const data = await res.json();
+    if (!data.telas || data.telas.length === 0) {
+      document.getElementById("tela-content").innerHTML = '<div class="empty"><div class="e-icon">🧵</div><p>Sin telas registradas</p></div>';
+      return;
+    }
+    let html = `<div class="card"><div class="card-title">Stock actual</div>`;
+    data.telas.forEach(t => {
+      const s = parseFloat(t.stock || 0);
+      const cls = s < 50 ? "bajo" : "ok";
+      html += `<div class="tela-item"><div><div class="tela-nombre">${t.nombre}</div><div class="tela-tipo">${t.tipo||""}</div></div><div class="tela-stock ${cls}">${s.toFixed(1)} kg</div></div>`;
+    });
+    html += `</div>`;
+    document.getElementById("tela-content").innerHTML = html;
+  } catch(e) {
+    document.getElementById("tela-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
+  }
 }
 
 function mostrarFormIngreso() {
-  const html = `<div class="card">
-    <div class="card-title">📦 Ingreso de tela</div>
-    <div class="form-group"><label class="form-label">Tela</label><select id="pi-tela" class="form-control"><option value="">Cargando...</option></select></div>
-    <div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pi-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>
-    <div class="form-group"><label class="form-label">Marca</label><select id="pi-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>
-    <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pi-notas" class="form-control" placeholder="Opcional"></div>
-    <button class="btn-submit" id="btn-guardar-ingreso" onclick="guardarIngreso()">Guardar ingreso</button>
-  </div>`;
-  document.getElementById("prod-content").innerHTML = html;
   fetch("/api/produccion?tab=stock-tela").then(r => r.json()).then(data => {
-    const sel = document.getElementById("pi-tela");
-    if (sel && data.telas) sel.innerHTML = data.telas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("");
+    const opts = data.telas ? data.telas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("") : "";
+    document.getElementById("tela-content").innerHTML = `
+      <div class="card">
+        <div class="card-title">📦 Ingreso de tela</div>
+        <div class="form-group"><label class="form-label">Tela</label><select id="pi-tela" class="form-control">${opts}</select></div>
+        <div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pi-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>
+        <div class="form-group"><label class="form-label">Marca</label><select id="pi-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>
+        <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pi-notas" class="form-control" placeholder="Opcional"></div>
+        <button class="btn-submit" id="btn-gi" onclick="guardarIngreso()">Guardar ingreso</button>
+      </div>`;
   });
 }
 
-async function guardarCorte() {
-  const btn = document.getElementById("btn-guardar-corte");
-  const num = document.getElementById("pc-num").value;
-  const tela = document.getElementById("pc-tela").value;
-  const kg = document.getElementById("pc-kg").value;
-  if (!num || !tela || !kg) { showToast("Completá número, tela y kg", "err"); return; }
-  btn.disabled = true; btn.textContent = "Guardando...";
-  const payload = {
-    numero: num, telaId: tela, kg,
-    partida: document.getElementById("pc-partida").value,
-    taller: document.getElementById("pc-taller").value,
-    estado: document.getElementById("pc-estado").value,
-    tu: document.getElementById("pc-tu").value || 0,
-    s: document.getElementById("pc-s").value || 0,
-    m: document.getElementById("pc-m").value || 0,
-    l: document.getElementById("pc-l").value || 0,
-    xl: document.getElementById("pc-xl").value || 0,
-    notas: document.getElementById("pc-notas").value
-  };
-  try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ accion:"nuevo-corte", ...payload }) });
-    const data = await res.json();
-    if (data.ok) { showToast("✅ Corte guardado", "ok"); prodTab("cortes-espera"); }
-    else { showToast("Error: " + (data.error || ""), "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
-  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
-}
-
 async function guardarIngreso() {
-  const btn = document.getElementById("btn-guardar-ingreso");
+  const btn = document.getElementById("btn-gi");
   const tela = document.getElementById("pi-tela").value;
   const kg = document.getElementById("pi-kg").value;
   if (!tela || !kg) { showToast("Completá tela y kg", "err"); return; }
   btn.disabled = true; btn.textContent = "Guardando...";
   try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ accion:"ingreso-tela", telaId: tela, kg, marca: document.getElementById("pi-marca").value, notas: document.getElementById("pi-notas").value }) });
+    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"guardarIngreso", telaId:tela, kg, marca:document.getElementById("pi-marca").value, notas:document.getElementById("pi-notas").value }) });
     const data = await res.json();
-    if (data.ok) { showToast("✅ Ingreso guardado", "ok"); prodTab("stock-tela"); }
-    else { showToast("Error: " + (data.error || ""), "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
+    if (data.ok) { showToast("✅ Ingreso guardado", "ok"); telaTab("stock"); }
+    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
   } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
+}
+
+// ─── CORTES ───
+let cortesData = [];
+let tallesData = [];
+
+function mostrarSeccionCortes() {
+  document.getElementById("prod-content").innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="prod-tab active" id="ctab-lista" onclick="corteTab('lista')">📋 Cortes</button>
+      <button class="prod-tab" id="ctab-nuevo" onclick="corteTab('nuevo')">➕ Nuevo</button>
+      <button class="prod-tab" id="ctab-peticion" onclick="corteTab('peticion')">📝 Petición</button>
+    </div>
+    <div id="corte-filtros" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
+    <div id="corte-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+  corteTab("lista");
+}
+
+async function corteTab(tab) {
+  ["lista","nuevo","peticion"].forEach(t => document.getElementById("ctab-"+t)?.classList.toggle("active", t === tab));
+  document.getElementById("corte-filtros").innerHTML = "";
+
+  if (tab === "lista") {
+    // Mostrar filtros
+    const filtros = `
+      <select id="fil-estado" class="form-control" style="flex:1;padding:8px" onchange="cargarCortes()">
+        <option value="">Todos los estados</option>
+        <option value="En Taller">En Taller</option>
+        <option value="Esperando Taller">Esperando Taller</option>
+        <option value="Terminado">Terminado</option>
+        <option value="Entregado">Entregado</option>
+      </select>
+      <select id="fil-marca" class="form-control" style="flex:1;padding:8px" onchange="cargarCortes()">
+        <option value="">Todas las marcas</option>
+        <option value="Tussy">Tussy</option><option value="Shato">Shato</option><option value="Blanks">Blanks</option>
+      </select>`;
+    document.getElementById("corte-filtros").innerHTML = filtros;
+    cargarCortes();
+  } else if (tab === "nuevo") {
+    mostrarFormCorte();
+  } else if (tab === "peticion") {
+    mostrarFormPeticion();
+  }
+}
+
+async function cargarCortes() {
+  document.getElementById("corte-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div>';
+  const estado = document.getElementById("fil-estado")?.value || "";
+  const marca = document.getElementById("fil-marca")?.value || "";
+  try {
+    const res = await fetch(`/api/produccion?tab=cortes&estado=${estado}&marca=${marca}`);
+    const data = await res.json();
+    cortesData = data.cortes || [];
+    if (cortesData.length === 0) {
+      document.getElementById("corte-content").innerHTML = '<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes registrados</p></div>';
+      return;
+    }
+    let html = "";
+    cortesData.forEach(c => {
+      const estadoColor = {
+        "En Taller": "estado-taller",
+        "Esperando Taller": "estado-espera",
+        "Terminado": "estado-listo",
+        "Entregado": "estado-listo"
+      }[c.estado] || "estado-espera";
+      html += `<div class="corte-card" onclick="verDetalleCorte('${c.id}')">
+        <div class="corte-header">
+          <div class="corte-num">Corte #${c.numero || "—"} <span style="font-size:11px;color:#aaa;font-weight:500">${c.marca||""}</span></div>
+          <span class="corte-estado ${estadoColor}">${c.estado||"—"}</span>
+        </div>
+        <div class="corte-tela">🧵 ${c.telaId||"—"} · 📅 ${c.fecha||"—"} · 👤 ${c.taller||"Sin asignar"}</div>
+        <div class="corte-grid">
+          <div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">${c.kg||"—"}</div></div>
+          <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.totalPrendas||c.qPrendas||"—"}</div></div>
+          <div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">${c.rinde||"—"}</div></div>
+        </div>
+        ${c.descripcion ? `<div style="font-size:12px;color:#888;margin-top:6px">📦 ${c.descripcion}</div>` : ""}
+      </div>`;
+    });
+    document.getElementById("corte-content").innerHTML = html;
+  } catch(e) {
+    document.getElementById("corte-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
+  }
+}
+
+function verDetalleCorte(id) {
+  const c = cortesData.find(x => x.id === id);
+  if (!c) return;
+  const estadoOpts = ["En Taller","Esperando Taller","Terminado","Entregado"].map(e =>
+    `<option ${c.estado === e ? "selected" : ""}>${e}</option>`).join("");
+
+  document.getElementById("corte-content").innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="card-title" style="margin:0">Corte #${c.numero}</div>
+        <button onclick="cargarCortes()" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer">← Volver</button>
+      </div>
+      <div class="corte-grid" style="margin-bottom:12px">
+        <div class="corte-dato"><div class="corte-dato-label">Kg tela</div><div class="corte-dato-val">${c.kg||"—"}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.totalPrendas||"—"}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">${c.rinde||"—"}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">TU</div><div class="corte-dato-val">${c.tu||0}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">S</div><div class="corte-dato-val">${c.s||0}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">M</div><div class="corte-dato-val">${c.m||0}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">L</div><div class="corte-dato-val">${c.l||0}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">XL</div><div class="corte-dato-val">${c.xl||0}</div></div>
+        <div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">${c.faltantes||0}</div></div>
+      </div>
+      <div style="font-size:13px;color:#666;margin-bottom:12px">
+        🧵 ${c.telaId||"—"} · 🏷️ ${c.marca||"—"} · 👤 ${c.taller||"—"} · 📅 ${c.fecha||"—"}
+      </div>
+      ${c.descripcion ? `<div style="font-size:13px;color:#666;margin-bottom:12px">📦 ${c.descripcion}</div>` : ""}
+      ${c.precioCostura ? `<div style="font-size:13px;color:#666;margin-bottom:12px">💰 Precio costura: $${c.precioCostura}</div>` : ""}
+      ${c.notas ? `<div style="font-size:13px;color:#888;margin-bottom:12px">📝 ${c.notas}</div>` : ""}
+      <div class="form-group" style="margin-top:8px">
+        <label class="form-label">Actualizar estado</label>
+        <select id="det-estado" class="form-control">${estadoOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Precio costura ($)</label>
+        <input type="number" id="det-precio" class="form-control" value="${c.precioCostura||""}" placeholder="0">
+      </div>
+      <button class="btn-submit" onclick="actualizarCorte('${c.id}')">Guardar cambios</button>
+    </div>`;
+}
+
+async function actualizarCorte(id) {
+  const estado = document.getElementById("det-estado").value;
+  const precio = document.getElementById("det-precio").value;
+  try {
+    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"actualizarEstado", id, estado, precioCostura:precio }) });
+    const data = await res.json();
+    if (data.ok) { showToast("✅ Actualizado", "ok"); cargarCortes(); }
+    else showToast("Error: " + (data.error||""), "err");
+  } catch(e) { showToast("Error de conexión", "err"); }
+}
+
+async function mostrarFormCorte() {
+  const telaRes = await fetch("/api/produccion?tab=stock-tela").then(r => r.json());
+  const tallRes = await fetch("/api/produccion?tab=talleres").then(r => r.json());
+  const telaOpts = telaRes.telas ? telaRes.telas.map(t => `<option value="${t.id}">${t.nombre} (${parseFloat(t.stock||0).toFixed(1)} kg)</option>`).join("") : "";
+  const tallOpts = tallRes.talleres ? tallRes.talleres.map(t => `<option>${t.nombre}</option>`).join("") : "";
+
+  document.getElementById("corte-content").innerHTML = `
+    <div class="card">
+      <div class="card-title">✂️ Nuevo corte</div>
+      <div class="form-group"><label class="form-label">N° de Corte</label><input type="number" id="pc-num" class="form-control" placeholder="Ej: 125"></div>
+      <div class="form-group"><label class="form-label">Producto / Descripción</label><input type="text" id="pc-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>
+      <div class="form-group"><label class="form-label">Tela</label><select id="pc-tela" class="form-control">${telaOpts}</select></div>
+      <div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pc-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>
+      <div class="form-group"><label class="form-label">Marca</label><select id="pc-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>
+      <div class="form-group"><label class="form-label">N° Partida</label><input type="text" id="pc-partida" class="form-control" placeholder="Opcional"></div>
+      <div class="form-group"><label class="form-label">Taller</label><select id="pc-taller" class="form-control">${tallOpts}</select></div>
+      <div class="form-group"><label class="form-label">Estado</label>
+        <select id="pc-estado" class="form-control">
+          <option>Esperando Taller</option><option>En Taller</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="pc-precio" class="form-control" placeholder="0" inputmode="numeric"></div>
+      <div class="form-group"><label class="form-label">Talles</label>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">TU</label><input type="number" id="pc-tu" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">S</label><input type="number" id="pc-s" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">M</label><input type="number" id="pc-m" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">L</label><input type="number" id="pc-l" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+          <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">XL</label><input type="number" id="pc-xl" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pc-notas" class="form-control" placeholder="Opcional"></div>
+      <button class="btn-submit" id="btn-gc" onclick="guardarCorte()">Guardar corte</button>
+    </div>`;
+}
+
+async function guardarCorte() {
+  const btn = document.getElementById("btn-gc");
+  const num = document.getElementById("pc-num").value;
+  const tela = document.getElementById("pc-tela").value;
+  const kg = document.getElementById("pc-kg").value;
+  const prod = document.getElementById("pc-prod").value;
+  if (!num || !tela || !kg || !prod) { showToast("Completá número, producto, tela y kg", "err"); return; }
+  btn.disabled = true; btn.textContent = "Guardando...";
+  const payload = {
+    action:"guardarCorte", numero:num, producto:prod, telaId:tela, kg,
+    marca:document.getElementById("pc-marca").value,
+    partida:document.getElementById("pc-partida").value,
+    taller:document.getElementById("pc-taller").value,
+    estado:document.getElementById("pc-estado").value,
+    precioCostura:document.getElementById("pc-precio").value||0,
+    tu:document.getElementById("pc-tu").value||0, s:document.getElementById("pc-s").value||0,
+    m:document.getElementById("pc-m").value||0, l:document.getElementById("pc-l").value||0,
+    xl:document.getElementById("pc-xl").value||0, notas:document.getElementById("pc-notas").value
+  };
+  try {
+    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.ok) { showToast("✅ Corte guardado", "ok"); corteTab("lista"); }
+    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
+  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
+}
+
+async function mostrarFormPeticion() {
+  const telaRes = await fetch("/api/produccion?tab=stock-tela").then(r => r.json());
+  const tallRes = await fetch("/api/produccion?tab=talleres").then(r => r.json());
+  const telaOpts = telaRes.telas ? telaRes.telas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("") : "";
+  const tallOpts = tallRes.talleres ? tallRes.talleres.map(t => `<option>${t.nombre}</option>`).join("") : "";
+
+  document.getElementById("corte-content").innerHTML = `
+    <div class="card">
+      <div class="card-title">📝 Petición de corte</div>
+      <div class="form-group"><label class="form-label">Producto</label><input type="text" id="pet-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>
+      <div class="form-group"><label class="form-label">Tela</label><select id="pet-tela" class="form-control">${telaOpts}</select></div>
+      <div class="form-group"><label class="form-label">Kg estimados</label><input type="number" id="pet-kg" class="form-control" placeholder="0.0" step="0.1"></div>
+      <div class="form-group"><label class="form-label">Taller sugerido</label><select id="pet-taller" class="form-control"><option value="">Sin asignar</option>${tallOpts}</select></div>
+      <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pet-notas" class="form-control" placeholder="Detalles adicionales..."></div>
+      <button class="btn-submit" id="btn-pet" onclick="guardarPeticion()">Enviar petición</button>
+    </div>`;
+}
+
+async function guardarPeticion() {
+  const btn = document.getElementById("btn-pet");
+  const prod = document.getElementById("pet-prod").value;
+  if (!prod) { showToast("Ingresá el producto", "err"); return; }
+  btn.disabled = true; btn.textContent = "Guardando...";
+  try {
+    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ action:"peticionCorte", producto:prod, telaId:document.getElementById("pet-tela").value,
+        kg:document.getElementById("pet-kg").value, taller:document.getElementById("pet-taller").value,
+        notas:document.getElementById("pet-notas").value }) });
+    const data = await res.json();
+    if (data.ok) { showToast("✅ Petición enviada", "ok"); corteTab("lista"); }
+    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Enviar petición"; }
+  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Enviar petición"; }
+}
+
+// ─── TALLERES ───
+async function mostrarSeccionTalleres() {
+  document.getElementById("prod-content").innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="prod-tab active" id="ttab-lista" onclick="tallerTab('lista')">👥 Talleres</button>
+      <button class="prod-tab" id="ttab-nuevo" onclick="tallerTab('nuevo')">➕ Nuevo</button>
+    </div>
+    <div id="taller-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+  tallerTab("lista");
+}
+
+async function tallerTab(tab) {
+  document.getElementById("ttab-lista").classList.toggle("active", tab === "lista");
+  document.getElementById("ttab-nuevo").classList.toggle("active", tab === "nuevo");
+  if (tab === "lista") {
+    try {
+      const res = await fetch("/api/produccion?tab=talleres");
+      const data = await res.json();
+      if (!data.talleres || data.talleres.length === 0) {
+        document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">👥</div><p>Sin talleres registrados</p></div>';
+        return;
+      }
+      let html = `<div class="card"><div class="card-title">Talleres activos</div>`;
+      data.talleres.forEach(t => {
+        html += `<div class="tx-item" onclick="verCortesTaller('${t.nombre}')">
+          <div class="tx-left"><div class="tx-desc">👤 ${t.nombre}</div><div class="tx-cat">${t.telefono||"Sin teléfono"}</div></div>
+          <div style="font-size:12px;color:#aaa">Ver cortes →</div>
+        </div>`;
+      });
+      html += `</div>`;
+      document.getElementById("taller-content").innerHTML = html;
+    } catch(e) {
+      document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
+    }
+  } else {
+    document.getElementById("taller-content").innerHTML = `
+      <div class="card">
+        <div class="card-title">➕ Nuevo taller</div>
+        <div class="form-group"><label class="form-label">Nombre</label><input type="text" id="nt-nombre" class="form-control" placeholder="Nombre del taller"></div>
+        <div class="form-group"><label class="form-label">Teléfono</label><input type="tel" id="nt-tel" class="form-control" placeholder="Opcional"></div>
+        <div class="form-group"><label class="form-label">Notas</label><input type="text" id="nt-notas" class="form-control" placeholder="Opcional"></div>
+        <button class="btn-submit" id="btn-nt" onclick="guardarTaller()">Guardar taller</button>
+      </div>`;
+  }
+}
+
+async function verCortesTaller(taller) {
+  document.getElementById("taller-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div>';
+  try {
+    const res = await fetch(`/api/produccion?tab=cortes&taller=${encodeURIComponent(taller)}`);
+    const data = await res.json();
+    cortesData = data.cortes || [];
+    let html = `<button onclick="tallerTab('lista')" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">← Volver a talleres</button>`;
+    html += `<div class="card-title">✂️ Cortes de ${taller} (${cortesData.length})</div>`;
+    if (cortesData.length === 0) {
+      html += '<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes asignados</p></div>';
+    } else {
+      cortesData.forEach(c => {
+        const estadoColor = { "En Taller":"estado-taller", "Esperando Taller":"estado-espera", "Terminado":"estado-listo" }[c.estado] || "estado-espera";
+        html += `<div class="corte-card" onclick="verDetalleCorte('${c.id}')">
+          <div class="corte-header"><div class="corte-num">Corte #${c.numero||"—"}</div><span class="corte-estado ${estadoColor}">${c.estado||"—"}</span></div>
+          <div class="corte-tela">${c.descripcion||"—"} · ${c.fecha||"—"}</div>
+          <div class="corte-grid">
+            <div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">${c.kg||"—"}</div></div>
+            <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.totalPrendas||"—"}</div></div>
+            <div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">${c.faltantes||0}</div></div>
+          </div>
+        </div>`;
+      });
+    }
+    document.getElementById("taller-content").innerHTML = html;
+  } catch(e) {
+    document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error</p></div>';
+  }
+}
+
+async function guardarTaller() {
+  const btn = document.getElementById("btn-nt");
+  const nombre = document.getElementById("nt-nombre").value;
+  if (!nombre) { showToast("Ingresá el nombre", "err"); return; }
+  btn.disabled = true; btn.textContent = "Guardando...";
+  try {
+    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ action:"guardarTaller", nombre, telefono:document.getElementById("nt-tel").value, notas:document.getElementById("nt-notas").value }) });
+    const data = await res.json();
+    if (data.ok) { showToast("✅ Taller guardado", "ok"); tallerTab("lista"); }
+    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar taller"; }
+  } catch(e) { showToast("Error de conexión", "err"); btn.disabled = false; btn.textContent = "Guardar taller"; }
+}
+
+// ─── ESTADÍSTICAS ───
+async function cargarEstadisticas() {
+  document.getElementById("prod-content").innerHTML = `
+    <div class="mes-row" style="margin-bottom:16px">
+      <input type="date" id="stat-desde" class="form-control">
+      <input type="date" id="stat-hasta" class="form-control">
+      <button class="mes-btn" onclick="fetchEstadisticas()">Ver</button>
+    </div>
+    <div id="stat-content"><div class="loading"><div class="spinner"></div><p>Cargando estadísticas...</p></div></div>
+    <button class="btn-secondary" onclick="volverProdHome()" style="margin-top:12px">← Volver</button>`;
+  fetchEstadisticas();
+}
+
+async function fetchEstadisticas() {
+  document.getElementById("stat-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Calculando...</p></div>';
+  const desde = document.getElementById("stat-desde").value;
+  const hasta = document.getElementById("stat-hasta").value;
+  try {
+    const url = `/api/produccion?tab=estadisticas${desde ? "&desde="+desde : ""}${hasta ? "&hasta="+hasta : ""}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    mostrarEstadisticas(data);
+  } catch(e) {
+    document.getElementById("stat-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
+  }
+}
+
+function mostrarEstadisticas(data) {
+  let html = "";
+  // Totales
+  html += `<div class="stats">
+    <div class="stat"><div class="stat-label">Total prendas</div><div class="stat-value">${(data.totalPrendas||0).toLocaleString("es-AR")}</div></div>
+    <div class="stat"><div class="stat-label">Total kg tela</div><div class="stat-value">${parseFloat(data.totalKg||0).toFixed(1)}</div></div>
+  </div>`;
+
+  const renderBar = (obj, titulo, unit) => {
+    if (!obj || Object.keys(obj).length === 0) return "";
+    const entries = Object.entries(obj).sort((a,b) => b[1]-a[1]);
+    const max = entries[0][1];
+    let h = `<div class="card"><div class="card-title">${titulo}</div>`;
+    entries.forEach(([key, val]) => {
+      const w = Math.round(val / max * 100);
+      h += `<div class="cat-item"><div class="cat-row"><span class="cat-name">${key}</span><span class="cat-monto">${typeof val === "number" && val % 1 !== 0 ? val.toFixed(1) : val} ${unit}</span></div><div class="bar-wrap"><div class="bar" style="width:${w}%;background:var(--negro)"></div></div></div>`;
+    });
+    return h + `</div>`;
+  };
+
+  html += renderBar(data.porTipoTela, "🧵 Prendas por tipo de tela", "prendas");
+  html += renderBar(data.porProducto, "👕 Prendas por tipo de producto", "prendas");
+  html += renderBar(data.porKgTela, "⚖️ Kg cortados por tela", "kg");
+  html += renderBar(data.porTaller, "👥 Prendas por taller", "prendas");
+
+  document.getElementById("stat-content").innerHTML = html || '<div class="empty"><div class="e-icon">📊</div><p>Sin datos</p></div>';
 }
 
 // ══ FORM ══
