@@ -25,27 +25,33 @@ body{
   display:flex;flex-direction:column;
 }
 
-/* ── PIN SCREEN ── */
-.pin-screen{
+/* ── LOGIN SCREEN ── */
+.login-screen{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   height:100%;background:var(--negro);padding:32px;
   padding-top:calc(32px + var(--safe-top));
 }
-.pin-logo{font-size:56px;margin-bottom:6px}
-.pin-title{color:white;font-size:26px;font-weight:800;letter-spacing:1px;margin-bottom:4px}
-.pin-sub{color:rgba(255,255,255,0.45);font-size:14px;margin-bottom:36px}
-.pin-dots{display:flex;gap:14px;margin-bottom:28px}
-.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);transition:all 0.2s}
-.pin-dot.filled{background:white;border-color:white;transform:scale(1.1)}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:270px}
-.pin-key{
-  padding:22px;background:rgba(255,255,255,0.09);color:white;
-  border:none;border-radius:16px;font-size:22px;font-weight:700;
-  cursor:pointer;transition:all 0.15s;text-align:center;
+.login-logo{width:200px;margin-bottom:32px;filter:invert(1)}
+.login-card{background:rgba(255,255,255,0.06);border-radius:20px;padding:28px;width:100%;max-width:340px}
+.login-field{margin-bottom:16px}
+.login-label{color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
+.login-input{
+  width:100%;padding:14px 16px;background:rgba(255,255,255,0.1);
+  border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;
+  color:white;font-size:16px;outline:none;transition:border-color 0.2s;
 }
-.pin-key:active{background:rgba(255,255,255,0.22);transform:scale(0.94)}
-.pin-key.del{font-size:18px}
-.pin-error{color:#E74C3C;font-size:14px;margin-top:14px;min-height:22px;font-weight:600}
+.login-input:focus{border-color:rgba(255,255,255,0.5)}
+.login-input::placeholder{color:rgba(255,255,255,0.3)}
+.login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer}
+.login-remember input{width:18px;height:18px;cursor:pointer;accent-color:white}
+.login-remember span{color:rgba(255,255,255,0.6);font-size:13px}
+.login-btn{
+  width:100%;padding:16px;background:white;color:var(--negro);
+  border:none;border-radius:12px;font-size:16px;font-weight:800;
+  cursor:pointer;transition:opacity 0.2s;
+}
+.login-btn:disabled{opacity:0.5}
+.login-error{color:#E74C3C;font-size:13px;margin-top:12px;min-height:20px;font-weight:600;text-align:center}
 
 /* ── APP SHELL ── */
 .app{display:none;flex-direction:column;height:100%}
@@ -200,22 +206,7 @@ body{
 .canal-mini-nombre{font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:4px}
 .canal-mini-total{font-size:18px;font-weight:900;color:var(--negro)}
 .canal-mini-cant{font-size:11px;color:#aaa;margin-top:2px}
-/* STOCK */
-.producto-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
-.producto-nombre{font-size:16px;font-weight:800;color:var(--negro);margin-bottom:4px}
-.producto-sku{font-size:11px;color:#aaa;margin-bottom:12px}
-.local-titulo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:6px 10px;border-radius:8px;margin-bottom:8px;display:inline-block}
-.local-palermo{background:#D6EAF8;color:#1A5276}
-.local-laplata{background:#D5F5E3;color:#1E8449}
-.variante-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F3F4F6;font-size:13px}
-.variante-row:last-child{border-bottom:none}
-.variante-attr{font-weight:600;color:var(--texto)}
-.variante-right{display:flex;align-items:center;gap:10px}
-.variante-precio{font-weight:700;color:var(--negro)}
-.badge-stock{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
-.badge-si{background:#D5F5E3;color:#1E8449}
-.badge-no{background:#FADBD8;color:#C0392B}
-.sin-resultados{text-align:center;padding:32px;color:#aaa}
+
 /* TOAST */
 .toast{
   position:fixed;bottom:calc(80px + var(--safe-bottom) + 12px);
@@ -237,32 +228,25 @@ body{
 </head>
 <body>
 
-<!-- PIN -->
-<div class="pin-screen" id="pin-screen">
-  <div class="pin-logo">💰</div>
-  <div class="pin-title">TUSSY</div>
-  <div class="pin-sub">Ingresá tu PIN para continuar</div>
-  <div class="pin-dots">
-    <div class="pin-dot" id="d0"></div>
-    <div class="pin-dot" id="d1"></div>
-    <div class="pin-dot" id="d2"></div>
-    <div class="pin-dot" id="d3"></div>
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <img src="logo.jpg" class="login-logo" id="login-logo" alt="Tussy">
+  <div class="login-card">
+    <div class="login-field">
+      <label class="login-label">Usuario</label>
+      <input type="text" id="login-user" class="login-input" placeholder="Tu usuario" autocomplete="username" autocapitalize="none">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Contraseña</label>
+      <input type="password" id="login-pass" class="login-input" placeholder="Tu contraseña" autocomplete="current-password">
+    </div>
+    <label class="login-remember">
+      <input type="checkbox" id="login-remember">
+      <span>Recordarme</span>
+    </label>
+    <button class="login-btn" id="login-btn" onclick="hacerLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
   </div>
-  <div class="pin-pad">
-    <button class="pin-key" onclick="pinKey('1')">1</button>
-    <button class="pin-key" onclick="pinKey('2')">2</button>
-    <button class="pin-key" onclick="pinKey('3')">3</button>
-    <button class="pin-key" onclick="pinKey('4')">4</button>
-    <button class="pin-key" onclick="pinKey('5')">5</button>
-    <button class="pin-key" onclick="pinKey('6')">6</button>
-    <button class="pin-key" onclick="pinKey('7')">7</button>
-    <button class="pin-key" onclick="pinKey('8')">8</button>
-    <button class="pin-key" onclick="pinKey('9')">9</button>
-    <button class="pin-key" onclick="pinKey('')"></button>
-    <button class="pin-key" onclick="pinKey('0')">0</button>
-    <button class="pin-key del" onclick="pinDel()">⌫</button>
-  </div>
-  <div class="pin-error" id="pin-error"></div>
 </div>
 
 <!-- APP -->
@@ -300,36 +284,22 @@ body{
         </div>
       </div>
 
-     <!-- VENTAS -->
+
+      <!-- VENTAS -->
       <div class="section" id="sec-ventas">
         <div class="mes-row">
-          <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
+          <select id="v-periodo" class="form-control" style="flex:1">
             <option value="hoy">Hoy</option>
             <option value="mes">Este mes</option>
             <option value="ayer">Ayer</option>
-            <option value="custom">Personalizado</option>
           </select>
           <button class="mes-btn" onclick="cargarVentas()">Ver</button>
-        </div>
-        <div id="custom-fechas" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
-          <input type="date" id="v-desde" class="form-control">
-          <input type="date" id="v-hasta" class="form-control">
         </div>
         <div id="ventas-content">
           <div class="loading"><div class="spinner"></div><p>Cargando...</p></div>
         </div>
       </div>
-      <!-- STOCK -->
-      <div class="section" id="sec-stock">
-        <div class="card">
-          <div class="card-title">Buscar producto</div>
-          <div style="display:flex;gap:8px">
-            <input type="text" id="stock-q" class="form-control" placeholder="Nombre o SKU..." style="flex:1">
-            <button class="mes-btn" onclick="buscarStock()">Buscar</button>
-          </div>
-        </div>
-        <div id="stock-content"></div>
-      </div>
+
       <!-- CARGAR -->
       <div class="section" id="sec-cargar">
         <div class="card">
@@ -384,9 +354,6 @@ body{
     <button class="bottom-btn" id="nav-ventas" onclick="showSection('ventas')">
       <span class="icon">🛍️</span>Ventas
     </button>
-    <button class="bottom-btn" id="nav-stock" onclick="showSection('stock')">
-      <span class="icon">📦</span>Stock
-    </button>
     <button class="bottom-btn" id="nav-cargar" onclick="showSection('cargar')">
       <span class="icon">➕</span>Cargar
     </button>
@@ -398,55 +365,61 @@ body{
 <script>
 // ══ CONFIGURACIÓN ══
 // Pegá acá el link de tu Apps Script Web App
-const APPS_SCRIPT_URL = "/api/proxy";
+const APPS_SCRIPT_URL = "PEGAR_ACA_TU_URL_DE_APPS_SCRIPT";
 const PIN_ADMIN  = "1234"; // ← cambialo
-const PIN_SOCIOS = "5678"; // ← cambialo
-
 // ══ ESTADO ══
-let pinActual = "";
 let rolActual = "";
+let nombreActual = "";
 let catsGasto = [];
 let catsIngreso = [];
 let tipoActual = "Gasto";
 let chartGasto = null;
 let chartIngreso = null;
 
-// ══ PIN ══
-function pinKey(k) {
-  if (!k || pinActual.length >= 4) return;
-  pinActual += k;
-  actualizarDots();
-  if (pinActual.length === 4) setTimeout(validarPin, 120);
-}
-function pinDel() {
-  pinActual = pinActual.slice(0, -1);
-  actualizarDots();
-  document.getElementById("pin-error").textContent = "";
-}
-function actualizarDots() {
-  for (let i = 0; i < 4; i++)
-    document.getElementById("d" + i).classList.toggle("filled", i < pinActual.length);
-}
-function validarPin() {
-  if (pinActual === PIN_ADMIN)  { entrarApp("admin");  return; }
-  if (pinActual === PIN_SOCIOS) { entrarApp("socio");  return; }
-  document.getElementById("pin-error").textContent = "PIN incorrecto. Intentá de nuevo.";
-  pinActual = ""; actualizarDots();
-}
-
+// ══ INIT ══
+document.addEventListener("DOMContentLoaded", function() {
+  // Auto-login si hay credenciales guardadas
+  const recuerda = localStorage.getItem("tussy_remember");
+  if (recuerda === "1") {
+    const savedUser = localStorage.getItem("tussy_user");
+    const savedPass = localStorage.getItem("tussy_pass");
+    if (savedUser && savedPass) {
+      document.getElementById("login-user").value = savedUser;
+      document.getElementById("login-pass").value = savedPass;
+      document.getElementById("login-remember").checked = true;
+      hacerLogin();
+      return;
+    }
+  }
+  // Enter key en login
+  document.getElementById("login-pass").addEventListener("keydown", e => {
+    if (e.key === "Enter") hacerLogin();
+  });
+  document.getElementById("login-user").addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("login-pass").focus();
+  });
+});
 // ══ APP ══
-function entrarApp(rol) {
+function entrarApp(rol, nombre) {
   rolActual = rol;
-  document.getElementById("pin-screen").style.display = "none";
+  nombreActual = nombre || "";
+  document.getElementById("login-screen").style.display = "none";
   const app = document.getElementById("app");
   app.style.display = "flex";
 
   const badge = document.getElementById("rol-badge");
-  badge.textContent = rol === "admin" ? "Admin" : "Solo lectura";
+  badge.textContent = rol === "admin" ? "Admin" : rol === "socio" ? "Socio" : nombreActual;
   badge.className = "rol-badge " + rol;
 
-  if (rol === "socio") {
+  // Socios y encargados no pueden cargar
+  if (rol === "socio" || rol === "encargado") {
     document.getElementById("nav-cargar").disabled = true;
+  }
+  // Encargados solo ven stock
+  if (rol === "encargado") {
+    document.getElementById("nav-resumen").style.display = "none";
+    document.getElementById("nav-ventas").style.display = "none";
+    setTimeout(() => showSectionDirect("stock"), 100);
   }
 
   const hoy = new Date();
@@ -469,15 +442,28 @@ function entrarApp(rol) {
     updateCatSelect();
   });
 
-  cargarDashboard();
+  if (rol !== "encargado") cargarDashboard();
 }
 
 function logout() {
-  pinActual = ""; rolActual = "";
-  actualizarDots();
-  document.getElementById("pin-error").textContent = "";
-  document.getElementById("pin-screen").style.display = "flex";
+  rolActual = ""; nombreActual = "";
+  document.getElementById("login-screen").style.display = "flex";
   document.getElementById("app").style.display = "none";
+  document.getElementById("nav-resumen").style.display = "";
+  document.getElementById("nav-ventas").style.display = "";
+  document.getElementById("nav-cargar").disabled = false;
+  document.getElementById("login-pass").value = "";
+  document.getElementById("login-error").textContent = "";
+  document.getElementById("login-btn").disabled = false;
+  document.getElementById("login-btn").textContent = "Ingresar";
+}
+
+function showSectionDirect(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".bottom-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("sec-" + id).classList.add("active");
+  const navBtn = document.getElementById("nav-" + id);
+  if (navBtn) navBtn.classList.add("active");
 }
 
 // ══ NAVEGACIÓN ══
@@ -487,9 +473,8 @@ function showSection(id) {
   document.querySelectorAll(".bottom-btn").forEach(b => b.classList.remove("active"));
   document.getElementById("sec-" + id).classList.add("active");
   document.getElementById("nav-" + id).classList.add("active");
-  if (id === "ventas") cargarVentas();
-  if (id === "stock") document.getElementById("stock-q").focus();
 }
+
 // ══ LLAMADA A APPS SCRIPT ══
 async function callScript(action, params, callback) {
   try {
@@ -695,30 +680,17 @@ async function cargarVentas() {
   document.getElementById("ventas-content").innerHTML =
     '<div class="loading"><div class="spinner"></div><p>Cargando ventas...</p></div>';
 
-  // Fecha en zona horaria Argentina
-  const ahora = new Date();
-  const offsetARG = -3 * 60; // UTC-3 en minutos
-  const argTime = new Date(ahora.getTime() + (offsetARG - ahora.getTimezoneOffset()) * 60000);
-  
-  const pad = n => String(n).padStart(2, "0");
-  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-
+  const hoy = new Date();
   let desde, hasta;
-  hasta = fmt(argTime);
 
   if (periodo === "hoy") {
-    desde = fmt(argTime);
+    desde = hasta = hoy.toISOString().split("T")[0];
   } else if (periodo === "ayer") {
-    const ayer = new Date(argTime);
-    ayer.setDate(ayer.getDate() - 1);
-    desde = fmt(ayer);
-    hasta = fmt(ayer);
-  } else if (periodo === "custom") {
-    desde = document.getElementById("v-desde").value;
-    hasta = document.getElementById("v-hasta").value;
-    if (!desde || !hasta) { showToast("Seleccioná las fechas", "err"); return; }
+    const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
+    desde = hasta = ayer.toISOString().split("T")[0];
   } else {
-    desde = `${argTime.getFullYear()}-${pad(argTime.getMonth()+1)}-01`;
+    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split("T")[0];
+    hasta = hoy.toISOString().split("T")[0];
   }
 
   try {
@@ -786,67 +758,7 @@ function mostrarVentas(data, periodo) {
 
   document.getElementById("ventas-content").innerHTML = html;
 }
-// ══ STOCK ══
-async function buscarStock() {
-  const q = document.getElementById("stock-q").value.trim();
-  if (q.length < 2) { showToast("Ingresá al menos 2 caracteres", "err"); return; }
 
-  document.getElementById("stock-content").innerHTML =
-    '<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
-
-  try {
-    const res = await fetch(`/api/stock?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    mostrarStock(data);
-  } catch(err) {
-    document.getElementById("stock-content").innerHTML =
-      '<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>';
-  }
-}
-
-function mostrarStock(data) {
-  if (!data.resultados || data.resultados.length === 0) {
-    document.getElementById("stock-content").innerHTML =
-      '<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "' + data.query + '"</p></div>';
-    return;
-  }
-
-  let html = "";
-  data.resultados.forEach(p => {
-    html += `<div class="producto-card">
-      <div class="producto-nombre">${p.nombre}</div>
-      <div class="producto-sku">${p.sku ? "SKU: " + p.sku : ""}</div>`;
-
-    const locales = [
-      { key: "palermo", label: "Local Palermo", clase: "local-palermo" },
-      { key: "laplata", label: "Local La Plata", clase: "local-laplata" }
-    ];
-
-    locales.forEach(({ key, label, clase }) => {
-      if (!p.locales[key]) return;
-      html += `<div class="local-titulo ${clase}">${label}</div>`;
-      p.locales[key].forEach(v => {
-        html += `<div class="variante-row">
-          <span class="variante-attr">${v.atributos}</span>
-          <div class="variante-right">
-            <span class="variante-precio">$${Math.round(v.precio).toLocaleString("es-AR")}</span>
-            <span class="badge-stock ${v.tiene_stock ? 'badge-si' : 'badge-no'}">${v.tiene_stock ? "✓ Stock" : "Sin stock"}</span>
-          </div>
-        </div>`;
-      });
-      html += `<div style="margin-bottom:10px"></div>`;
-    });
-
-    html += `</div>`;
-  });
-
-  document.getElementById("stock-content").innerHTML = html;
-}
-  function toggleFechaCustom() {
-  const periodo = document.getElementById("v-periodo").value;
-  const div = document.getElementById("custom-fechas");
-  div.style.display = periodo === "custom" ? "flex" : "none";
-}
 // ══ TOAST ══
 function showToast(msg, tipo) {
   const t = document.getElementById("toast");
