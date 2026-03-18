@@ -12,24 +12,17 @@ module.exports = async function handler(req, res) {
   const TN_TOKEN   = process.env.TN_ACCESS_TOKEN;
   const TN_USER    = process.env.TN_USER_ID;
 
-  // Convertir fecha Argentina a UTC
-  // Argentina = UTC-3, entonces 00:00 ARG = 03:00 UTC
+  const pad = n => String(n).padStart(2, "0");
+
   function toUTC(fecha, esInicio) {
     const [y, m, d] = fecha.split("-").map(Number);
     if (esInicio) {
-      // 00:00 Argentina = 03:00 UTC
-      return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}T03:00:00+0000`;
+      return `${y}-${pad(m)}-${pad(d)}T03:00:00+0000`;
     } else {
-      // 23:59 Argentina = 02:59 UTC del día siguiente
       const sig = new Date(Date.UTC(y, m-1, d+1));
-      return `${sig.getUTCFullYear()}-${String(sig.getUTCMonth()+1).padStart(2,"0")}-${String(sig.getUTCDate()).padStart(2,"0")}T02:59:59+0000`;
+      return `${sig.getUTCFullYear()}-${pad(sig.getUTCMonth()+1)}-${pad(sig.getUTCDate())}T02:59:59+0000`;
     }
   }
-```
-
-Y en `getTNData` asegurate que el filtro de payment_status sea solo pedidos pagados — buscá la URL de Tiendanube y fijate que tenga esto al final:
-```
-&payment_status=paid
 
   const inicioUTC = toUTC(desde, true);
   const finUTC    = toUTC(hasta, false);
@@ -54,7 +47,8 @@ Y en `getTNData` asegurate que el filtro de payment_status sea solo pedidos paga
       })) : []
     };
   }
-async function getTNData() {
+
+  async function getTNData() {
     let page = 1, total = 0, cantidad = 0, primerPedidos = [];
     while (true) {
       const r = await fetch(
@@ -79,7 +73,6 @@ async function getTNData() {
       }))
     };
   }
-  
 
   try {
     const [palermo, laplata, tn] = await Promise.all([
