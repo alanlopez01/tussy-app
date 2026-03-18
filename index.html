@@ -691,17 +691,26 @@ async function cargarVentas() {
   document.getElementById("ventas-content").innerHTML =
     '<div class="loading"><div class="spinner"></div><p>Cargando ventas...</p></div>';
 
-  const hoy = new Date();
+  // Fecha en zona horaria Argentina
+  const ahora = new Date();
+  const offsetARG = -3 * 60; // UTC-3 en minutos
+  const argTime = new Date(ahora.getTime() + (offsetARG - ahora.getTimezoneOffset()) * 60000);
+  
+  const pad = n => String(n).padStart(2, "0");
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
   let desde, hasta;
+  hasta = fmt(argTime);
 
   if (periodo === "hoy") {
-    desde = hasta = hoy.toISOString().split("T")[0];
+    desde = fmt(argTime);
   } else if (periodo === "ayer") {
-    const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
-    desde = hasta = ayer.toISOString().split("T")[0];
+    const ayer = new Date(argTime);
+    ayer.setDate(ayer.getDate() - 1);
+    desde = fmt(ayer);
+    hasta = fmt(ayer);
   } else {
-    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split("T")[0];
-    hasta = hoy.toISOString().split("T")[0];
+    desde = `${argTime.getFullYear()}-${pad(argTime.getMonth()+1)}-01`;
   }
 
   try {
