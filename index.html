@@ -798,13 +798,22 @@ function mostrarComparacion(data) {
 }
 
 // ══ REPORTES ══
+function toggleRepCustom() {
+  document.getElementById("rep-custom").style.display =
+    document.getElementById("rep-periodo").value === "custom" ? "flex" : "none";
+}
+
 async function cargarReportes() {
+  const canal = document.getElementById("rep-canal").value;
   const periodo = document.getElementById("rep-periodo").value;
-  document.getElementById("reportes-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando productos...</p></div>';
+  document.getElementById("reportes-content").innerHTML =
+    '<div class="loading"><div class="spinner"></div><p>Buscando productos...</p></div>';
+
   const ahora = new Date();
   const argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2, "0");
   const fmtDate = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+
   let desde, hasta;
   if (periodo === "custom") {
     desde = document.getElementById("rep-desde").value;
@@ -814,28 +823,32 @@ async function cargarReportes() {
     desde = `${argTime.getUTCFullYear()}-${pad(argTime.getUTCMonth()+1)}-01`;
     hasta = fmtDate(argTime);
   }
+
   try {
-    const res = await fetch(`/api/reportes?desde=${desde}&hasta=${hasta}`);
+    const res = await fetch(`/api/reportes?desde=${desde}&hasta=${hasta}&canal=${canal}`);
     const data = await res.json();
-    mostrarReportes(data);
+    mostrarReportes(data, canal);
   } catch(err) {
-    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar reportes</p></div>';
+    document.getElementById("reportes-content").innerHTML =
+      '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar reportes</p></div>';
   }
 }
 
-function mostrarReportes(data) {
+function mostrarReportes(data, canal) {
   if (!data.productos || data.productos.length === 0) {
-    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el período</p></div>';
+    document.getElementById("reportes-content").innerHTML =
+      '<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el período</p></div>';
     return;
   }
+  const titulo = canal === "online" ? "🌐 Más vendidos Online (Tiendanube)" : "🏪 Más vendidos Físico (Locales)";
   const medallas = ["🥇","🥈","🥉"];
-  let html = `<div class="card"><div class="card-title">🏆 Ranking de productos más vendidos</div>`;
+  let html = `<div class="card"><div class="card-title">${titulo}</div>`;
   data.productos.forEach((p, i) => {
     html += `<div class="ranking-item">
       <div class="ranking-pos">${medallas[i] || `${i+1}`}</div>
       <div class="ranking-info">
         <div class="ranking-nombre">${p.nombre}</div>
-        <div class="ranking-detalle">${p.fuentes || ""}</div>
+        <div class="ranking-detalle">${p.fuentes}${p.sku ? ` · SKU: ${p.sku}` : ""}</div>
       </div>
       <div class="ranking-cant">${p.cantidad}<span>unidades</span></div>
     </div>`;
@@ -843,7 +856,6 @@ function mostrarReportes(data) {
   html += `</div>`;
   document.getElementById("reportes-content").innerHTML = html;
 }
-
 // ══ PRODUCCION ══
 function prodTab(tab) {
   prodTabActual = tab;
