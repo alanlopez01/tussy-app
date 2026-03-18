@@ -104,15 +104,22 @@ module.exports = async function handler(req, res) {
         getWooTopSellers(WOO_P_URL, WOO_P_KEY, WOO_P_SEC, "Palermo"),
         getWooTopSellers(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC, "La Plata")
       ]);
-      const merged = { ...wooP };
-      Object.entries(wooLP).forEach(([key, val]) => {
-        if (merged[key]) {
-          merged[key].cantidad += val.cantidad;
-          val.locales.forEach(l => { if (!merged[key].locales.includes(l)) merged[key].locales.push(l); });
-        } else {
-          merged[key] = val;
-        }
-      });
+     // Unificar por nombre (en mayúsculas) para que Palermo y La Plata se sumen
+const mergedPorNombre = {};
+const agregarAlMerge = (mapa) => {
+  Object.values(mapa).forEach(val => {
+    const key = val.nombre.toUpperCase().trim();
+    if (mergedPorNombre[key]) {
+      mergedPorNombre[key].cantidad += val.cantidad;
+      val.locales.forEach(l => { if (!mergedPorNombre[key].locales.includes(l)) mergedPorNombre[key].locales.push(l); });
+    } else {
+      mergedPorNombre[key] = { ...val };
+    }
+  });
+};
+agregarAlMerge(wooP);
+agregarAlMerge(wooLP);
+const merged = mergedPorNombre;
       productos = Object.values(merged);
     }
 
