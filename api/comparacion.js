@@ -11,7 +11,6 @@ module.exports = async function handler(req, res) {
   const TN_TOKEN   = process.env.TN_ACCESS_TOKEN;
   const TN_USER    = process.env.TN_USER_ID;
 
-  // Calcular fechas en zona horaria Argentina
   const ahora = new Date();
   const offsetARG = -3 * 60;
   const argNow = new Date(ahora.getTime() + (offsetARG - ahora.getTimezoneOffset()) * 60000);
@@ -19,13 +18,17 @@ module.exports = async function handler(req, res) {
   const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
   const hoy = fmtDate(argNow);
+  const diaDelMes = argNow.getDate(); // ej: 18
   const inicioMes = `${argNow.getFullYear()}-${pad(argNow.getMonth()+1)}-01`;
 
-  // Mes anterior
-  const mesAnt = new Date(argNow.getFullYear(), argNow.getMonth()-1, 1);
-  const inicioMesAnt = `${mesAnt.getFullYear()}-${pad(mesAnt.getMonth()+1)}-01`;
-  const finMesAnt = new Date(argNow.getFullYear(), argNow.getMonth(), 0);
-  const finMesAntStr = fmtDate(finMesAnt);
+  // Mes anterior: mismos días (del 1 al día actual del mes pasado)
+  const mesAntYear = argNow.getMonth() === 0 ? argNow.getFullYear()-1 : argNow.getFullYear();
+  const mesAntMes  = argNow.getMonth() === 0 ? 12 : argNow.getMonth();
+  const inicioMesAnt = `${mesAntYear}-${pad(mesAntMes)}-01`;
+  // Último día disponible del mes anterior (mismo día del mes o último día si el mes es más corto)
+  const ultimoDiaMesAnt = new Date(argNow.getFullYear(), argNow.getMonth(), 0).getDate();
+  const diaComparacion = Math.min(diaDelMes, ultimoDiaMesAnt);
+  const finMesAnt = `${mesAntYear}-${pad(mesAntMes)}-${pad(diaComparacion)}`;
 
   function toUTC(fecha, esInicio) {
     const [y, m, d] = fecha.split("-").map(Number);
@@ -36,10 +39,9 @@ module.exports = async function handler(req, res) {
 
   async function getWooTotal(url, key, secret, desde, hasta) {
     const auth = Buffer.from(`${key}:${secret}`).toString("base64");
-    const headers = { "Authorization": `Basic ${auth}` };
     const r = await fetch(
       `${url}/wp-json/wc/v3/reports/sales?date_min=${desde}&date_max=${hasta}`,
-      { headers }
+      { headers: { "Authorization": `Basic ${auth}` } }
     );
     const data = await r.json();
     return {
@@ -79,26 +81,32 @@ module.exports = async function handler(req, res) {
       getWooTotal(WOO_P_URL, WOO_P_KEY, WOO_P_SEC, inicioMes, hoy),
       getWooTotal(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC, inicioMes, hoy),
       getTNTotal(inicioMes, hoy),
-      getWooTotal(WOO_P_URL, WOO_P_KEY, WOO_P_SEC, inicioMesAnt, finMesAntStr),
-      getWooTotal(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC, inicioMesAnt, finMesAntStr),
-      getTNTotal(inicioMesAnt, finMesAntStr)
+      getWooTotal(WOO_P_URL, WOO_P_KEY, WOO_P_SEC, inicioMesAnt, finMesAnt),
+      getWooTotal(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC, inicioMesAnt, finMesAnt),
+      getTNTotal(inicioMesAnt, finMesAnt)
     ]);
 
+    // Proyección: (total acumulado / días transcurridos) * 30
+    const proyectar = (total) => diaDelMes > 0 ? Math.round(total / diaDelMes * 30) : 0;
+
     const locales = [
-      { nombre: "Palermo",    hoy: palmHoy,  mes: palmMes,  ant: palmAnt  },
-      { nombre: "La Plata",   hoy: lpHoy,    mes: lpMes,    ant: lpAnt    },
-      { nombre: "Tiendanube", hoy: tnHoy,    mes: tnMes,    ant: tnAnt    }
+      { nombre: "Palermo",    hoy: palmHoy, mes: palmMes, ant: palmAnt, proyeccion: proyectar(palmMes.total) },
+      { nombre: "La Plata",   hoy: lpHoy,   mes: lpMes,   ant: lpAnt,   proyeccion: proyectar(lpMes.total) },
+      { nombre: "Tiendanube", hoy: tnHoy,   mes: tnMes,   ant: tnAnt,   proyeccion: proyectar(tnMes.total) }
     ];
 
-    // Ordenar por mes (ranking)
-    const ranking = [...locales].sort((a, b) => b.mes.total - a.mes.total);
+    const totalMes = locales.reduce((s, l) => s + l.mes.total, 0);
+    const totalAnt = locales.reduce((s, l) => s + l.ant.total, 0);
 
     res.status(200).json({
       locales,
-      ranking,
+      ranking: [...locales].sort((a, b) => b.mes.total - a.mes.total),
       totalHoy: locales.reduce((s, l) => s + l.hoy.total, 0),
-      totalMes: locales.reduce((s, l) => s + l.mes.total, 0),
-      totalAnt: locales.reduce((s, l) => s + l.ant.total, 0)
+      totalMes,
+      totalAnt,
+      proyeccionTotal: proyectar(totalMes),
+      diaDelMes,
+      diasComparados: diaComparacion
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
