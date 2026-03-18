@@ -1,81 +1,45 @@
-const https = require("https");
-
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
 
-  const SHEET_ID = process.env.TELAS_SHEET_ID;
-  const SCRIPT_URL = process.env.APPS_SCRIPT_URL;
+  const SCRIPT_URL = process.env.TELAS_SCRIPT_URL;
+  if (!SCRIPT_URL) return res.status(500).json({ error: "TELAS_SCRIPT_URL no configurada" });
 
   if (req.method === "GET") {
-    const { tab } = req.query;
+    const { tab, estado, taller, marca, desde, hasta } = req.query;
+    try {
+      let action, params = {};
+      if (tab === "stock-tela")    { action = "getStockTelas"; }
+      else if (tab === "cortes")   { action = "getCortes"; params = { estado, taller, marca }; }
+      else if (tab === "talleres") { action = "getTalleres"; }
+      else if (tab === "estadisticas") { action = "getEstadisticas"; params = { desde, hasta }; }
+      else if (tab === "historial") { action = "getHistorial"; }
+      else return res.status(400).json({ error: "Tab no reconocido" });
 
-    if (tab === "stock-tela") {
-      try {
-        const url = `${SCRIPT_URL}?action=getStockTelas&params={}`;
-        const r = await fetch(url, { redirect: "follow" });
-        const data = await r.json();
-        return res.status(200).json({ telas: data.telas || [] });
-      } catch(e) {
-        return res.status(500).json({ error: e.message });
-      }
+      const url = `${SCRIPT_URL}?action=${action}&params=${encodeURIComponent(JSON.stringify(params))}`;
+      const r = await fetch(url, { redirect: "follow" });
+      const data = await r.json();
+      return res.status(200).json(data);
+    } catch(e) {
+      return res.status(500).json({ error: e.message });
     }
-
-    if (tab === "cortes-espera" || tab === "cortes-taller") {
-      try {
-        const estado = tab === "cortes-espera" ? "Esperando Taller" : "En Taller";
-        const url = `${SCRIPT_URL}?action=getCortes&params=${encodeURIComponent(JSON.stringify({ estado }))}`;
-        const r = await fetch(url, { redirect: "follow" });
-        const data = await r.json();
-        return res.status(200).json({ cortes: data.cortes || [] });
-      } catch(e) {
-        return res.status(500).json({ error: e.message });
-      }
-    }
-
-    if (tab === "historial") {
-      try {
-        const url = `${SCRIPT_URL}?action=getHistorialTelas&params={}`;
-        const r = await fetch(url, { redirect: "follow" });
-        const data = await r.json();
-        return res.status(200).json({ movimientos: data.movimientos || [] });
-      } catch(e) {
-        return res.status(500).json({ error: e.message });
-      }
-    }
-
-    return res.status(400).json({ error: "Tab no reconocido" });
   }
 
   if (req.method === "POST") {
-    const body = req.body;
-    const { accion } = body;
-
-    if (accion === "nuevo-corte") {
-      try {
-        const url = `${SCRIPT_URL}?action=guardarCorte&params=${encodeURIComponent(JSON.stringify(body))}`;
-        const r = await fetch(url, { redirect: "follow" });
-        const data = await r.json();
-        return res.status(200).json(data);
-      } catch(e) {
-        return res.status(500).json({ error: e.message });
-      }
+    try {
+      const body = req.body;
+      const r = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await r.json();
+      return res.status(200).json(data);
+    } catch(e) {
+      return res.status(500).json({ error: e.message });
     }
-
-    if (accion === "ingreso-tela") {
-      try {
-        const url = `${SCRIPT_URL}?action=guardarIngresoTela&params=${encodeURIComponent(JSON.stringify(body))}`;
-        const r = await fetch(url, { redirect: "follow" });
-        const data = await r.json();
-        return res.status(200).json(data);
-      } catch(e) {
-        return res.status(500).json({ error: e.message });
-      }
-    }
-
-    return res.status(400).json({ error: "Acción no reconocida" });
   }
 
   res.status(405).json({ error: "Método no permitido" });
