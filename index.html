@@ -500,27 +500,30 @@ function construirHome(rol){
 // ══ NAVEGACION ══
 function goTo(sectionId, title){
   navStack.push({ sectionId: sectionId, title: title });
-  showSection(sectionId, title);
+  _mostrarSeccion(sectionId, title);
 }
 
 function goBack(){
-  // Si estamos en una sub-sección de producción, volver al home de producción
   var prodContent=document.getElementById("prod-content");
-  if(prodContent&&prodContent.style.display!=="none"){
+  if(prodContent && prodContent.style.display!=="none"){
     prodContent.style.display="none";
     prodContent.innerHTML="";
     document.getElementById("prod-home").style.display="grid";
     document.getElementById("header-title").textContent="Produccion";
+    navStack.pop();
     return;
   }
-  // Si estamos en home, no hacer nada
-  if(navStack.length<=1){ navStack=[]; showSection("home",""); return; }
+  if(navStack.length<=1){ navStack=[]; _mostrarSeccion("home",""); return; }
   navStack.pop();
   var prev=navStack[navStack.length-1];
-  showSection(prev.sectionId,prev.title);
+  _mostrarSeccion(prev.sectionId, prev.title);
 }
 
 function showSection(id, title){
+  goTo(id, title);
+}
+
+function _mostrarSeccion(id, title){
   document.querySelectorAll(".section").forEach(function(s){ s.classList.remove("active"); });
   document.getElementById("sec-"+id).classList.add("active");
   document.getElementById("scroll-area").scrollTop=0;
@@ -534,7 +537,27 @@ function showSection(id, title){
   if(id==="ventas") cargarVentas();
   if(id==="comparacion") cargarComparacion();
   if(id==="stock") setTimeout(function(){ document.getElementById("stock-q").focus(); },100);
-  if(id==="produccion"){ document.getElementById("prod-home").style.display="grid"; document.getElementById("prod-content").style.display="none"; }
+  if(id==="produccion"){
+    document.getElementById("prod-home").style.display="grid";
+    document.getElementById("prod-content").style.display="none";
+    document.getElementById("prod-content").innerHTML="";
+  }
+}
+
+function navigate(sub){
+  var titles={telas:"Telas",cortes:"Cortes",talleres:"Talleres",estadisticas:"Estadisticas"};
+  var title=titles[sub]||sub;
+  document.getElementById("prod-home").style.display="none";
+  document.getElementById("prod-content").style.display="block";
+  document.getElementById("prod-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  document.getElementById("header-title").textContent="Produccion - "+title;
+  document.getElementById("btn-back").style.display="block";
+  document.getElementById("header-logo").style.display="none";
+  navStack.push({ sectionId:"prod-"+sub, title:"Produccion - "+title });
+  if(sub==="telas") mostrarTelas();
+  else if(sub==="cortes") mostrarCortes();
+  else if(sub==="talleres") mostrarTalleres();
+  else if(sub==="estadisticas") mostrarEstadisticas();
 }
 
 function logout(){
