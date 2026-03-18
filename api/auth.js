@@ -5,12 +5,9 @@ module.exports = async function handler(req, res) {
   const { usuario, password } = req.query;
 
   const USUARIOS = {
-    // Admin
     alan:      { pass: process.env.PASS_ALAN,      rol: "admin",     nombre: "Alan" },
-    // Socios
     fede:      { pass: process.env.PASS_FEDE,      rol: "socio",     nombre: "Federico" },
     nico:      { pass: process.env.PASS_NICO,      rol: "socio",     nombre: "Nicolas" },
-    // Encargados
     benjamin:  { pass: process.env.PASS_BENJAMIN,  rol: "encargado", nombre: "Benjamin" },
     ramiro:    { pass: process.env.PASS_RAMIRO,    rol: "encargado", nombre: "Ramiro" },
     pablo:     { pass: process.env.PASS_PABLO,     rol: "encargado", nombre: "Pablo" },
