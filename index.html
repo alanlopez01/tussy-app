@@ -543,6 +543,7 @@ function showSection(id) {
 
   if (id === "ventas") cargarVentas();
   if (id === "comparacion") cargarComparacion();
+  if (id === "resumen") cargarDashboard();
   if (id === "stock") setTimeout(() => document.getElementById("stock-q").focus(), 100);
   if (id === "produccion" && !prodTabActual) prodTab("stock-tela");
   if (id === "reportes") document.getElementById("rep-periodo").addEventListener("change", () => {
