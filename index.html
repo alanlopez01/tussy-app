@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tussy">
-<link rel="apple-touch-icon" href="icon.png">
-<title>Tussy App</title>
+<link rel="apple-touch-icon" href="logo.png">
+<title>Tussy</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -19,108 +20,59 @@
   --safe-bottom:env(safe-area-inset-bottom);
 }
 html,body{height:100%;overflow:hidden}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:var(--gris);color:var(--texto);
-  display:flex;flex-direction:column;
-}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gris);color:var(--texto);display:flex;flex-direction:column}
 
-/* ── LOGIN SCREEN ── */
-.login-screen{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:100%;background:var(--negro);padding:32px;
-  padding-top:calc(32px + var(--safe-top));
-}
-.login-logo{width:200px;margin-bottom:32px;filter:invert(1)}
+/* LOGIN */
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--negro);padding:32px;padding-top:calc(32px + var(--safe-top))}
+.login-logo{width:200px;margin-bottom:32px}
 .login-card{background:rgba(255,255,255,0.06);border-radius:20px;padding:28px;width:100%;max-width:340px}
 .login-field{margin-bottom:16px}
 .login-label{color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
-.login-input{
-  width:100%;padding:14px 16px;background:rgba(255,255,255,0.1);
-  border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;
-  color:white;font-size:16px;outline:none;transition:border-color 0.2s;
-}
+.login-input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:16px;outline:none;transition:border-color 0.2s}
 .login-input:focus{border-color:rgba(255,255,255,0.5)}
 .login-input::placeholder{color:rgba(255,255,255,0.3)}
 .login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer}
 .login-remember input{width:18px;height:18px;cursor:pointer;accent-color:white}
 .login-remember span{color:rgba(255,255,255,0.6);font-size:13px}
-.login-btn{
-  width:100%;padding:16px;background:white;color:var(--negro);
-  border:none;border-radius:12px;font-size:16px;font-weight:800;
-  cursor:pointer;transition:opacity 0.2s;
-}
+.login-btn{width:100%;padding:16px;background:white;color:var(--negro);border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:opacity 0.2s}
 .login-btn:disabled{opacity:0.5}
 .login-error{color:#E74C3C;font-size:13px;margin-top:12px;min-height:20px;font-weight:600;text-align:center}
 
-/* ── APP SHELL ── */
+/* APP */
 .app{display:none;flex-direction:column;height:100%}
-
-.header{
-  background:var(--negro);color:white;
-  padding:14px 20px;padding-top:calc(14px + var(--safe-top));
-  display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;
-}
+.header{background:var(--negro);color:white;padding:14px 20px;padding-top:calc(14px + var(--safe-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .header-left h1{font-size:20px;font-weight:800;letter-spacing:1px}
 .header-left small{font-size:11px;opacity:0.45;display:block;margin-top:1px}
 .header-right{display:flex;align-items:center;gap:10px}
 .rol-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700}
 .rol-badge.admin{background:#F39C12;color:#000}
 .rol-badge.socio{background:rgba(255,255,255,0.15);color:white}
+.rol-badge.encargado{background:#27AE60;color:white}
 .logout-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:22px;cursor:pointer;padding:4px;line-height:1}
-
-/* SCROLL AREA */
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.content{padding:16px;max-width:480px;margin:0 auto;padding-bottom:calc(80px + var(--safe-bottom))}
-
-/* BOTTOM NAV */
-.bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;
-  background:white;border-top:1px solid var(--borde);
-  display:flex;padding-bottom:var(--safe-bottom);
-  box-shadow:0 -2px 12px rgba(0,0,0,0.08);
-  z-index:100;flex-shrink:0;
-}
-.bottom-btn{
-  flex:1;padding:12px 8px 10px;border:none;background:none;
-  font-size:10px;font-weight:700;color:#aaa;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  text-transform:uppercase;letter-spacing:0.3px;transition:color 0.2s;
-}
+.content{padding:16px;max-width:480px;margin:0 auto;padding-bottom:calc(90px + var(--safe-bottom))}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--borde);display:flex;padding-bottom:var(--safe-bottom);box-shadow:0 -2px 12px rgba(0,0,0,0.08);z-index:100}
+.bottom-btn{flex:1;padding:12px 8px 10px;border:none;background:none;font-size:10px;font-weight:700;color:#aaa;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.3px;transition:color 0.2s}
 .bottom-btn .icon{font-size:24px;line-height:1}
 .bottom-btn.active{color:var(--negro)}
 .bottom-btn:disabled{opacity:0.3;cursor:not-allowed}
-
 .section{display:none}.section.active{display:block}
 
-/* ── CARDS ── */
+/* CARDS */
 .card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .card-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#aaa;margin-bottom:16px}
-
-/* MES SELECTOR */
-.mes-row{display:flex;gap:8px;margin-bottom:16px}
-.mes-row select{
-  flex:1;padding:12px 14px;border:1.5px solid var(--borde);
-  border-radius:12px;font-size:15px;background:white;
-  -webkit-appearance:none;color:var(--texto);font-weight:600;
-}
-.mes-btn{
-  padding:12px 18px;background:var(--negro);color:white;
-  border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;
-}
+.mes-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.mes-row select,.form-control{width:100%;padding:13px 14px;border:1.5px solid var(--borde);border-radius:12px;font-size:15px;background:white;-webkit-appearance:none;color:var(--texto);font-weight:600;transition:border-color 0.2s}
+.form-control:focus{outline:none;border-color:var(--negro)}
+.mes-btn{padding:12px 18px;background:var(--negro);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
 
 /* SALDO */
-.saldo-card{
-  background:linear-gradient(135deg,#1A1A2E,#2C3E6E);
-  color:white;border-radius:16px;padding:22px 20px;margin-bottom:14px;
-  text-align:center;box-shadow:0 4px 16px rgba(26,26,46,0.3);
-}
+.saldo-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);color:white;border-radius:16px;padding:22px 20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(26,26,46,0.3)}
 .saldo-label{font-size:12px;opacity:0.55;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .saldo-value{font-size:36px;font-weight:900;letter-spacing:-1px}
 .saldo-neg{color:#E74C3C}
 
-/* STATS GRID */
+/* STATS */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat{background:white;border-radius:14px;padding:16px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .stat.full{grid-column:1/-1}
@@ -129,11 +81,7 @@ body{
 .stat-delta{font-size:11px;margin-top:4px;color:#aaa;font-weight:600}
 .stat-delta.up{color:var(--verde)}.stat-delta.down{color:var(--rojo)}
 .gasto{color:var(--rojo)}.ingreso{color:var(--verde)}.pos{color:var(--verde)}.neg{color:var(--rojo)}
-
-/* CHART */
 .chart-wrap{height:200px;position:relative;margin:4px 0 16px}
-
-/* CAT LIST */
 .cat-list{list-style:none}
 .cat-item{padding:11px 0;border-bottom:1px solid #F3F4F6}
 .cat-item:last-child{border-bottom:none}
@@ -144,8 +92,6 @@ body{
 .cat-monto{font-size:15px;font-weight:800}
 .bar-wrap{height:5px;background:#F0F0F0;border-radius:3px}
 .bar{height:5px;border-radius:3px;transition:width 0.6s ease}
-
-/* TX HOY */
 .tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F3F4F6}
 .tx-item:last-child{border-bottom:none}
 .tx-left{flex:1;min-width:0}
@@ -153,51 +99,7 @@ body{
 .tx-cat{font-size:12px;color:#aaa;margin-top:2px}
 .tx-monto{font-size:16px;font-weight:900;margin-left:12px;white-space:nowrap}
 
-/* FORM */
-.form-group{margin-bottom:16px}
-.form-label{display:block;font-size:12px;font-weight:800;color:#666;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.3px}
-.form-control{
-  width:100%;padding:15px 16px;border:1.5px solid var(--borde);
-  border-radius:12px;font-size:16px;background:white;
-  -webkit-appearance:none;color:var(--texto);
-  transition:border-color 0.2s;
-}
-.form-control:focus{outline:none;border-color:var(--negro)}
-.tipo-toggle{display:flex;gap:10px}
-.tipo-btn{
-  flex:1;padding:15px;border:2px solid var(--borde);
-  border-radius:12px;font-size:16px;font-weight:800;
-  cursor:pointer;transition:all 0.2s;background:white;
-}
-.tipo-btn.gasto.active{background:#FEF2F2;border-color:var(--rojo);color:var(--rojo)}
-.tipo-btn.ingreso.active{background:#F0FFF4;border-color:var(--verde);color:var(--verde)}
-.btn-submit{
-  width:100%;padding:18px;background:var(--negro);color:white;
-  border:none;border-radius:14px;font-size:17px;font-weight:800;
-  cursor:pointer;margin-top:8px;letter-spacing:0.3px;
-}
-.btn-submit:disabled{opacity:0.4}
-
-/* EMPTY */
-.empty{text-align:center;padding:40px 20px;color:#bbb}
-.empty .e-icon{font-size:48px;margin-bottom:12px}
-.empty p{font-size:15px;font-weight:600}
-
-
 /* VENTAS */
-.canal-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
-.canal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.canal-nombre{font-size:15px;font-weight:800;color:var(--texto)}
-.canal-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;background:var(--gris);color:#666}
-.canal-total{font-size:28px;font-weight:900;color:var(--negro);margin-bottom:4px}
-.canal-cant{font-size:12px;color:#aaa;font-weight:600}
-.canal-divider{height:1px;background:#F3F4F6;margin:12px 0}
-.pedido-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;border-bottom:1px solid #F9F9F9}
-.pedido-item:last-child{border-bottom:none}
-.pedido-left{flex:1}
-.pedido-cliente{font-weight:600;color:var(--texto)}
-.pedido-estado{font-size:11px;color:#aaa;margin-top:1px}
-.pedido-monto{font-weight:800;color:var(--verde)}
 .consolidado{background:linear-gradient(135deg,#1E8449,#27AE60);color:white;border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(30,132,73,0.3)}
 .consolidado-label{font-size:12px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .consolidado-value{font-size:36px;font-weight:900;letter-spacing:-1px}
@@ -206,31 +108,62 @@ body{
 .canal-mini-nombre{font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:4px}
 .canal-mini-total{font-size:18px;font-weight:900;color:var(--negro)}
 .canal-mini-cant{font-size:11px;color:#aaa;margin-top:2px}
+.canal-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.canal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.canal-nombre{font-size:15px;font-weight:800;color:var(--texto)}
+.canal-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;background:var(--gris);color:#666}
+.canal-total{font-size:28px;font-weight:900;color:var(--negro);margin-bottom:4px}
+.canal-divider{height:1px;background:#F3F4F6;margin:12px 0}
+.pedido-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;border-bottom:1px solid #F9F9F9}
+.pedido-item:last-child{border-bottom:none}
+.pedido-left{flex:1}
+.pedido-cliente{font-weight:600;color:var(--texto)}
+.pedido-estado{font-size:11px;color:#aaa;margin-top:1px}
+.pedido-monto{font-weight:800;color:var(--verde)}
 
-/* TOAST */
-.toast{
-  position:fixed;bottom:calc(80px + var(--safe-bottom) + 12px);
-  left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--negro);color:white;
-  padding:13px 24px;border-radius:24px;
-  font-size:14px;font-weight:700;
-  transition:all 0.3s;z-index:999;
-  white-space:nowrap;opacity:0;pointer-events:none;
-}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.toast.ok{background:var(--verde)}.toast.err{background:var(--rojo)}
+/* STOCK */
+.producto-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.producto-nombre{font-size:16px;font-weight:800;color:var(--negro);margin-bottom:4px}
+.producto-sku{font-size:11px;color:#aaa;margin-bottom:12px}
+.local-titulo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:6px 10px;border-radius:8px;margin:8px 0;display:inline-block}
+.local-palermo{background:#D6EAF8;color:#1A5276}
+.local-laplata{background:#D5F5E3;color:#1E8449}
+.variante-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F3F4F6;font-size:13px}
+.variante-row:last-child{border-bottom:none}
+.variante-attr{font-weight:600;color:var(--texto)}
+.variante-right{display:flex;align-items:center;gap:10px}
+.variante-precio{font-weight:700;color:var(--negro)}
+.badge-stock{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
+.badge-si{background:#D5F5E3;color:#1E8449}
+.badge-no{background:#FADBD8;color:#C0392B}
 
-/* LOADING */
+/* FORM */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:800;color:#666;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.3px}
+.tipo-toggle{display:flex;gap:10px}
+.tipo-btn{flex:1;padding:15px;border:2px solid var(--borde);border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:all 0.2s;background:white}
+.tipo-btn.gasto.active{background:#FEF2F2;border-color:var(--rojo);color:var(--rojo)}
+.tipo-btn.ingreso.active{background:#F0FFF4;border-color:var(--verde);color:var(--verde)}
+.btn-submit{width:100%;padding:18px;background:var(--negro);color:white;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;margin-top:8px}
+.btn-submit:disabled{opacity:0.4}
+
+/* MISC */
+.empty{text-align:center;padding:40px 20px;color:#bbb}
+.empty .e-icon{font-size:48px;margin-bottom:12px}
+.empty p{font-size:15px;font-weight:600}
 .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;color:#bbb}
 .spinner{width:32px;height:32px;border:3px solid #eee;border-top-color:var(--negro);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
 @keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(90px + var(--safe-bottom) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--negro);color:white;padding:13px 24px;border-radius:24px;font-size:14px;font-weight:700;transition:all 0.3s;z-index:999;white-space:nowrap;opacity:0;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.ok{background:var(--verde)}.toast.err{background:var(--rojo)}
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
 <div class="login-screen" id="login-screen">
-  <img src="logo.png" class="login-logo" id="login-logo" alt="Tussy">
+  <img src="logo.png" class="login-logo" alt="Tussy">
   <div class="login-card">
     <div class="login-field">
       <label class="login-label">Usuario</label>
@@ -284,20 +217,36 @@ body{
         </div>
       </div>
 
-
       <!-- VENTAS -->
       <div class="section" id="sec-ventas">
         <div class="mes-row">
-          <select id="v-periodo" class="form-control" style="flex:1">
+          <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
             <option value="hoy">Hoy</option>
-            <option value="mes">Este mes</option>
             <option value="ayer">Ayer</option>
+            <option value="mes">Este mes</option>
+            <option value="custom">Personalizado</option>
           </select>
           <button class="mes-btn" onclick="cargarVentas()">Ver</button>
+        </div>
+        <div id="custom-fechas" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
+          <input type="date" id="v-desde" class="form-control">
+          <input type="date" id="v-hasta" class="form-control">
         </div>
         <div id="ventas-content">
           <div class="loading"><div class="spinner"></div><p>Cargando...</p></div>
         </div>
+      </div>
+
+      <!-- STOCK -->
+      <div class="section" id="sec-stock">
+        <div class="card">
+          <div class="card-title">Buscar producto</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="stock-q" class="form-control" placeholder="Nombre o SKU..." style="flex:1">
+            <button class="mes-btn" onclick="buscarStock()">Buscar</button>
+          </div>
+        </div>
+        <div id="stock-content"></div>
       </div>
 
       <!-- CARGAR -->
@@ -326,9 +275,7 @@ body{
           <div class="form-group">
             <label class="form-label">Medio de pago</label>
             <select id="f-medio" class="form-control">
-              <option>Efectivo</option>
-              <option>Transferencia</option>
-              <option>Cheque</option>
+              <option>Efectivo</option><option>Transferencia</option><option>Cheque</option>
             </select>
           </div>
           <div class="form-group">
@@ -354,6 +301,9 @@ body{
     <button class="bottom-btn" id="nav-ventas" onclick="showSection('ventas')">
       <span class="icon">🛍️</span>Ventas
     </button>
+    <button class="bottom-btn" id="nav-stock" onclick="showSection('stock')">
+      <span class="icon">📦</span>Stock
+    </button>
     <button class="bottom-btn" id="nav-cargar" onclick="showSection('cargar')">
       <span class="icon">➕</span>Cargar
     </button>
@@ -363,10 +313,8 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-// ══ CONFIGURACIÓN ══
-// Pegá acá el link de tu Apps Script Web App
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZ7TsLOK8Y847_EoZgh61pmL5x7rHSgX-EYmVf5vyT8bZHu5If-ecXCCziiC2RH4FDdQ/exec";
-const PIN_ADMIN  = "1234"; // ← cambialo
+const APPS_SCRIPT_URL = "/api/proxy";
+
 // ══ ESTADO ══
 let rolActual = "";
 let nombreActual = "";
@@ -378,48 +326,94 @@ let chartIngreso = null;
 
 // ══ INIT ══
 document.addEventListener("DOMContentLoaded", function() {
-  // Auto-login si hay credenciales guardadas
-  const recuerda = localStorage.getItem("tussy_remember");
-  if (recuerda === "1") {
-    const savedUser = localStorage.getItem("tussy_user");
-    const savedPass = localStorage.getItem("tussy_pass");
-    if (savedUser && savedPass) {
-      document.getElementById("login-user").value = savedUser;
-      document.getElementById("login-pass").value = savedPass;
-      document.getElementById("login-remember").checked = true;
-      hacerLogin();
-      return;
-    }
-  }
-  // Enter key en login
   document.getElementById("login-pass").addEventListener("keydown", e => {
     if (e.key === "Enter") hacerLogin();
   });
   document.getElementById("login-user").addEventListener("keydown", e => {
     if (e.key === "Enter") document.getElementById("login-pass").focus();
   });
+  document.getElementById("stock-q").addEventListener("keydown", e => {
+    if (e.key === "Enter") buscarStock();
+  });
+
+  // Auto-login si hay credenciales guardadas
+  const recuerda = localStorage.getItem("tussy_remember");
+  if (recuerda === "1") {
+    const u = localStorage.getItem("tussy_user");
+    const p = localStorage.getItem("tussy_pass");
+    if (u && p) {
+      document.getElementById("login-user").value = u;
+      document.getElementById("login-pass").value = p;
+      document.getElementById("login-remember").checked = true;
+      hacerLogin();
+    }
+  }
 });
+
+// ══ LOGIN ══
+async function hacerLogin() {
+  const user = document.getElementById("login-user").value.trim().toLowerCase();
+  const pass = document.getElementById("login-pass").value.trim();
+  const recordar = document.getElementById("login-remember").checked;
+  const btn = document.getElementById("login-btn");
+  const err = document.getElementById("login-error");
+
+  if (!user || !pass) { err.textContent = "Completá usuario y contraseña"; return; }
+
+  btn.disabled = true;
+  btn.textContent = "Ingresando...";
+  err.textContent = "";
+
+  try {
+    const res = await fetch("/api/auth?usuario=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass));
+    const data = await res.json();
+    if (data.ok) {
+      if (recordar) {
+        localStorage.setItem("tussy_user", user);
+        localStorage.setItem("tussy_pass", pass);
+        localStorage.setItem("tussy_remember", "1");
+      } else {
+        localStorage.removeItem("tussy_user");
+        localStorage.removeItem("tussy_pass");
+        localStorage.removeItem("tussy_remember");
+      }
+      entrarApp(data.rol, data.nombre);
+    } else {
+      err.textContent = data.error || "Usuario o contraseña incorrectos";
+      btn.disabled = false;
+      btn.textContent = "Ingresar";
+    }
+  } catch(e) {
+    err.textContent = "Error de conexión. Intentá de nuevo.";
+    btn.disabled = false;
+    btn.textContent = "Ingresar";
+  }
+}
+
 // ══ APP ══
 function entrarApp(rol, nombre) {
   rolActual = rol;
   nombreActual = nombre || "";
   document.getElementById("login-screen").style.display = "none";
-  const app = document.getElementById("app");
-  app.style.display = "flex";
+  document.getElementById("app").style.display = "flex";
 
   const badge = document.getElementById("rol-badge");
   badge.textContent = rol === "admin" ? "Admin" : rol === "socio" ? "Socio" : nombreActual;
   badge.className = "rol-badge " + rol;
 
-  // Socios y encargados no pueden cargar
-  if (rol === "socio" || rol === "encargado") {
-    document.getElementById("nav-cargar").disabled = true;
-  }
-  // Encargados solo ven stock
+  // Encargados: solo stock
   if (rol === "encargado") {
     document.getElementById("nav-resumen").style.display = "none";
     document.getElementById("nav-ventas").style.display = "none";
-    setTimeout(() => showSectionDirect("stock"), 100);
+    document.getElementById("nav-cargar").style.display = "none";
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById("sec-stock").classList.add("active");
+    document.getElementById("nav-stock").classList.add("active");
+  }
+
+  // Socios: no pueden cargar
+  if (rol === "socio") {
+    document.getElementById("nav-cargar").disabled = true;
   }
 
   const hoy = new Date();
@@ -449,42 +443,43 @@ function logout() {
   rolActual = ""; nombreActual = "";
   document.getElementById("login-screen").style.display = "flex";
   document.getElementById("app").style.display = "none";
+  // Reset nav
   document.getElementById("nav-resumen").style.display = "";
   document.getElementById("nav-ventas").style.display = "";
+  document.getElementById("nav-cargar").style.display = "";
   document.getElementById("nav-cargar").disabled = false;
+  document.querySelectorAll(".bottom-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("nav-resumen").classList.add("active");
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.getElementById("sec-resumen").classList.add("active");
+  // Reset login form
   document.getElementById("login-pass").value = "";
   document.getElementById("login-error").textContent = "";
   document.getElementById("login-btn").disabled = false;
   document.getElementById("login-btn").textContent = "Ingresar";
 }
 
-function showSectionDirect(id) {
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  document.querySelectorAll(".bottom-btn").forEach(b => b.classList.remove("active"));
-  document.getElementById("sec-" + id).classList.add("active");
-  const navBtn = document.getElementById("nav-" + id);
-  if (navBtn) navBtn.classList.add("active");
-}
-
-// ══ NAVEGACIÓN ══
+// ══ NAV ══
 function showSection(id) {
-  if (id === "cargar" && rolActual === "socio") return;
+  if (id === "cargar" && (rolActual === "socio" || rolActual === "encargado")) return;
+  if ((id === "resumen" || id === "ventas") && rolActual === "encargado") return;
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.querySelectorAll(".bottom-btn").forEach(b => b.classList.remove("active"));
   document.getElementById("sec-" + id).classList.add("active");
   document.getElementById("nav-" + id).classList.add("active");
+  if (id === "ventas") cargarVentas();
+  if (id === "stock") document.getElementById("stock-q").focus();
 }
 
-// ══ LLAMADA A APPS SCRIPT ══
+// ══ APPS SCRIPT ══
 async function callScript(action, params, callback) {
   try {
     const url = APPS_SCRIPT_URL + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
-    const res = await fetch(url);
-    const data = await res.json();
-    callback(data);
+    const res = await fetch(url, { redirect: "follow" });
+    const text = await res.text();
+    try { callback(JSON.parse(text)); } catch(e) { console.error("Parse error", text); }
   } catch (err) {
-    showToast("Error de conexión", "err");
-    console.error(err);
+    console.error("Script error:", err);
   }
 }
 
@@ -499,9 +494,7 @@ function cargarDashboard() {
   callScript("getDashboard", { mes, anio }, data => mostrarDashboard(data));
 }
 
-function fmt(n) {
-  return "$" + Math.round(n).toLocaleString("es-AR");
-}
+function fmt(n) { return "$" + Math.round(n).toLocaleString("es-AR"); }
 function deltaHtml(actual, ant) {
   if (!ant || ant === 0) return "";
   const d = ((actual - ant) / ant * 100).toFixed(1);
@@ -512,93 +505,42 @@ function deltaHtml(actual, ant) {
 function mostrarDashboard(data) {
   const netoClass = data.neto >= 0 ? "pos" : "neg";
   let html = "";
-
   html += `<div class="saldo-card">
     <div class="saldo-label">💵 Saldo acumulado en caja</div>
-    <div class="saldo-value ${data.saldoActual < 0 ? 'saldo-neg' : ''}">${fmt(data.saldoActual)}</div>
+    <div class="saldo-value ${data.saldoActual < 0 ? 'saldo-neg' : ''}">${fmt(data.saldoActual || 0)}</div>
   </div>`;
-
   html += `<div class="stats">
-    <div class="stat">
-      <div class="stat-label">Gastos</div>
-      <div class="stat-value gasto">${fmt(data.totalGasto)}</div>
-      ${deltaHtml(data.totalGasto, data.totalGastoAnt)}
-    </div>
-    <div class="stat">
-      <div class="stat-label">Ingresos</div>
-      <div class="stat-value ingreso">${fmt(data.totalIngreso)}</div>
-      ${deltaHtml(data.totalIngreso, data.totalIngresoAnt)}
-    </div>
-    <div class="stat full">
-      <div class="stat-label">Resultado neto</div>
-      <div class="stat-value ${netoClass}">${fmt(data.neto)}</div>
-      ${deltaHtml(data.neto, data.netoAnt)}
-    </div>
+    <div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">${fmt(data.totalGasto)}</div>${deltaHtml(data.totalGasto, data.totalGastoAnt)}</div>
+    <div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">${fmt(data.totalIngreso)}</div>${deltaHtml(data.totalIngreso, data.totalIngresoAnt)}</div>
+    <div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value ${netoClass}">${fmt(data.neto)}</div>${deltaHtml(data.neto, data.netoAnt)}</div>
   </div>`;
 
-  // Gastos por categoría
   const gEntries = Object.entries(data.porCatGasto || {}).sort((a,b) => b[1]-a[1]).slice(0,8);
   if (gEntries.length > 0) {
-    html += `<div class="card">
-      <div class="card-title">📤 Gastos por categoría</div>
-      <div class="chart-wrap"><canvas id="cg"></canvas></div>
-      <ul class="cat-list">`;
+    html += `<div class="card"><div class="card-title">📤 Gastos por categoría</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">`;
     const maxG = gEntries[0][1];
     gEntries.forEach(([cat, monto]) => {
       const pct = (monto / data.totalGasto * 100).toFixed(1);
-      const w   = Math.round(monto / maxG * 100);
-      html += `<li class="cat-item">
-        <div class="cat-row">
-          <span class="cat-name">${cat}</span>
-          <div class="cat-right">
-            <span class="cat-pct">${pct}%</span>
-            <span class="cat-monto gasto">${fmt(monto)}</span>
-          </div>
-        </div>
-        <div class="bar-wrap"><div class="bar" style="width:${w}%;background:#E74C3C"></div></div>
-      </li>`;
+      html += `<li class="cat-item"><div class="cat-row"><span class="cat-name">${cat}</span><div class="cat-right"><span class="cat-pct">${pct}%</span><span class="cat-monto gasto">${fmt(monto)}</span></div></div><div class="bar-wrap"><div class="bar" style="width:${Math.round(monto/maxG*100)}%;background:#E74C3C"></div></div></li>`;
     });
     html += `</ul></div>`;
   }
 
-  // Ingresos por categoría
   const iEntries = Object.entries(data.porCatIngreso || {}).sort((a,b) => b[1]-a[1]).slice(0,8);
   if (iEntries.length > 0) {
-    html += `<div class="card">
-      <div class="card-title">📥 Ingresos por categoría</div>
-      <div class="chart-wrap"><canvas id="ci"></canvas></div>
-      <ul class="cat-list">`;
+    html += `<div class="card"><div class="card-title">📥 Ingresos por categoría</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">`;
     const maxI = iEntries[0][1];
     iEntries.forEach(([cat, monto]) => {
       const pct = (monto / data.totalIngreso * 100).toFixed(1);
-      const w   = Math.round(monto / maxI * 100);
-      html += `<li class="cat-item">
-        <div class="cat-row">
-          <span class="cat-name">${cat}</span>
-          <div class="cat-right">
-            <span class="cat-pct">${pct}%</span>
-            <span class="cat-monto ingreso">${fmt(monto)}</span>
-          </div>
-        </div>
-        <div class="bar-wrap"><div class="bar" style="width:${w}%;background:#27AE60"></div></div>
-      </li>`;
+      html += `<li class="cat-item"><div class="cat-row"><span class="cat-name">${cat}</span><div class="cat-right"><span class="cat-pct">${pct}%</span><span class="cat-monto ingreso">${fmt(monto)}</span></div></div><div class="bar-wrap"><div class="bar" style="width:${Math.round(monto/maxI*100)}%;background:#27AE60"></div></div></li>`;
     });
     html += `</ul></div>`;
   }
 
-  // Transacciones de hoy
   if (data.txHoy && data.txHoy.length > 0) {
-    html += `<div class="card">
-      <div class="card-title">🕐 Movimientos de hoy</div>`;
+    html += `<div class="card"><div class="card-title">🕐 Movimientos de hoy</div>`;
     data.txHoy.forEach(tx => {
-      const color = tx.monto < 0 ? "gasto" : "ingreso";
-      html += `<div class="tx-item">
-        <div class="tx-left">
-          <div class="tx-desc">${tx.desc}</div>
-          <div class="tx-cat">${tx.cat}</div>
-        </div>
-        <div class="tx-monto ${color}">${fmt(Math.abs(tx.monto))}</div>
-      </div>`;
+      html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${tx.desc}</div><div class="tx-cat">${tx.cat}</div></div><div class="tx-monto ${tx.monto < 0 ? 'gasto' : 'ingreso'}">${fmt(Math.abs(tx.monto))}</div></div>`;
     });
     html += `</div>`;
   }
@@ -609,88 +551,53 @@ function mostrarDashboard(data) {
 
   document.getElementById("dashboard-content").innerHTML = html;
 
-  // Gráficos
   setTimeout(() => {
-    const COLORS_G = ["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
-    const COLORS_I = ["#27AE60","#1E8449","#2ECC71","#16A085","#1ABC9C","#3498DB","#2980B9","#1A5276"];
+    const CG = ["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
+    const CI = ["#27AE60","#1E8449","#2ECC71","#16A085","#1ABC9C","#3498DB","#2980B9","#1A5276"];
     if (gEntries.length > 0) {
       const cg = document.getElementById("cg");
-      if (cg) chartGasto = new Chart(cg, {
-        type:"doughnut",
-        data:{ labels: gEntries.map(e=>e[0]), datasets:[{ data: gEntries.map(e=>e[1]), backgroundColor: COLORS_G, borderWidth:2, borderColor:"#fff" }] },
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } }
-      });
+      if (cg) chartGasto = new Chart(cg, { type:"doughnut", data:{ labels: gEntries.map(e=>e[0]), datasets:[{ data: gEntries.map(e=>e[1]), backgroundColor: CG, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
     }
     if (iEntries.length > 0) {
       const ci = document.getElementById("ci");
-      if (ci) chartIngreso = new Chart(ci, {
-        type:"doughnut",
-        data:{ labels: iEntries.map(e=>e[0]), datasets:[{ data: iEntries.map(e=>e[1]), backgroundColor: COLORS_I, borderWidth:2, borderColor:"#fff" }] },
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } }
-      });
+      if (ci) chartIngreso = new Chart(ci, { type:"doughnut", data:{ labels: iEntries.map(e=>e[0]), datasets:[{ data: iEntries.map(e=>e[1]), backgroundColor: CI, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
     }
   }, 100);
 }
 
-// ══ FORM ══
-function setTipo(tipo) {
-  tipoActual = tipo;
-  document.getElementById("btn-gasto").classList.toggle("active", tipo === "Gasto");
-  document.getElementById("btn-ingreso").classList.toggle("active", tipo === "Ingreso");
-  updateCatSelect();
-}
-function updateCatSelect() {
-  const sel  = document.getElementById("f-cat");
-  const cats = tipoActual === "Gasto" ? catsGasto : catsIngreso;
-  if (cats && cats.length > 0)
-    sel.innerHTML = cats.map(c => `<option>${c}</option>`).join("");
-}
-
-async function guardarTransaccion() {
-  const fecha = document.getElementById("f-fecha").value;
-  const desc  = document.getElementById("f-desc").value.trim();
-  const cat   = document.getElementById("f-cat").value;
-  const medio = document.getElementById("f-medio").value;
-  const monto = document.getElementById("f-monto").value;
-  const notas = document.getElementById("f-notas").value.trim();
-
-  if (!fecha || !desc || !monto || parseFloat(monto) <= 0) {
-    showToast("Completá fecha, descripción y monto", "err"); return;
-  }
-
-  const btn = document.getElementById("btn-guardar");
-  btn.disabled = true; btn.textContent = "Guardando...";
-
-  callScript("agregarTransaccion",
-    { fecha, descripcion:desc, categoria:cat, tipo:tipoActual, medio, monto, notas },
-    () => {
-      showToast("✅ Guardado correctamente", "ok");
-      btn.disabled = false; btn.textContent = "Guardar transacción";
-      document.getElementById("f-desc").value = "";
-      document.getElementById("f-monto").value = "";
-      document.getElementById("f-notas").value = "";
-    }
-  );
-}
-
-
 // ══ VENTAS ══
+function toggleFechaCustom() {
+  const v = document.getElementById("v-periodo").value;
+  document.getElementById("custom-fechas").style.display = v === "custom" ? "flex" : "none";
+}
+
 async function cargarVentas() {
   const periodo = document.getElementById("v-periodo").value;
   document.getElementById("ventas-content").innerHTML =
     '<div class="loading"><div class="spinner"></div><p>Cargando ventas...</p></div>';
 
-  const hoy = new Date();
+  const ahora = new Date();
+  const offsetARG = -3 * 60;
+  const argTime = new Date(ahora.getTime() + (offsetARG - ahora.getTimezoneOffset()) * 60000);
+  const pad = n => String(n).padStart(2, "0");
+  const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
   let desde, hasta;
+  hasta = fmtDate(argTime);
 
   if (periodo === "hoy") {
-    desde = hasta = hoy.toISOString().split("T")[0];
+    desde = fmtDate(argTime);
   } else if (periodo === "ayer") {
-    const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
-    desde = hasta = ayer.toISOString().split("T")[0];
+    const ayer = new Date(argTime);
+    ayer.setDate(ayer.getDate() - 1);
+    desde = fmtDate(ayer);
+    hasta = fmtDate(ayer);
+  } else if (periodo === "custom") {
+    desde = document.getElementById("v-desde").value;
+    hasta = document.getElementById("v-hasta").value;
+    if (!desde || !hasta) { showToast("Seleccioná las fechas", "err"); return; }
   } else {
-    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split("T")[0];
-    hasta = hoy.toISOString().split("T")[0];
+    desde = `${argTime.getFullYear()}-${pad(argTime.getMonth()+1)}-01`;
   }
 
   try {
@@ -704,51 +611,28 @@ async function cargarVentas() {
 }
 
 function mostrarVentas(data, periodo) {
-  const periodoTexto = periodo === "hoy" ? "hoy" : periodo === "ayer" ? "ayer" : "este mes";
+  const textos = { hoy:"hoy", ayer:"ayer", mes:"este mes", custom:"el período" };
+  const periodoTexto = textos[periodo] || "el período";
   let html = "";
 
-  // Total consolidado
-  html += `<div class="consolidado">
-    <div class="consolidado-label">💰 Total vendido ${periodoTexto}</div>
-    <div class="consolidado-value">${fmt(data.total || 0)}</div>
-  </div>`;
+  html += `<div class="consolidado"><div class="consolidado-label">💰 Total vendido ${periodoTexto}</div><div class="consolidado-value">${fmt(data.total || 0)}</div></div>`;
 
-  // Grid resumen canales
-  const canales = ["tiendanube", "palermo", "laplata"];
-  const nombres = { tiendanube: "Tiendanube", palermo: "Palermo", laplata: "La Plata" };
+  const canales = ["tiendanube","palermo","laplata"];
+  const nombres = { tiendanube:"Tiendanube", palermo:"Palermo", laplata:"La Plata" };
   html += `<div class="canales-grid">`;
   canales.forEach(c => {
-    if (data[c]) {
-      html += `<div class="canal-mini">
-        <div class="canal-mini-nombre">${nombres[c]}</div>
-        <div class="canal-mini-total">${fmt(data[c].total || 0)}</div>
-        <div class="canal-mini-cant">${data[c].cantidad || 0} pedidos</div>
-      </div>`;
-    }
+    if (data[c]) html += `<div class="canal-mini"><div class="canal-mini-nombre">${nombres[c]}</div><div class="canal-mini-total">${fmt(data[c].total || 0)}</div><div class="canal-mini-cant">${data[c].cantidad || 0} pedidos</div></div>`;
   });
   html += `</div>`;
 
-  // Detalle por canal
   canales.forEach(c => {
     if (!data[c]) return;
     const canal = data[c];
-    html += `<div class="canal-card">
-      <div class="canal-header">
-        <span class="canal-nombre">${canal.nombre}</span>
-        <span class="canal-badge">${canal.cantidad} pedidos</span>
-      </div>
-      <div class="canal-total">${fmt(canal.total || 0)}</div>`;
-
+    html += `<div class="canal-card"><div class="canal-header"><span class="canal-nombre">${canal.nombre}</span><span class="canal-badge">${canal.cantidad} pedidos</span></div><div class="canal-total">${fmt(canal.total || 0)}</div>`;
     if (canal.pedidos && canal.pedidos.length > 0) {
       html += `<div class="canal-divider"></div>`;
       canal.pedidos.forEach(p => {
-        html += `<div class="pedido-item">
-          <div class="pedido-left">
-            <div class="pedido-cliente">${p.cliente || "Cliente"}</div>
-            <div class="pedido-estado">#${p.numero} · ${p.estado}</div>
-          </div>
-          <div class="pedido-monto">${fmt(p.total)}</div>
-        </div>`;
+        html += `<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">${p.cliente || "Cliente"}</div><div class="pedido-estado">#${p.numero} · ${p.estado}</div></div><div class="pedido-monto">${fmt(p.total)}</div></div>`;
       });
     } else {
       html += `<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas ${periodoTexto}</div>`;
@@ -758,45 +642,84 @@ function mostrarVentas(data, periodo) {
 
   document.getElementById("ventas-content").innerHTML = html;
 }
-async function hacerLogin() {
-  const user = document.getElementById("login-user").value.trim().toLowerCase();
-  const pass = document.getElementById("login-pass").value.trim();
-  const recordar = document.getElementById("login-remember").checked;
-  const btn = document.getElementById("login-btn");
-  const err = document.getElementById("login-error");
 
-  if (!user || !pass) { err.textContent = "Completá usuario y contraseña"; return; }
-
-  btn.disabled = true;
-  btn.textContent = "Ingresando...";
-  err.textContent = "";
-
+// ══ STOCK ══
+async function buscarStock() {
+  const q = document.getElementById("stock-q").value.trim();
+  if (q.length < 2) { showToast("Ingresá al menos 2 caracteres", "err"); return; }
+  document.getElementById("stock-content").innerHTML =
+    '<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
   try {
-    const url = "/api/auth?usuario=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass);
-    const res = await fetch(url);
+    const res = await fetch(`/api/stock?q=${encodeURIComponent(q)}`);
     const data = await res.json();
-    if (data.ok) {
-      if (recordar) {
-        localStorage.setItem("tussy_user", user);
-        localStorage.setItem("tussy_pass", pass);
-        localStorage.setItem("tussy_remember", "1");
-      } else {
-        localStorage.removeItem("tussy_user");
-        localStorage.removeItem("tussy_pass");
-        localStorage.removeItem("tussy_remember");
-      }
-      entrarApp(data.rol, data.nombre);
-    } else {
-      err.textContent = data.error || "Usuario o contraseña incorrectos";
-      btn.disabled = false;
-      btn.textContent = "Ingresar";
-    }
-  } catch(e) {
-    err.textContent = "Error de conexion. Intentá de nuevo.";
-    btn.disabled = false;
-    btn.textContent = "Ingresar";
+    mostrarStock(data);
+  } catch(err) {
+    document.getElementById("stock-content").innerHTML =
+      '<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>';
   }
 }
+
+function mostrarStock(data) {
+  if (!data.resultados || data.resultados.length === 0) {
+    document.getElementById("stock-content").innerHTML =
+      `<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "${data.query}"</p></div>`;
+    return;
+  }
+  let html = "";
+  data.resultados.forEach(p => {
+    html += `<div class="producto-card"><div class="producto-nombre">${p.nombre}</div><div class="producto-sku">${p.sku ? "SKU: " + p.sku : ""}</div>`;
+    const locales = [
+      { key:"palermo", label:"Local Palermo", clase:"local-palermo" },
+      { key:"laplata", label:"Local La Plata", clase:"local-laplata" }
+    ];
+    locales.forEach(({ key, label, clase }) => {
+      if (!p.locales[key]) return;
+      html += `<div class="local-titulo ${clase}">${label}</div>`;
+      p.locales[key].forEach(v => {
+        html += `<div class="variante-row"><span class="variante-attr">${v.atributos}</span><div class="variante-right"><span class="variante-precio">$${Math.round(v.precio).toLocaleString("es-AR")}</span><span class="badge-stock ${v.tiene_stock ? 'badge-si' : 'badge-no'}">${v.tiene_stock ? "✓ Stock" : "Sin stock"}</span></div></div>`;
+      });
+      html += `<div style="margin-bottom:8px"></div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById("stock-content").innerHTML = html;
+}
+
+// ══ FORM ══
+function setTipo(tipo) {
+  tipoActual = tipo;
+  document.getElementById("btn-gasto").classList.toggle("active", tipo === "Gasto");
+  document.getElementById("btn-ingreso").classList.toggle("active", tipo === "Ingreso");
+  updateCatSelect();
+}
+function updateCatSelect() {
+  const sel = document.getElementById("f-cat");
+  const cats = tipoActual === "Gasto" ? catsGasto : catsIngreso;
+  if (cats && cats.length > 0)
+    sel.innerHTML = cats.map(c => `<option>${c}</option>`).join("");
+}
+
+async function guardarTransaccion() {
+  const fecha = document.getElementById("f-fecha").value;
+  const desc  = document.getElementById("f-desc").value.trim();
+  const cat   = document.getElementById("f-cat").value;
+  const medio = document.getElementById("f-medio").value;
+  const monto = document.getElementById("f-monto").value;
+  const notas = document.getElementById("f-notas").value.trim();
+  if (!fecha || !desc || !monto || parseFloat(monto) <= 0) {
+    showToast("Completá fecha, descripción y monto", "err"); return;
+  }
+  const btn = document.getElementById("btn-guardar");
+  btn.disabled = true; btn.textContent = "Guardando...";
+  callScript("agregarTransaccion", { fecha, descripcion:desc, categoria:cat, tipo:tipoActual, medio, monto, notas }, () => {
+    showToast("✅ Guardado correctamente", "ok");
+    btn.disabled = false; btn.textContent = "Guardar transacción";
+    document.getElementById("f-desc").value = "";
+    document.getElementById("f-monto").value = "";
+    document.getElementById("f-notas").value = "";
+  });
+}
+
 // ══ TOAST ══
 function showToast(msg, tipo) {
   const t = document.getElementById("toast");
@@ -807,4 +730,3 @@ function showToast(msg, tipo) {
 </script>
 </body>
 </html>
-<!-- VENTAS PATCH - will be integrated below -->
