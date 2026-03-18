@@ -13,31 +13,33 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --negro:#1A1A2E;--verde:#1E8449;--rojo:#C0392B;
-  --azul:#1A5276;--amar:#D4AC0D;--gris:#F0F2F5;
-  --blanco:#fff;--texto:#2C3E50;--borde:#E5E7EB;
+  --negro:#1A1A2E;--verde:#1E8449;--rojo:#C0392B;--azul:#1A5276;
+  --gris:#F0F2F5;--texto:#2C3E50;--borde:#E5E7EB;
   --safe-top:env(safe-area-inset-top);--safe-bottom:env(safe-area-inset-bottom);
 }
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gris);color:var(--texto);display:flex;flex-direction:column}
+
+/* LOGIN */
 .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--negro);padding:32px;padding-top:calc(32px + var(--safe-top))}
 .login-logo{width:200px;margin-bottom:32px}
 .login-card{background:rgba(255,255,255,0.06);border-radius:20px;padding:28px;width:100%;max-width:340px}
 .login-field{margin-bottom:16px}
 .login-label{color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
-.login-input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:16px;outline:none;transition:border-color 0.2s}
-.login-input:focus{border-color:rgba(255,255,255,0.5)}
+.login-input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:16px;outline:none}
 .login-input::placeholder{color:rgba(255,255,255,0.3)}
 .login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer}
-.login-remember input{width:18px;height:18px;cursor:pointer;accent-color:white}
+.login-remember input{width:18px;height:18px;accent-color:white}
 .login-remember span{color:rgba(255,255,255,0.6);font-size:13px}
 .login-btn{width:100%;padding:16px;background:white;color:var(--negro);border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer}
 .login-btn:disabled{opacity:0.5}
 .login-error{color:#E74C3C;font-size:13px;margin-top:12px;min-height:20px;font-weight:600;text-align:center}
+
+/* APP */
 .app{display:none;flex-direction:column;height:100%}
 .header{background:var(--negro);color:white;padding:12px 20px;padding-top:calc(12px + var(--safe-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .header-left{display:flex;align-items:center;gap:10px}
-.header-back{background:none;border:none;color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;padding:4px;display:none;line-height:1}
+.header-back{background:none;border:none;color:rgba(255,255,255,0.7);font-size:24px;cursor:pointer;padding:2px 6px;display:none;line-height:1}
 .header-title{color:white;font-size:15px;font-weight:800;display:none}
 .header-right{display:flex;align-items:center;gap:10px}
 .rol-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700}
@@ -45,10 +47,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .rol-badge.socio{background:rgba(255,255,255,0.15);color:white}
 .rol-badge.encargado{background:#27AE60;color:white}
 .rol-badge.produccion{background:#8E44AD;color:white}
-.logout-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:22px;cursor:pointer;padding:4px;line-height:1}
+.logout-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:22px;cursor:pointer;padding:4px}
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .content{padding:16px;max-width:480px;margin:0 auto;padding-bottom:24px}
 .section{display:none}.section.active{display:block}
+
+/* HOME */
 .home-header{background:linear-gradient(135deg,var(--negro),#2C3E6E);padding:24px 20px 28px;color:white;margin:-16px -16px 20px;border-radius:0 0 24px 24px}
 .home-saludo{font-size:13px;opacity:0.6;margin-bottom:4px}
 .home-nombre{font-size:24px;font-weight:900}
@@ -63,21 +67,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .home-card-title{font-size:15px;font-weight:800;color:var(--negro);margin-bottom:2px}
 .home-card-sub{font-size:11px;color:#aaa;font-weight:600}
 .home-card-arrow{font-size:18px;color:#ddd;margin-left:auto}
+
+/* CARDS */
 .card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .card-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#aaa;margin-bottom:16px}
 .mes-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
-.mes-row select,.form-control{width:100%;padding:13px 14px;border:1.5px solid var(--borde);border-radius:12px;font-size:15px;background:white;-webkit-appearance:none;color:var(--texto);font-weight:600;transition:border-color 0.2s}
+.mes-row select,.form-control{width:100%;padding:13px 14px;border:1.5px solid var(--borde);border-radius:12px;font-size:15px;background:white;-webkit-appearance:none;color:var(--texto);font-weight:600}
 .form-control:focus{outline:none;border-color:var(--negro)}
 .mes-btn{padding:12px 18px;background:var(--negro);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
-.saldo-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);color:white;border-radius:16px;padding:22px 20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(26,26,46,0.3)}
+.search-box{width:100%;padding:12px 14px;border:1.5px solid var(--borde);border-radius:12px;font-size:15px;background:white;color:var(--texto);margin-bottom:12px;outline:none}
+.search-box:focus{border-color:var(--negro)}
+
+/* SALDO */
+.saldo-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);color:white;border-radius:16px;padding:22px 20px;margin-bottom:14px;text-align:center}
 .saldo-label{font-size:12px;opacity:0.55;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .saldo-value{font-size:36px;font-weight:900;letter-spacing:-1px}
 .saldo-neg{color:#E74C3C}
+
+/* STATS */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat{background:white;border-radius:14px;padding:16px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .stat.full{grid-column:1/-1}
-.stat-label{font-size:11px;color:#aaa;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:5px}
-.stat-value{font-size:24px;font-weight:900;letter-spacing:-0.5px}
+.stat-label{font-size:11px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:5px}
+.stat-value{font-size:24px;font-weight:900}
 .stat-delta{font-size:11px;margin-top:4px;color:#aaa;font-weight:600}
 .stat-delta.up{color:var(--verde)}.stat-delta.down{color:var(--rojo)}
 .gasto{color:var(--rojo)}.ingreso{color:var(--verde)}.pos{color:var(--verde)}.neg{color:var(--rojo)}
@@ -91,14 +103,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .cat-pct{font-size:11px;color:#aaa;font-weight:600}
 .cat-monto{font-size:15px;font-weight:800}
 .bar-wrap{height:5px;background:#F0F0F0;border-radius:3px}
-.bar{height:5px;border-radius:3px;transition:width 0.6s ease}
-.tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F3F4F6;cursor:pointer}
+.bar{height:5px;border-radius:3px}
+.tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F3F4F6}
 .tx-item:last-child{border-bottom:none}
 .tx-left{flex:1;min-width:0}
 .tx-desc{font-size:14px;font-weight:700;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tx-cat{font-size:12px;color:#aaa;margin-top:2px}
 .tx-monto{font-size:16px;font-weight:900;margin-left:12px;white-space:nowrap}
-.consolidado{background:linear-gradient(135deg,#1E8449,#27AE60);color:white;border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(30,132,73,0.3)}
+
+/* VENTAS */
+.consolidado{background:linear-gradient(135deg,#1E8449,#27AE60);color:white;border-radius:16px;padding:20px;margin-bottom:14px;text-align:center}
 .consolidado-label{font-size:12px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .consolidado-value{font-size:36px;font-weight:900;letter-spacing:-1px}
 .canales-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
@@ -118,6 +132,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .pedido-cliente{font-weight:600;color:var(--texto)}
 .pedido-estado{font-size:11px;color:#aaa;margin-top:1px}
 .pedido-monto{font-weight:800;color:var(--verde)}
+
+/* STOCK */
 .producto-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .producto-nombre{font-size:16px;font-weight:800;color:var(--negro);margin-bottom:4px}
 .producto-sku{font-size:11px;color:#aaa;margin-bottom:12px}
@@ -132,6 +148,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .badge-stock{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
 .badge-si{background:#D5F5E3;color:#1E8449}
 .badge-no{background:#FADBD8;color:#C0392B}
+
+/* RANKING */
 .ranking-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F3F4F6}
 .ranking-item:last-child{border-bottom:none}
 .ranking-pos{font-size:20px;width:32px;text-align:center}
@@ -140,37 +158,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ranking-detalle{font-size:11px;color:#aaa;margin-top:2px}
 .ranking-cant{font-size:18px;font-weight:900;color:var(--negro);text-align:right}
 .ranking-cant span{font-size:11px;color:#aaa;font-weight:600;display:block}
-.prod-tab-bar{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
-.prod-tab{padding:8px 16px;border:2px solid var(--borde);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:white;color:#aaa;white-space:nowrap;transition:all 0.2s;flex-shrink:0}
+
+/* PRODUCCION */
+.prod-tab{padding:8px 14px;border:2px solid var(--borde);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:white;color:#aaa;white-space:nowrap;transition:all 0.2s;flex-shrink:0}
 .prod-tab.active{background:var(--negro);border-color:var(--negro);color:white}
+.tela-card{background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.tela-card:active{opacity:0.8}
+.tela-card-left{flex:1}
+.tela-card-nombre{font-size:14px;font-weight:700;color:var(--negro)}
+.tela-card-tipo{font-size:11px;color:#aaa;margin-top:2px}
+.tela-card-stock{font-size:18px;font-weight:900}
+.tela-card-stock.bajo{color:var(--rojo)}.tela-card-stock.ok{color:var(--verde)}
 .corte-card{background:white;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);cursor:pointer}
+.corte-card:active{opacity:0.8}
 .corte-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
 .corte-num{font-size:15px;font-weight:800;color:var(--negro)}
 .corte-estado{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
-.estado-espera{background:#FEF9E7;color:#D4AC0D}
+.estado-espera{background:#FEF9E7;color:#B7950B}
 .estado-taller{background:#EBF5FB;color:#1A5276}
 .estado-listo{background:#EAFAF1;color:#1E8449}
+.estado-pendiente{background:#F9EBEA;color:#C0392B}
 .corte-tela{font-size:12px;color:#666;margin-bottom:8px}
 .corte-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .corte-dato{background:#F8F9FA;border-radius:8px;padding:6px 8px;text-align:center}
 .corte-dato-label{font-size:9px;color:#aaa;font-weight:700;text-transform:uppercase}
 .corte-dato-val{font-size:13px;font-weight:800;color:var(--texto)}
-.tela-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F3F4F6}
-.tela-item:last-child{border-bottom:none}
-.tela-nombre{font-size:14px;font-weight:700;color:var(--texto)}
-.tela-tipo{font-size:11px;color:#aaa;margin-top:2px}
-.tela-stock{font-size:16px;font-weight:900}
-.tela-stock.bajo{color:var(--rojo)}.tela-stock.ok{color:var(--verde)}
+.filtros-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filtro-sel{flex:1;min-width:120px;padding:9px 12px;border:1.5px solid var(--borde);border-radius:10px;font-size:13px;background:white;-webkit-appearance:none;color:var(--texto);font-weight:600}
+.mov-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F3F4F6}
+.mov-item:last-child{border-bottom:none}
+.mov-left{flex:1}
+.mov-tipo{font-size:13px;font-weight:700}
+.mov-fecha{font-size:11px;color:#aaa;margin-top:1px}
+.mov-kg{font-size:15px;font-weight:900}
+.taller-card{background:white;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);cursor:pointer}
+.taller-nombre{font-size:15px;font-weight:800;color:var(--negro)}
+.taller-info{font-size:12px;color:#aaa;margin-top:3px}
+.pet-card{background:white;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.pet-prod{font-size:14px;font-weight:700;color:var(--negro);margin-bottom:4px}
+.pet-talles{font-size:12px;color:#666}
+.pet-estado{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;display:inline-block;margin-top:4px}
+
+/* FORM */
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;font-weight:800;color:#666;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.3px}
 .tipo-toggle{display:flex;gap:10px}
-.tipo-btn{flex:1;padding:15px;border:2px solid var(--borde);border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;transition:all 0.2s;background:white}
+.tipo-btn{flex:1;padding:15px;border:2px solid var(--borde);border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;background:white}
 .tipo-btn.gasto.active{background:#FEF2F2;border-color:var(--rojo);color:var(--rojo)}
 .tipo-btn.ingreso.active{background:#F0FFF4;border-color:var(--verde);color:var(--verde)}
 .btn-submit{width:100%;padding:18px;background:var(--negro);color:white;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;margin-top:8px}
 .btn-submit:disabled{opacity:0.4}
-.btn-secondary{width:100%;padding:14px;background:var(--gris);color:var(--texto);border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
-.btn-back{background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block;padding:0}
+
+/* MISC */
 .empty{text-align:center;padding:40px 20px;color:#bbb}
 .empty .e-icon{font-size:48px;margin-bottom:12px}
 .empty p{font-size:15px;font-weight:600}
@@ -180,6 +219,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .toast{position:fixed;bottom:calc(24px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--negro);color:white;padding:13px 24px;border-radius:24px;font-size:14px;font-weight:700;transition:all 0.3s;z-index:999;white-space:nowrap;opacity:0;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .toast.ok{background:var(--verde)}.toast.err{background:var(--rojo)}
+.tabs-row{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
 </style>
 </head>
 <body>
@@ -207,7 +247,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div class="app" id="app">
   <div class="header">
     <div class="header-left">
-      <button class="header-back" id="btn-back" onclick="volverHome()">←</button>
+      <button class="header-back" id="btn-back" onclick="goBack()">←</button>
       <img src="logo.png" id="header-logo" style="height:40px;filter:invert(1)" alt="Tussy">
       <span class="header-title" id="header-title"></span>
     </div>
@@ -216,9 +256,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <button class="logout-btn" onclick="logout()">↩</button>
     </div>
   </div>
-  <div class="scroll-area">
+  <div class="scroll-area" id="scroll-area">
     <div class="content">
 
+      <!-- HOME -->
       <div class="section active" id="sec-home">
         <div class="home-header">
           <div class="home-saludo">Bienvenido,</div>
@@ -228,8 +269,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div class="home-grid" id="home-grid"></div>
       </div>
 
+      <!-- FINANZAS -->
       <div class="section" id="sec-resumen">
-        <div style="display:flex;gap:8px;margin-bottom:16px">
+        <div class="tabs-row">
           <button class="prod-tab active" id="fin-tab-info" onclick="finTab('info')">Informacion</button>
           <button class="prod-tab" id="fin-tab-cargar" onclick="finTab('cargar')">Cargar</button>
         </div>
@@ -257,11 +299,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
               </div>
             </div>
             <div class="form-group"><label class="form-label">Fecha</label><input type="date" id="f-fecha" class="form-control"></div>
-            <div class="form-group"><label class="form-label">Descripcion</label><input type="text" id="f-desc" class="form-control" placeholder="Ej: Tela Juan, Sueldo Maria..."></div>
+            <div class="form-group"><label class="form-label">Descripcion</label><input type="text" id="f-desc" class="form-control" placeholder="Ej: Tela Juan..."></div>
             <div class="form-group"><label class="form-label">Categoria</label><select id="f-cat" class="form-control"></select></div>
             <div class="form-group"><label class="form-label">Medio de pago</label>
-              <select id="f-medio" class="form-control"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select>
-            </div>
+              <select id="f-medio" class="form-control"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select></div>
             <div class="form-group"><label class="form-label">Monto ($)</label><input type="number" id="f-monto" class="form-control" placeholder="0" inputmode="numeric"></div>
             <div class="form-group"><label class="form-label">Notas (opcional)</label><input type="text" id="f-notas" class="form-control" placeholder="Aclaraciones..."></div>
             <button class="btn-submit" id="btn-guardar" onclick="guardarTransaccion()">Guardar transaccion</button>
@@ -269,13 +310,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         </div>
       </div>
 
+      <!-- VENTAS -->
       <div class="section" id="sec-ventas">
         <div class="mes-row">
           <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
-            <option value="hoy">Hoy</option>
-            <option value="ayer">Ayer</option>
-            <option value="mes">Este mes</option>
-            <option value="custom">Personalizado</option>
+            <option value="hoy">Hoy</option><option value="ayer">Ayer</option>
+            <option value="mes">Este mes</option><option value="custom">Personalizado</option>
           </select>
           <button class="mes-btn" onclick="cargarVentas()">Ver</button>
         </div>
@@ -286,6 +326,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="ventas-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
+      <!-- STOCK -->
       <div class="section" id="sec-stock">
         <div class="card">
           <div class="card-title">Buscar producto</div>
@@ -297,10 +338,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="stock-content"></div>
       </div>
 
+      <!-- LOCALES -->
       <div class="section" id="sec-comparacion">
         <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
+      <!-- REPORTES -->
       <div class="section" id="sec-reportes">
         <div class="mes-row">
           <select id="rep-canal" class="form-control" style="flex:1">
@@ -310,8 +353,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         </div>
         <div class="mes-row">
           <select id="rep-periodo" class="form-control" style="flex:1" onchange="toggleRepCustom()">
-            <option value="mes">Este mes</option>
-            <option value="custom">Personalizado</option>
+            <option value="mes">Este mes</option><option value="custom">Personalizado</option>
           </select>
           <button class="mes-btn" onclick="cargarReportes()">Ver</button>
         </div>
@@ -322,26 +364,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="reportes-content"><div class="empty"><div class="e-icon">📊</div><p>Selecciona canal y periodo</p></div></div>
       </div>
 
+      <!-- PRODUCCION -->
       <div class="section" id="sec-produccion">
-        <div class="home-grid" id="prod-home" style="margin-bottom:16px">
-          <button class="home-card" onclick="prodSeccion('telas')">
+        <div class="home-grid" id="prod-home">
+          <button class="home-card" onclick="navigate('telas')">
             <div class="home-icon">🧵</div>
             <div class="home-card-info"><div class="home-card-title">Telas</div><div class="home-card-sub">Stock e ingresos</div></div>
           </button>
-          <button class="home-card" onclick="prodSeccion('cortes')">
+          <button class="home-card" onclick="navigate('cortes')">
             <div class="home-icon">✂️</div>
             <div class="home-card-info"><div class="home-card-title">Cortes</div><div class="home-card-sub">Registro y seguimiento</div></div>
           </button>
-          <button class="home-card" onclick="prodSeccion('talleres')">
+          <button class="home-card" onclick="navigate('talleres')">
             <div class="home-icon">👥</div>
             <div class="home-card-info"><div class="home-card-title">Talleres</div><div class="home-card-sub">Gestion de talleres</div></div>
           </button>
-          <button class="home-card" id="btn-prod-stats" onclick="prodSeccion('estadisticas')">
+          <button class="home-card" id="btn-prod-stats" onclick="navigate('estadisticas')">
             <div class="home-icon">📊</div>
             <div class="home-card-info"><div class="home-card-title">Estadisticas</div><div class="home-card-sub">Prendas y kg cortados</div></div>
           </button>
         </div>
-        <div id="prod-content"></div>
+        <div id="prod-content" style="display:none"></div>
       </div>
 
     </div>
@@ -351,905 +394,884 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 
 <script>
 var APPS_SCRIPT_URL = "/api/proxy";
+var PROD_SCRIPT_URL = "/api/produccion";
 var rolActual = "";
 var nombreActual = "";
-var catsGasto = [];
-var catsIngreso = [];
+var catsGasto = [], catsIngreso = [];
 var tipoActual = "Gasto";
-var chartGasto = null;
-var chartIngreso = null;
+var chartGasto = null, chartIngreso = null;
+// Datos cacheados
+var telasList = [];
+var talleresList = [];
+var cortesNumeros = [];
 var cortesData = [];
-var prodSeccionActual = "";
+// Navegacion stack
+var navStack = [];
 
 document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById("login-pass").addEventListener("keydown", function(e) { if (e.key === "Enter") hacerLogin(); });
-  document.getElementById("login-user").addEventListener("keydown", function(e) { if (e.key === "Enter") document.getElementById("login-pass").focus(); });
-  document.getElementById("stock-q").addEventListener("keydown", function(e) { if (e.key === "Enter") buscarStock(); });
-  var recuerda = localStorage.getItem("tussy_remember");
-  if (recuerda === "1") {
-    var u = localStorage.getItem("tussy_user");
-    var p = localStorage.getItem("tussy_pass");
-    if (u && p) {
-      document.getElementById("login-user").value = u;
-      document.getElementById("login-pass").value = p;
-      document.getElementById("login-remember").checked = true;
-      hacerLogin();
-    }
+  document.getElementById("login-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") hacerLogin(); });
+  document.getElementById("login-user").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("login-pass").focus(); });
+  document.getElementById("stock-q").addEventListener("keydown", function(e){ if(e.key==="Enter") buscarStock(); });
+  var r = localStorage.getItem("tussy_remember");
+  if(r==="1"){
+    var u=localStorage.getItem("tussy_user"), p=localStorage.getItem("tussy_pass");
+    if(u&&p){ document.getElementById("login-user").value=u; document.getElementById("login-pass").value=p; document.getElementById("login-remember").checked=true; hacerLogin(); }
   }
 });
 
+// ══ LOGIN ══
 async function hacerLogin() {
-  var user = document.getElementById("login-user").value.trim().toLowerCase();
-  var pass = document.getElementById("login-pass").value.trim();
-  var recordar = document.getElementById("login-remember").checked;
-  var btn = document.getElementById("login-btn");
-  var err = document.getElementById("login-error");
-  if (!user || !pass) { err.textContent = "Completa usuario y contrasena"; return; }
-  btn.disabled = true; btn.textContent = "Ingresando..."; err.textContent = "";
+  var user=document.getElementById("login-user").value.trim().toLowerCase();
+  var pass=document.getElementById("login-pass").value.trim();
+  var recordar=document.getElementById("login-remember").checked;
+  var btn=document.getElementById("login-btn"), err=document.getElementById("login-error");
+  if(!user||!pass){ err.textContent="Completa usuario y contrasena"; return; }
+  btn.disabled=true; btn.textContent="Ingresando..."; err.textContent="";
   try {
-    var res = await fetch("/api/auth?usuario=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass));
-    var data = await res.json();
-    if (data.ok) {
-      if (recordar) {
-        localStorage.setItem("tussy_user", user);
-        localStorage.setItem("tussy_pass", pass);
-        localStorage.setItem("tussy_remember", "1");
-      } else {
-        localStorage.removeItem("tussy_user");
-        localStorage.removeItem("tussy_pass");
-        localStorage.removeItem("tussy_remember");
-      }
-      entrarApp(data.rol, data.nombre);
+    var res=await fetch("/api/auth?usuario="+encodeURIComponent(user)+"&password="+encodeURIComponent(pass));
+    var data=await res.json();
+    if(data.ok){
+      if(recordar){ localStorage.setItem("tussy_user",user); localStorage.setItem("tussy_pass",pass); localStorage.setItem("tussy_remember","1"); }
+      else{ localStorage.removeItem("tussy_user"); localStorage.removeItem("tussy_pass"); localStorage.removeItem("tussy_remember"); }
+      entrarApp(data.rol,data.nombre);
     } else {
-      err.textContent = data.error || "Usuario o contrasena incorrectos";
-      btn.disabled = false; btn.textContent = "Ingresar";
+      err.textContent=data.error||"Usuario o contrasena incorrectos";
+      btn.disabled=false; btn.textContent="Ingresar";
     }
-  } catch(e) {
-    err.textContent = "Error de conexion. Intenta de nuevo.";
-    btn.disabled = false; btn.textContent = "Ingresar";
-  }
+  } catch(e){ err.textContent="Error de conexion."; btn.disabled=false; btn.textContent="Ingresar"; }
 }
 
+// ══ SECCIONES CONFIG ══
 var SECCIONES = {
-  admin: [
-    { id:"resumen", icon:"📊", title:"Finanzas", sub:"Info y cargar transacciones" },
-    { id:"ventas", icon:"🛍️", title:"Ventas", sub:"Hoy, ayer y este mes" },
-    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle" },
-    { id:"comparacion", icon:"📈", title:"Locales", sub:"Ranking y proyeccion" },
-    { id:"reportes", icon:"🏆", title:"Reportes", sub:"Mejores productos" },
-    { id:"produccion", icon:"✂️", title:"Produccion", sub:"Cortes, telas y talleres" }
+  admin:[
+    {id:"resumen",icon:"📊",title:"Finanzas",sub:"Info y cargar transacciones"},
+    {id:"ventas",icon:"🛍️",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
+    {id:"comparacion",icon:"📈",title:"Locales",sub:"Ranking y proyeccion"},
+    {id:"reportes",icon:"🏆",title:"Reportes",sub:"Mejores productos"},
+    {id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres"}
   ],
-  socio: [
-    { id:"resumen", icon:"📊", title:"Finanzas", sub:"Info del mes" },
-    { id:"ventas", icon:"🛍️", title:"Ventas", sub:"Hoy, ayer y este mes" },
-    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle" },
-    { id:"comparacion", icon:"📈", title:"Locales", sub:"Ranking y proyeccion" },
-    { id:"reportes", icon:"🏆", title:"Reportes", sub:"Mejores productos" },
-    { id:"produccion", icon:"✂️", title:"Produccion", sub:"Cortes, telas y talleres" }
+  socio:[
+    {id:"resumen",icon:"📊",title:"Finanzas",sub:"Info del mes"},
+    {id:"ventas",icon:"🛍️",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
+    {id:"comparacion",icon:"📈",title:"Locales",sub:"Ranking y proyeccion"},
+    {id:"reportes",icon:"🏆",title:"Reportes",sub:"Mejores productos"},
+    {id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres"}
   ],
-  encargado: [
-    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle", full:true }
-  ],
-  produccion: [
-    { id:"produccion", icon:"✂️", title:"Produccion", sub:"Cortes, telas y talleres", full:true }
-  ]
+  encargado:[{id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle",full:true}],
+  produccion:[{id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres",full:true}]
 };
 
-function entrarApp(rol, nombre) {
-  rolActual = rol; nombreActual = nombre || "";
-  document.getElementById("login-screen").style.display = "none";
-  document.getElementById("app").style.display = "flex";
-  var badge = document.getElementById("rol-badge");
-  badge.textContent = rol === "admin" ? "Admin" : rol === "socio" ? "Socio" : nombreActual;
-  badge.className = "rol-badge " + rol;
-  var hoy = new Date();
-  document.getElementById("home-nombre").textContent = nombreActual;
-  document.getElementById("home-fecha").textContent = hoy.toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" });
-  var selAnio = document.getElementById("sel-anio");
-  selAnio.innerHTML = "";
-  for (var y = hoy.getFullYear(); y >= 2023; y--) {
-    var o = document.createElement("option");
-    o.value = y; o.text = y; selAnio.appendChild(o);
-  }
-  document.getElementById("sel-mes").value = hoy.getMonth() + 1;
-  document.getElementById("f-fecha").value = hoy.toISOString().split("T")[0];
+function entrarApp(rol,nombre){
+  rolActual=rol; nombreActual=nombre||"";
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="flex";
+  var badge=document.getElementById("rol-badge");
+  badge.textContent=rol==="admin"?"Admin":rol==="socio"?"Socio":nombreActual;
+  badge.className="rol-badge "+rol;
+  var hoy=new Date();
+  document.getElementById("home-nombre").textContent=nombreActual;
+  document.getElementById("home-fecha").textContent=hoy.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"});
+  var sa=document.getElementById("sel-anio"); sa.innerHTML="";
+  for(var y=hoy.getFullYear();y>=2023;y--){ var o=document.createElement("option"); o.value=y; o.text=y; sa.appendChild(o); }
+  document.getElementById("sel-mes").value=hoy.getMonth()+1;
+  document.getElementById("f-fecha").value=hoy.toISOString().split("T")[0];
   construirHome(rol);
-  if (rol === "socio") {
-    document.getElementById("fin-tab-cargar").style.display = "none";
-    document.getElementById("btn-prod-stats").style.display = "";
-  }
-  if (rol === "produccion") {
-    document.getElementById("btn-prod-stats").style.display = "none";
-  }
-  if (rol !== "encargado" && rol !== "produccion") {
-    callScript("getCategorias", {}, function(data) {
-      catsGasto = data.gasto; catsIngreso = data.ingreso; updateCatSelect();
-    });
-  }
-  if (rol === "produccion") showSection("produccion");
-  else if (rol === "encargado") showSection("stock");
+  if(rol==="socio"){ document.getElementById("fin-tab-cargar").style.display="none"; document.getElementById("btn-prod-stats").style.display=""; }
+  if(rol==="produccion") document.getElementById("btn-prod-stats").style.display="none";
+  if(rol!=="encargado"&&rol!=="produccion") callScript("getCategorias",{},function(d){ catsGasto=d.gasto; catsIngreso=d.ingreso; updateCatSelect(); });
+  if(rol==="produccion") goTo("produccion","Produccion");
+  else if(rol==="encargado") goTo("stock","Stock");
 }
 
-function construirHome(rol) {
-  var grid = document.getElementById("home-grid");
-  var items = SECCIONES[rol] || SECCIONES.encargado;
-  grid.innerHTML = items.map(function(s) {
-    return '<button class="home-card' + (s.full ? " full" : "") + '" onclick="showSection(\'' + s.id + '\')">' +
-      '<div class="home-icon">' + s.icon + '</div>' +
-      '<div class="home-card-info"><div class="home-card-title">' + s.title + '</div><div class="home-card-sub">' + s.sub + '</div></div>' +
-      (s.full ? '<div class="home-card-arrow">→</div>' : '') +
+function construirHome(rol){
+  var grid=document.getElementById("home-grid");
+  var items=SECCIONES[rol]||SECCIONES.encargado;
+  grid.innerHTML=items.map(function(s){
+    return '<button class="home-card'+(s.full?" full":"")+'" onclick="goTo(\''+s.id+'\',\''+s.title+'\')">'+
+      '<div class="home-icon">'+s.icon+'</div>'+
+      '<div class="home-card-info"><div class="home-card-title">'+s.title+'</div><div class="home-card-sub">'+s.sub+'</div></div>'+
+      (s.full?'<div class="home-card-arrow">→</div>':'')+
       '</button>';
   }).join("");
 }
 
-function showSection(id) {
-  document.querySelectorAll(".section").forEach(function(s) { s.classList.remove("active"); });
-  document.getElementById("sec-" + id).classList.add("active");
-  var esHome = id === "home";
-  document.getElementById("btn-back").style.display = esHome ? "none" : "block";
-  document.getElementById("header-logo").style.display = esHome ? "block" : "none";
-  var titles = { resumen:"Finanzas", ventas:"Ventas", stock:"Stock", comparacion:"Locales", reportes:"Reportes", produccion:"Produccion" };
-  var titleEl = document.getElementById("header-title");
-  titleEl.style.display = esHome ? "none" : "block";
-  titleEl.textContent = titles[id] || "";
-  if (id === "resumen") cargarDashboard();
-  if (id === "ventas") cargarVentas();
-  if (id === "comparacion") cargarComparacion();
-  if (id === "stock") setTimeout(function() { document.getElementById("stock-q").focus(); }, 100);
-  if (id === "produccion") {
-    document.getElementById("prod-home").style.display = "grid";
-    document.getElementById("prod-content").innerHTML = "";
-  }
+// ══ NAVEGACION ══
+function goTo(sectionId, title){
+  navStack.push({ sectionId: sectionId, title: title });
+  showSection(sectionId, title);
 }
 
-function volverHome() { showSection("home"); }
-
-function logout() {
-  rolActual = ""; nombreActual = "";
-  document.getElementById("login-screen").style.display = "flex";
-  document.getElementById("app").style.display = "none";
-  document.getElementById("login-pass").value = "";
-  document.getElementById("login-error").textContent = "";
-  document.getElementById("login-btn").disabled = false;
-  document.getElementById("login-btn").textContent = "Ingresar";
-  document.getElementById("fin-tab-cargar").style.display = "";
-  document.getElementById("btn-prod-stats").style.display = "";
-  document.querySelectorAll(".section").forEach(function(s) { s.classList.remove("active"); });
-  document.getElementById("sec-home").classList.add("active");
+function goBack(){
+  if(navStack.length<=1){ navStack=[]; showSection("home",""); return; }
+  navStack.pop();
+  var prev=navStack[navStack.length-1];
+  showSection(prev.sectionId, prev.title);
 }
 
-function finTab(tab) {
-  document.getElementById("fin-tab-info").classList.toggle("active", tab === "info");
-  document.getElementById("fin-tab-cargar").classList.toggle("active", tab === "cargar");
-  document.getElementById("fin-info").style.display = tab === "info" ? "" : "none";
-  document.getElementById("fin-cargar").style.display = tab === "cargar" ? "" : "none";
+function showSection(id, title){
+  document.querySelectorAll(".section").forEach(function(s){ s.classList.remove("active"); });
+  document.getElementById("sec-"+id).classList.add("active");
+  document.getElementById("scroll-area").scrollTop=0;
+  var isHome=(id==="home"||navStack.length===0);
+  document.getElementById("btn-back").style.display=isHome?"none":"block";
+  document.getElementById("header-logo").style.display=isHome?"block":"none";
+  var titleEl=document.getElementById("header-title");
+  titleEl.style.display=isHome?"none":"block";
+  titleEl.textContent=title||"";
+  if(id==="resumen") cargarDashboard();
+  if(id==="ventas") cargarVentas();
+  if(id==="comparacion") cargarComparacion();
+  if(id==="stock") setTimeout(function(){ document.getElementById("stock-q").focus(); },100);
+  if(id==="produccion"){ document.getElementById("prod-home").style.display="grid"; document.getElementById("prod-content").style.display="none"; }
 }
 
-async function callScript(action, params, callback) {
+function logout(){
+  rolActual=""; nombreActual=""; navStack=[];
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("app").style.display="none";
+  document.getElementById("login-pass").value="";
+  document.getElementById("login-error").textContent="";
+  document.getElementById("login-btn").disabled=false;
+  document.getElementById("login-btn").textContent="Ingresar";
+  document.getElementById("fin-tab-cargar").style.display="";
+  document.getElementById("btn-prod-stats").style.display="";
+}
+
+function finTab(tab){
+  document.getElementById("fin-tab-info").classList.toggle("active",tab==="info");
+  document.getElementById("fin-tab-cargar").classList.toggle("active",tab==="cargar");
+  document.getElementById("fin-info").style.display=tab==="info"?"":"none";
+  document.getElementById("fin-cargar").style.display=tab==="cargar"?"":"none";
+}
+
+// ══ APPS SCRIPT ══
+async function callScript(action,params,callback){
   try {
-    var url = APPS_SCRIPT_URL + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
-    var res = await fetch(url, { redirect:"follow" });
-    var text = await res.text();
-    try { callback(JSON.parse(text)); } catch(e) { console.error("Parse error", text); }
-  } catch(err) { console.error("Script error:", err); }
+    var url=APPS_SCRIPT_URL+"?action="+action+"&params="+encodeURIComponent(JSON.stringify(params));
+    var res=await fetch(url,{redirect:"follow"});
+    var text=await res.text();
+    try{ callback(JSON.parse(text)); } catch(e){ console.error("Parse error",text); }
+  } catch(err){ console.error("Script error:",err); }
 }
 
-function cargarDashboard() {
-  var mes = parseInt(document.getElementById("sel-mes").value);
-  var anio = parseInt(document.getElementById("sel-anio").value);
-  document.getElementById("dashboard-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
-  if (chartGasto) { chartGasto.destroy(); chartGasto = null; }
-  if (chartIngreso) { chartIngreso.destroy(); chartIngreso = null; }
-  callScript("getDashboard", { mes:mes, anio:anio }, function(data) { mostrarDashboard(data); });
+async function callProd(tab, params){
+  var qs="?tab="+tab;
+  if(params) Object.keys(params).forEach(function(k){ if(params[k]) qs+="&"+k+"="+encodeURIComponent(params[k]); });
+  var res=await fetch(PROD_SCRIPT_URL+qs);
+  return res.json();
 }
 
-function fmt(n) { return "$" + Math.round(n).toLocaleString("es-AR"); }
-function deltaHtml(actual, ant) {
-  if (!ant || ant === 0) return "";
-  var d = ((actual - ant) / ant * 100).toFixed(1);
-  var cls = d >= 0 ? "up" : "down";
-  return '<div class="stat-delta ' + cls + '">' + (d >= 0 ? "▲" : "▼") + " " + Math.abs(d) + "% vs mes ant.</div>";
+async function postProd(body){
+  var res=await fetch(PROD_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  return res.json();
 }
 
-function mostrarDashboard(data) {
-  var netoClass = data.neto >= 0 ? "pos" : "neg";
-  var html = "";
-  html += '<div class="saldo-card"><div class="saldo-label">Saldo acumulado en caja</div><div class="saldo-value ' + (data.saldoActual < 0 ? "saldo-neg" : "") + '">' + fmt(data.saldoActual || 0) + "</div></div>";
-  html += '<div class="stats">' +
-    '<div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">' + fmt(data.totalGasto) + "</div>" + deltaHtml(data.totalGasto, data.totalGastoAnt) + "</div>" +
-    '<div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">' + fmt(data.totalIngreso) + "</div>" + deltaHtml(data.totalIngreso, data.totalIngresoAnt) + "</div>" +
-    '<div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value ' + netoClass + '">' + fmt(data.neto) + "</div>" + deltaHtml(data.neto, data.netoAnt) + "</div>" +
-    "</div>";
-  var gEntries = Object.entries(data.porCatGasto || {}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
-  if (gEntries.length > 0) {
-    var maxG = gEntries[0][1];
-    html += '<div class="card"><div class="card-title">Gastos por categoria</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">';
-    gEntries.forEach(function(e) {
-      var pct = (e[1] / data.totalGasto * 100).toFixed(1);
-      html += '<li class="cat-item"><div class="cat-row"><span class="cat-name">' + e[0] + '</span><div class="cat-right"><span class="cat-pct">' + pct + '%</span><span class="cat-monto gasto">' + fmt(e[1]) + '</span></div></div><div class="bar-wrap"><div class="bar" style="width:' + Math.round(e[1]/maxG*100) + '%;background:#E74C3C"></div></div></li>';
-    });
-    html += "</ul></div>";
+// ══ DASHBOARD ══
+function cargarDashboard(){
+  var mes=parseInt(document.getElementById("sel-mes").value);
+  var anio=parseInt(document.getElementById("sel-anio").value);
+  document.getElementById("dashboard-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  if(chartGasto){chartGasto.destroy();chartGasto=null;}
+  if(chartIngreso){chartIngreso.destroy();chartIngreso=null;}
+  callScript("getDashboard",{mes:mes,anio:anio},function(data){ mostrarDashboard(data); });
+}
+
+function fmt(n){ return "$"+Math.round(n).toLocaleString("es-AR"); }
+function deltaHtml(actual,ant){
+  if(!ant||ant===0) return "";
+  var d=((actual-ant)/ant*100).toFixed(1);
+  return '<div class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"% vs mes ant.</div>";
+}
+
+function mostrarDashboard(data){
+  var nc=data.neto>=0?"pos":"neg";
+  var html='<div class="saldo-card"><div class="saldo-label">Saldo acumulado en caja</div><div class="saldo-value '+(data.saldoActual<0?"saldo-neg":"")+'">'+fmt(data.saldoActual||0)+"</div></div>";
+  html+='<div class="stats"><div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">'+fmt(data.totalGasto)+"</div>"+deltaHtml(data.totalGasto,data.totalGastoAnt)+'</div><div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">'+fmt(data.totalIngreso)+"</div>"+deltaHtml(data.totalIngreso,data.totalIngresoAnt)+'</div><div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value '+nc+'">'+fmt(data.neto)+"</div>"+deltaHtml(data.neto,data.netoAnt)+"</div></div>";
+  var gE=Object.entries(data.porCatGasto||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  if(gE.length>0){
+    var mG=gE[0][1];
+    html+='<div class="card"><div class="card-title">Gastos por categoria</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">';
+    gE.forEach(function(e){ var p=(e[1]/data.totalGasto*100).toFixed(1); html+='<li class="cat-item"><div class="cat-row"><span class="cat-name">'+e[0]+'</span><div class="cat-right"><span class="cat-pct">'+p+'%</span><span class="cat-monto gasto">'+fmt(e[1])+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+Math.round(e[1]/mG*100)+'%;background:#E74C3C"></div></div></li>'; });
+    html+="</ul></div>";
   }
-  var iEntries = Object.entries(data.porCatIngreso || {}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
-  if (iEntries.length > 0) {
-    var maxI = iEntries[0][1];
-    html += '<div class="card"><div class="card-title">Ingresos por categoria</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">';
-    iEntries.forEach(function(e) {
-      var pct = (e[1] / data.totalIngreso * 100).toFixed(1);
-      html += '<li class="cat-item"><div class="cat-row"><span class="cat-name">' + e[0] + '</span><div class="cat-right"><span class="cat-pct">' + pct + '%</span><span class="cat-monto ingreso">' + fmt(e[1]) + '</span></div></div><div class="bar-wrap"><div class="bar" style="width:' + Math.round(e[1]/maxI*100) + '%;background:#27AE60"></div></div></li>';
-    });
-    html += "</ul></div>";
+  var iE=Object.entries(data.porCatIngreso||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  if(iE.length>0){
+    var mI=iE[0][1];
+    html+='<div class="card"><div class="card-title">Ingresos por categoria</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">';
+    iE.forEach(function(e){ var p=(e[1]/data.totalIngreso*100).toFixed(1); html+='<li class="cat-item"><div class="cat-row"><span class="cat-name">'+e[0]+'</span><div class="cat-right"><span class="cat-pct">'+p+'%</span><span class="cat-monto ingreso">'+fmt(e[1])+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+Math.round(e[1]/mI*100)+'%;background:#27AE60"></div></div></li>'; });
+    html+="</ul></div>";
   }
-  if (data.txHoy && data.txHoy.length > 0) {
-    html += '<div class="card"><div class="card-title">Movimientos de hoy</div>';
-    data.txHoy.forEach(function(tx) {
-      html += '<div class="tx-item"><div class="tx-left"><div class="tx-desc">' + tx.desc + '</div><div class="tx-cat">' + tx.cat + '</div></div><div class="tx-monto ' + (tx.monto < 0 ? "gasto" : "ingreso") + '">' + fmt(Math.abs(tx.monto)) + "</div></div>";
-    });
-    html += "</div>";
+  if(data.txHoy&&data.txHoy.length>0){
+    html+='<div class="card"><div class="card-title">Movimientos de hoy</div>';
+    data.txHoy.forEach(function(tx){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+tx.desc+'</div><div class="tx-cat">'+tx.cat+'</div></div><div class="tx-monto '+(tx.monto<0?"gasto":"ingreso")+'">'+fmt(Math.abs(tx.monto))+"</div></div>"; });
+    html+="</div>";
   }
-  if (gEntries.length === 0 && iEntries.length === 0) html += '<div class="empty"><div class="e-icon">📭</div><p>Sin movimientos este mes</p></div>';
-  document.getElementById("dashboard-content").innerHTML = html;
-  setTimeout(function() {
-    var CG = ["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
-    var CI = ["#27AE60","#1E8449","#2ECC71","#16A085","#1ABC9C","#3498DB","#2980B9","#1A5276"];
-    if (gEntries.length > 0) { var cg = document.getElementById("cg"); if (cg) chartGasto = new Chart(cg, { type:"doughnut", data:{ labels:gEntries.map(function(e){return e[0];}), datasets:[{ data:gEntries.map(function(e){return e[1];}), backgroundColor:CG, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } }); }
-    if (iEntries.length > 0) { var ci = document.getElementById("ci"); if (ci) chartIngreso = new Chart(ci, { type:"doughnut", data:{ labels:iEntries.map(function(e){return e[0];}), datasets:[{ data:iEntries.map(function(e){return e[1];}), backgroundColor:CI, borderWidth:2, borderColor:"#fff" }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } }); }
-  }, 100);
+  if(gE.length===0&&iE.length===0) html+='<div class="empty"><div class="e-icon">📭</div><p>Sin movimientos este mes</p></div>';
+  document.getElementById("dashboard-content").innerHTML=html;
+  setTimeout(function(){
+    var CG=["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
+    var CI=["#27AE60","#1E8449","#2ECC71","#16A085","#1ABC9C","#3498DB","#2980B9","#1A5276"];
+    if(gE.length>0){var cg=document.getElementById("cg");if(cg)chartGasto=new Chart(cg,{type:"doughnut",data:{labels:gE.map(function(e){return e[0];}),datasets:[{data:gE.map(function(e){return e[1];}),backgroundColor:CG,borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}
+    if(iE.length>0){var ci=document.getElementById("ci");if(ci)chartIngreso=new Chart(ci,{type:"doughnut",data:{labels:iE.map(function(e){return e[0];}),datasets:[{data:iE.map(function(e){return e[1];}),backgroundColor:CI,borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}
+  },100);
 }
 
-function toggleFechaCustom() {
-  document.getElementById("custom-fechas").style.display = document.getElementById("v-periodo").value === "custom" ? "flex" : "none";
+// ══ VENTAS ══
+function toggleFechaCustom(){ document.getElementById("custom-fechas").style.display=document.getElementById("v-periodo").value==="custom"?"flex":"none"; }
+async function cargarVentas(){
+  var periodo=document.getElementById("v-periodo").value;
+  document.getElementById("ventas-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando ventas...</p></div>';
+  var ahora=new Date(), argTime=new Date(ahora.getTime()-3*60*60*1000);
+  var pad=function(n){return String(n).padStart(2,"0");};
+  var fd=function(d){return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());};
+  var desde,hasta=fd(argTime);
+  if(periodo==="hoy"){ desde=fd(argTime); }
+  else if(periodo==="ayer"){ var ay=new Date(argTime.getTime()-86400000); desde=fd(ay); hasta=fd(ay); }
+  else if(periodo==="custom"){ desde=document.getElementById("v-desde").value; hasta=document.getElementById("v-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
+  else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
+  try{
+    var res=await fetch("/api/ventas?desde="+desde+"&hasta="+hasta);
+    var data=await res.json(); mostrarVentas(data,periodo);
+  } catch(err){ document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar ventas</p></div>'; }
 }
-
-async function cargarVentas() {
-  var periodo = document.getElementById("v-periodo").value;
-  document.getElementById("ventas-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando ventas...</p></div>';
-  var ahora = new Date();
-  var argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
-  var pad = function(n) { return String(n).padStart(2, "0"); };
-  var fmtDate = function(d) { return d.getUTCFullYear() + "-" + pad(d.getUTCMonth()+1) + "-" + pad(d.getUTCDate()); };
-  var desde, hasta;
-  hasta = fmtDate(argTime);
-  if (periodo === "hoy") {
-    desde = fmtDate(argTime);
-  } else if (periodo === "ayer") {
-    var ayer = new Date(argTime.getTime() - 24 * 60 * 60 * 1000);
-    desde = fmtDate(ayer); hasta = fmtDate(ayer);
-  } else if (periodo === "custom") {
-    desde = document.getElementById("v-desde").value;
-    hasta = document.getElementById("v-hasta").value;
-    if (!desde || !hasta) { showToast("Selecciona las fechas", "err"); return; }
-  } else {
-    desde = argTime.getUTCFullYear() + "-" + pad(argTime.getUTCMonth()+1) + "-01";
-  }
-  try {
-    var res = await fetch("/api/ventas?desde=" + desde + "&hasta=" + hasta);
-    var data = await res.json();
-    mostrarVentas(data, periodo);
-  } catch(err) {
-    document.getElementById("ventas-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar ventas</p></div>';
-  }
-}
-
-function mostrarVentas(data, periodo) {
-  var textos = { hoy:"hoy", ayer:"ayer", mes:"este mes", custom:"el periodo" };
-  var pt = textos[periodo] || "el periodo";
-  var html = "";
-  html += '<div class="consolidado"><div class="consolidado-label">Total vendido ' + pt + '</div><div class="consolidado-value">' + fmt(data.total || 0) + "</div></div>";
-  var canales = ["tiendanube","palermo","laplata"];
-  var nombres = { tiendanube:"Tiendanube", palermo:"Palermo", laplata:"La Plata" };
-  html += '<div class="canales-grid">';
-  canales.forEach(function(c) {
-    if (data[c]) html += '<div class="canal-mini"><div class="canal-mini-nombre">' + nombres[c] + '</div><div class="canal-mini-total">' + fmt(data[c].total || 0) + '</div><div class="canal-mini-cant">' + (data[c].cantidad || 0) + " pedidos</div></div>";
+function mostrarVentas(data,periodo){
+  var tx={hoy:"hoy",ayer:"ayer",mes:"este mes",custom:"el periodo"};
+  var pt=tx[periodo]||"el periodo";
+  var html='<div class="consolidado"><div class="consolidado-label">Total vendido '+pt+'</div><div class="consolidado-value">'+fmt(data.total||0)+"</div></div>";
+  var canales=["tiendanube","palermo","laplata"], nombres={tiendanube:"Tiendanube",palermo:"Palermo",laplata:"La Plata"};
+  html+='<div class="canales-grid">';
+  canales.forEach(function(c){ if(data[c]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+nombres[c]+'</div><div class="canal-mini-total">'+fmt(data[c].total||0)+'</div><div class="canal-mini-cant">'+(data[c].cantidad||0)+" pedidos</div></div>"; });
+  html+="</div>";
+  canales.forEach(function(c){
+    if(!data[c]) return;
+    var canal=data[c];
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+canal.nombre+'</span><span class="canal-badge">'+canal.cantidad+' pedidos</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
+    if(canal.pedidos&&canal.pedidos.length>0){
+      html+='<div class="canal-divider"></div>';
+      canal.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Cliente")+'</div><div class="pedido-estado">#'+p.numero+" · "+p.estado+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
+    } else html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas '+pt+"</div>";
+    html+="</div>";
   });
-  html += "</div>";
-  canales.forEach(function(c) {
-    if (!data[c]) return;
-    var canal = data[c];
-    html += '<div class="canal-card"><div class="canal-header"><span class="canal-nombre">' + canal.nombre + '</span><span class="canal-badge">' + canal.cantidad + ' pedidos</span></div><div class="canal-total">' + fmt(canal.total || 0) + "</div>";
-    if (canal.pedidos && canal.pedidos.length > 0) {
-      html += '<div class="canal-divider"></div>';
-      canal.pedidos.forEach(function(p) {
-        html += '<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">' + (p.cliente || "Cliente") + '</div><div class="pedido-estado">#' + p.numero + " · " + p.estado + "</div></div><div class=\"pedido-monto\">" + fmt(p.total) + "</div></div>";
-      });
-    } else {
-      html += '<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas ' + pt + "</div>";
-    }
-    html += "</div>";
-  });
-  document.getElementById("ventas-content").innerHTML = html;
+  document.getElementById("ventas-content").innerHTML=html;
 }
 
-async function buscarStock() {
-  var q = document.getElementById("stock-q").value.trim();
-  if (q.length < 2) { showToast("Ingresa al menos 2 caracteres", "err"); return; }
-  document.getElementById("stock-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
-  try {
-    var res = await fetch("/api/stock?q=" + encodeURIComponent(q));
-    var data = await res.json();
-    mostrarStock(data);
-  } catch(err) {
-    document.getElementById("stock-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>';
-  }
+// ══ STOCK ══
+async function buscarStock(){
+  var q=document.getElementById("stock-q").value.trim();
+  if(q.length<2){showToast("Ingresa al menos 2 caracteres","err");return;}
+  document.getElementById("stock-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
+  try{
+    var res=await fetch("/api/stock?q="+encodeURIComponent(q));
+    var data=await res.json(); mostrarStock(data);
+  } catch(err){ document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>'; }
 }
-
-function mostrarStock(data) {
-  if (!data.resultados || data.resultados.length === 0) {
-    document.getElementById("stock-content").innerHTML = '<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "' + data.query + '"</p></div>';
-    return;
-  }
-  var html = "";
-  data.resultados.forEach(function(p) {
-    html += '<div class="producto-card"><div class="producto-nombre">' + p.nombre + '</div><div class="producto-sku">' + (p.sku ? "SKU: " + p.sku : "") + "</div>";
-    var locales = [{ key:"palermo", label:"Local Palermo", clase:"local-palermo" }, { key:"laplata", label:"Local La Plata", clase:"local-laplata" }];
-    locales.forEach(function(loc) {
-      if (!p.locales[loc.key]) return;
-      html += '<div class="local-titulo ' + loc.clase + '">' + loc.label + "</div>";
-      p.locales[loc.key].forEach(function(v) {
-        html += '<div class="variante-row"><span class="variante-attr">' + v.atributos + '</span><div class="variante-right"><span class="variante-precio">$' + Math.round(v.precio).toLocaleString("es-AR") + '</span><span class="badge-stock ' + (v.tiene_stock ? "badge-si" : "badge-no") + '">' + (v.tiene_stock ? "✓ Stock" : "Sin stock") + "</span></div></div>";
-      });
-      html += '<div style="margin-bottom:8px"></div>';
+function mostrarStock(data){
+  if(!data.resultados||data.resultados.length===0){ document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "'+data.query+'"</p></div>'; return; }
+  var html="";
+  data.resultados.forEach(function(p){
+    html+='<div class="producto-card"><div class="producto-nombre">'+p.nombre+'</div><div class="producto-sku">'+(p.sku?"SKU: "+p.sku:"")+"</div>";
+    var locs=[{key:"palermo",label:"Local Palermo",clase:"local-palermo"},{key:"laplata",label:"Local La Plata",clase:"local-laplata"}];
+    locs.forEach(function(loc){
+      if(!p.locales[loc.key]) return;
+      html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
+      p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"✓ Stock":"Sin stock")+"</span></div></div>"; });
+      html+='<div style="margin-bottom:8px"></div>';
     });
-    html += "</div>";
+    html+="</div>";
   });
-  document.getElementById("stock-content").innerHTML = html;
+  document.getElementById("stock-content").innerHTML=html;
 }
 
-async function cargarComparacion() {
-  document.getElementById("comparacion-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
-  try {
-    var res = await fetch("/api/comparacion");
-    var data = await res.json();
-    mostrarComparacion(data);
-  } catch(err) {
-    document.getElementById("comparacion-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
-  }
+// ══ COMPARACION ══
+async function cargarComparacion(){
+  document.getElementById("comparacion-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  try{
+    var res=await fetch("/api/comparacion"); var data=await res.json(); mostrarComparacion(data);
+  } catch(err){ document.getElementById("comparacion-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
 }
-
-function mostrarComparacion(data) {
-  var delta = function(actual, ant) {
-    if (!ant || ant === 0) return "";
-    var d = ((actual - ant) / ant * 100).toFixed(1);
-    var cls = d >= 0 ? "up" : "down";
-    return '<span class="stat-delta ' + cls + '" style="font-size:12px">' + (d >= 0 ? "▲" : "▼") + " " + Math.abs(d) + "% vs mes ant.</span>";
+function mostrarComparacion(data){
+  var delta=function(actual,ant){
+    if(!ant||ant===0) return "";
+    var d=((actual-ant)/ant*100).toFixed(1);
+    return '<span class="stat-delta '+(d>=0?"up":"down")+'" style="font-size:12px">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"% vs mes ant.</span>";
   };
-  var html = "";
-  html += '<div class="saldo-card"><div class="saldo-label">Total vendido hoy</div><div class="saldo-value">' + fmt(data.totalHoy) + "</div></div>";
-  html += '<div class="card"><div class="card-title">Hoy por local</div>';
-  data.locales.forEach(function(l) {
-    html += '<div class="tx-item"><div class="tx-left"><div class="tx-desc">' + l.nombre + '</div><div class="tx-cat">' + l.hoy.cantidad + ' pedidos</div></div><div class="tx-monto ingreso">' + fmt(l.hoy.total) + "</div></div>";
+  var html='<div class="saldo-card"><div class="saldo-label">Total vendido hoy</div><div class="saldo-value">'+fmt(data.totalHoy)+"</div></div>";
+  html+='<div class="card"><div class="card-title">Hoy por local</div>';
+  data.locales.forEach(function(l){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">'+l.hoy.cantidad+' pedidos</div></div><div class="tx-monto ingreso">'+fmt(l.hoy.total)+"</div></div>"; });
+  html+="</div>";
+  html+='<div class="card"><div class="card-title">Ranking del mes</div>';
+  var med=["🥇","🥈","🥉"], mM=data.ranking[0]?data.ranking[0].mes.total:1;
+  data.ranking.forEach(function(l,i){
+    var pct=Math.round(l.mes.total/data.totalMes*100), w=Math.round(l.mes.total/mM*100);
+    html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(med[i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#27AE60"></div></div></div>';
   });
-  html += "</div>";
-  html += '<div class="card"><div class="card-title">Ranking del mes</div>';
-  var medallas = ["🥇","🥈","🥉"];
-  var maxMes = data.ranking[0] ? data.ranking[0].mes.total : 1;
-  data.ranking.forEach(function(l, i) {
-    var pct = Math.round(l.mes.total / data.totalMes * 100);
-    var w = Math.round(l.mes.total / maxMes * 100);
-    html += '<div class="cat-item"><div class="cat-row"><span class="cat-name">' + (medallas[i] || "") + " " + l.nombre + '</span><div class="cat-right"><span class="cat-pct">' + pct + '%</span><span class="cat-monto ingreso">' + fmt(l.mes.total) + '</span></div></div><div class="bar-wrap"><div class="bar" style="width:' + w + '%;background:#27AE60"></div></div></div>';
+  html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700">Total del mes</span><div style="text-align:right"><div style="font-size:18px;font-weight:900">'+fmt(data.totalMes)+"</div>"+delta(data.totalMes,data.totalAnt)+"</div></div>";
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#1E8449">Proyeccion del mes</span><span style="font-size:16px;font-weight:900;color:#1E8449">'+fmt(data.proyeccionTotal)+"</span></div>";
+  html+='<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">Basado en '+data.diaDelMes+" dias - Comparado con primeros "+data.diasComparados+" dias del mes ant.</div></div></div>";
+  html+='<div class="card"><div class="card-title">Este mes vs mes anterior (mismos dias)</div>';
+  data.locales.forEach(function(l){
+    var d=l.ant.total>0?((l.mes.total-l.ant.total)/l.ant.total*100).toFixed(1):null;
+    html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">Ant: '+fmt(l.ant.total)+" - Proy: "+fmt(l.proyeccion)+(d!==null?' <span class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"%</span>":"")+'</div></div><div class="tx-monto ingreso">'+fmt(l.mes.total)+"</div></div>";
   });
-  html += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-    '<span style="font-size:13px;font-weight:700">Total del mes</span>' +
-    '<div style="text-align:right"><div style="font-size:18px;font-weight:900">' + fmt(data.totalMes) + "</div>" + delta(data.totalMes, data.totalAnt) + "</div></div>" +
-    '<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px">' +
-    '<span style="font-size:12px;font-weight:700;color:#1E8449">Proyeccion del mes</span>' +
-    '<span style="font-size:16px;font-weight:900;color:#1E8449">' + fmt(data.proyeccionTotal) + "</span></div>" +
-    '<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">Basado en ' + data.diaDelMes + " dias - Comparado con primeros " + data.diasComparados + " dias del mes ant.</div>" +
-    "</div></div>";
-  html += '<div class="card"><div class="card-title">Este mes vs mes anterior (mismos dias)</div>';
-  data.locales.forEach(function(l) {
-    var d = l.ant.total > 0 ? ((l.mes.total - l.ant.total) / l.ant.total * 100).toFixed(1) : null;
-    var cls = d >= 0 ? "up" : "down";
-    html += '<div class="tx-item"><div class="tx-left"><div class="tx-desc">' + l.nombre + '</div><div class="tx-cat">Ant: ' + fmt(l.ant.total) + " - Proy: " + fmt(l.proyeccion) + (d !== null ? ' <span class="stat-delta ' + cls + '">' + (d >= 0 ? "▲" : "▼") + " " + Math.abs(d) + "%</span>" : "") + '</div></div><div class="tx-monto ingreso">' + fmt(l.mes.total) + "</div></div>";
-  });
-  html += "</div>";
-  document.getElementById("comparacion-content").innerHTML = html;
+  html+="</div>";
+  document.getElementById("comparacion-content").innerHTML=html;
 }
 
-function toggleRepCustom() {
-  document.getElementById("rep-custom").style.display = document.getElementById("rep-periodo").value === "custom" ? "flex" : "none";
+// ══ REPORTES ══
+function toggleRepCustom(){ document.getElementById("rep-custom").style.display=document.getElementById("rep-periodo").value==="custom"?"flex":"none"; }
+async function cargarReportes(){
+  var canal=document.getElementById("rep-canal").value, periodo=document.getElementById("rep-periodo").value;
+  document.getElementById("reportes-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
+  var ahora=new Date(), argTime=new Date(ahora.getTime()-3*60*60*1000);
+  var pad=function(n){return String(n).padStart(2,"0");};
+  var fd=function(d){return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());};
+  var desde,hasta;
+  if(periodo==="custom"){ desde=document.getElementById("rep-desde").value; hasta=document.getElementById("rep-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
+  else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; hasta=fd(argTime); }
+  try{
+    var res=await fetch("/api/reportes?desde="+desde+"&hasta="+hasta+"&canal="+canal);
+    var data=await res.json(); mostrarReportes(data,canal);
+  } catch(err){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
 }
-
-async function cargarReportes() {
-  var canal = document.getElementById("rep-canal").value;
-  var periodo = document.getElementById("rep-periodo").value;
-  document.getElementById("reportes-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando productos...</p></div>';
-  var ahora = new Date();
-  var argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
-  var pad = function(n) { return String(n).padStart(2, "0"); };
-  var fmtDate = function(d) { return d.getUTCFullYear() + "-" + pad(d.getUTCMonth()+1) + "-" + pad(d.getUTCDate()); };
-  var desde, hasta;
-  if (periodo === "custom") {
-    desde = document.getElementById("rep-desde").value;
-    hasta = document.getElementById("rep-hasta").value;
-    if (!desde || !hasta) { showToast("Selecciona las fechas", "err"); return; }
-  } else {
-    desde = argTime.getUTCFullYear() + "-" + pad(argTime.getUTCMonth()+1) + "-01";
-    hasta = fmtDate(argTime);
-  }
-  try {
-    var res = await fetch("/api/reportes?desde=" + desde + "&hasta=" + hasta + "&canal=" + canal);
-    var data = await res.json();
-    mostrarReportes(data, canal);
-  } catch(err) {
-    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar reportes</p></div>';
-  }
-}
-
-function mostrarReportes(data, canal) {
-  if (!data.productos || data.productos.length === 0) {
-    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el periodo</p></div>';
-    return;
-  }
-  var titulo = canal === "online" ? "Mas vendidos Online (Tiendanube)" : "Mas vendidos Fisico (Locales)";
-  var medallas = ["🥇","🥈","🥉"];
-  var html = '<div class="card"><div class="card-title">' + titulo + "</div>";
-  data.productos.forEach(function(p, i) {
-    html += '<div class="ranking-item"><div class="ranking-pos">' + (medallas[i] || (i+1)) + '</div><div class="ranking-info"><div class="ranking-nombre">' + p.nombre + '</div><div class="ranking-detalle">' + p.fuentes + '</div></div><div class="ranking-cant">' + p.cantidad + '<span>unidades</span></div></div>';
-  });
-  html += "</div>";
-  document.getElementById("reportes-content").innerHTML = html;
+function mostrarReportes(data,canal){
+  if(!data.productos||data.productos.length===0){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el periodo</p></div>'; return; }
+  var titulo=canal==="online"?"Mas vendidos Online (Tiendanube)":"Mas vendidos Fisico (Locales)";
+  var med=["🥇","🥈","🥉"];
+  var html='<div class="card"><div class="card-title">'+titulo+"</div>";
+  data.productos.forEach(function(p,i){ html+='<div class="ranking-item"><div class="ranking-pos">'+(med[i]||(i+1))+'</div><div class="ranking-info"><div class="ranking-nombre">'+p.nombre+'</div><div class="ranking-detalle">'+p.fuentes+'</div></div><div class="ranking-cant">'+p.cantidad+'<span>unidades</span></div></div>'; });
+  html+="</div>";
+  document.getElementById("reportes-content").innerHTML=html;
 }
 
 // ══ PRODUCCION ══
-function prodSeccion(sec) {
-  prodSeccionActual = sec;
-  document.getElementById("prod-home").style.display = "none";
-  var titles = { telas:"Telas", cortes:"Cortes", talleres:"Talleres", estadisticas:"Estadisticas" };
-  document.getElementById("header-title").textContent = "Produccion - " + (titles[sec] || sec);
-  if (sec === "telas") mostrarSeccionTelas();
-  else if (sec === "cortes") mostrarSeccionCortes();
-  else if (sec === "talleres") mostrarSeccionTalleres();
-  else if (sec === "estadisticas") mostrarSeccionEstadisticas();
+function prodNavigate(sub, title){
+  document.getElementById("prod-home").style.display="none";
+  document.getElementById("prod-content").style.display="block";
+  document.getElementById("header-title").textContent="Produccion - "+title;
+  goTo("produccion","Produccion - "+title);
+  cargarProdSub(sub);
 }
 
-function volverProdHome() {
-  document.getElementById("prod-home").style.display = "grid";
-  document.getElementById("prod-content").innerHTML = "";
-  document.getElementById("header-title").textContent = "Produccion";
+function cargarProdSub(sub){
+  if(sub==="telas") mostrarTelas();
+  else if(sub==="cortes") mostrarCortes();
+  else if(sub==="talleres") mostrarTalleres();
+  else if(sub==="estadisticas") mostrarEstadisticas();
 }
 
-// TELAS
-function mostrarSeccionTelas() {
-  document.getElementById("prod-content").innerHTML =
-    '<div style="display:flex;gap:8px;margin-bottom:16px">' +
-    '<button class="prod-tab active" id="ptab-stock" onclick="telaTab(\'stock\')">Stock</button>' +
-    '<button class="prod-tab" id="ptab-ingreso" onclick="telaTab(\'ingreso\')">Ingreso</button>' +
-    '</div>' +
-    '<div id="tela-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>' +
-    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
-  telaTab("stock");
+// Override goBack para produccion
+var origGoBack=null;
+function navigate(sub){
+  var titles={telas:"Telas",cortes:"Cortes",talleres:"Talleres",estadisticas:"Estadisticas"};
+  prodNavigate(sub,titles[sub]||sub);
 }
 
-function telaTab(tab) {
-  document.getElementById("ptab-stock").classList.toggle("active", tab === "stock");
-  document.getElementById("ptab-ingreso").classList.toggle("active", tab === "ingreso");
-  if (tab === "stock") cargarStockTelas();
-  else mostrarFormIngreso();
+// ─── TELAS ───
+var telasFull=[];
+async function mostrarTelas(){
+  var el=document.getElementById("prod-content");
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  try{
+    var data=await callProd("stock-tela");
+    telasList=data.telas||[];
+    var tipos=data.tipos||[];
+    var tiposOpts='<option value="">Todos los tipos</option>';
+    tipos.forEach(function(t){ tiposOpts+='<option>'+t+'</option>'; });
+    var html='<div class="tabs-row"><button class="prod-tab active" id="tt-stock" onclick="telasTab(\'stock\')">Stock</button><button class="prod-tab" id="tt-ingreso" onclick="telasTab(\'ingreso\')">Ingreso</button></div>';
+    html+='<div id="telas-panel">';
+    html+='<input type="text" class="search-box" id="tela-search" placeholder="Buscar tela..." oninput="filtrarTelas()">';
+    html+='<div class="filtros-row">';
+    html+='<select id="tela-tipo" class="filtro-sel" onchange="filtrarTelas()">'+tiposOpts+'</select>';
+    html+='<select id="tela-orden" class="filtro-sel" onchange="filtrarTelas()">';
+    html+='<option value="nombre">A-Z</option><option value="mas">Mayor stock</option><option value="menos">Menor stock</option></select>';
+    html+='</div>';
+    html+='<div id="telas-list"></div>';
+    html+='</div>';
+    el.innerHTML=html;
+    telasFull=telasList;
+    filtrarTelas();
+  } catch(e){ el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
 }
 
-async function cargarStockTelas() {
-  document.getElementById("tela-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
-  try {
-    var res = await fetch("/api/produccion?tab=stock-tela");
-    var data = await res.json();
-    if (!data.telas || data.telas.length === 0) {
-      document.getElementById("tela-content").innerHTML = '<div class="empty"><div class="e-icon">🧵</div><p>Sin telas registradas</p></div>';
-      return;
-    }
-    var html = '<div class="card"><div class="card-title">Stock actual</div>';
-    data.telas.forEach(function(t) {
-      var s = parseFloat(t.stock || 0);
-      var cls = s < 50 ? "bajo" : "ok";
-      html += '<div class="tela-item"><div><div class="tela-nombre">' + t.nombre + '</div><div class="tela-tipo">' + (t.tipo || "") + '</div></div><div class="tela-stock ' + cls + '">' + s.toFixed(1) + ' kg</div></div>';
+function telasTab(tab){
+  document.getElementById("tt-stock").classList.toggle("active",tab==="stock");
+  document.getElementById("tt-ingreso").classList.toggle("active",tab==="ingreso");
+  if(tab==="stock"){ document.getElementById("telas-panel").style.display=""; mostrarFormIngreso(); return; }
+  // Si es stock, volver a filtrar
+  document.getElementById("telas-panel").style.display="";
+  filtrarTelas();
+}
+
+function filtrarTelas(){
+  var q=(document.getElementById("tela-search")||{value:""}).value.toLowerCase();
+  var tipo=(document.getElementById("tela-tipo")||{value:""}).value;
+  var orden=(document.getElementById("tela-orden")||{value:"nombre"}).value;
+  var lista=telasFull.filter(function(t){
+    return (!q||t.nombre.toLowerCase().includes(q)) && (!tipo||t.tipo===tipo);
+  });
+  if(orden==="mas") lista.sort(function(a,b){return b.stock-a.stock;});
+  else if(orden==="menos") lista.sort(function(a,b){return a.stock-b.stock;});
+  else lista.sort(function(a,b){return a.nombre.localeCompare(b.nombre);});
+  var html="";
+  if(lista.length===0) html='<div class="empty"><div class="e-icon">🧵</div><p>Sin resultados</p></div>';
+  lista.forEach(function(t){
+    var s=parseFloat(t.stock||0), cls=s<50?"bajo":"ok";
+    html+='<div class="tela-card" onclick="verDetalleTela(\''+t.id+'\')"><div class="tela-card-left"><div class="tela-card-nombre">'+t.nombre+'</div><div class="tela-card-tipo">'+t.tipo+'</div></div><div class="tela-card-stock '+cls+'">'+s.toFixed(1)+' kg</div></div>';
+  });
+  document.getElementById("telas-list").innerHTML=html;
+}
+
+async function verDetalleTela(telaId){
+  var el=document.getElementById("prod-content");
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando detalle...</p></div>';
+  try{
+    var data=await callProd("detalle-tela",{telaId:telaId});
+    var tela=data.tela||{nombre:telaId,tipo:""};
+    var movs=data.movimientos||[];
+    var stockTela=telasList.find(function(t){return t.id===telaId;})||{stock:0};
+    var html='<div class="card" style="margin-bottom:14px">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+    html+='<div><div style="font-size:18px;font-weight:900;color:var(--negro)">'+tela.nombre+'</div><div style="font-size:12px;color:#aaa;margin-top:2px">'+tela.tipo+'</div></div>';
+    html+='<div style="text-align:right"><div style="font-size:24px;font-weight:900;color:'+(parseFloat(stockTela.stock||0)<50?"var(--rojo)":"var(--verde)")+'">'+parseFloat(stockTela.stock||0).toFixed(1)+' kg</div><div style="font-size:11px;color:#aaa">Stock actual</div></div>';
+    html+='</div></div>';
+    html+='<div class="card"><div class="card-title">Movimientos ('+movs.length+')</div>';
+    if(movs.length===0) html+='<div class="empty" style="padding:20px"><div class="e-icon" style="font-size:32px">📋</div><p>Sin movimientos</p></div>';
+    movs.forEach(function(m){
+      var esEnt=m.tipo==="Entrada";
+      html+='<div class="mov-item"><div class="mov-left"><div class="mov-tipo">'+(esEnt?"📦 Ingreso":"✂️ Corte #"+(m.numero||""))+' '+(m.descripcion||"")+'</div><div class="mov-fecha">'+m.fecha+' · '+m.estado+'</div></div><div class="mov-kg" style="color:'+(esEnt?"var(--verde)":"var(--rojo)")+'">'+(esEnt?"+":"-")+parseFloat(m.kg||0).toFixed(1)+" kg</div></div>";
     });
-    html += "</div>";
-    document.getElementById("tela-content").innerHTML = html;
-  } catch(e) {
-    document.getElementById("tela-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
-  }
+    html+="</div>";
+    el.innerHTML=html;
+  } catch(e){ el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
 }
 
-async function mostrarFormIngreso() {
-  var data = await fetch("/api/produccion?tab=stock-tela").then(function(r){return r.json();});
-  var opts = data.telas ? data.telas.map(function(t){return '<option value="' + t.id + '">' + t.nombre + '</option>';}).join("") : "";
-  document.getElementById("tela-content").innerHTML =
-    '<div class="card"><div class="card-title">Ingreso de tela</div>' +
-    '<div class="form-group"><label class="form-label">Tela</label><select id="pi-tela" class="form-control">' + opts + '</select></div>' +
-    '<div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pi-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>' +
-    '<div class="form-group"><label class="form-label">Marca</label><select id="pi-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>' +
-    '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pi-notas" class="form-control" placeholder="Opcional"></div>' +
+async function mostrarFormIngreso(){
+  var el=document.getElementById("prod-content");
+  var opts=telasList.map(function(t){return '<option value="'+t.id+'">'+t.nombre+' ('+parseFloat(t.stock||0).toFixed(1)+' kg)</option>';}).join("");
+  var insert='<div class="card" style="margin-top:14px"><div class="card-title">Ingreso de tela</div>'+
+    '<div class="form-group"><label class="form-label">Tela</label><select id="pi-tela" class="form-control">'+opts+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pi-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>'+
+    '<div class="form-group"><label class="form-label">N de Partida</label><input type="text" id="pi-partida" class="form-control" placeholder="Ej: P-2024-001"></div>'+
+    '<div class="form-group"><label class="form-label">Marca</label><select id="pi-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>'+
+    '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pi-notas" class="form-control" placeholder="Opcional"></div>'+
     '<button class="btn-submit" id="btn-gi" onclick="guardarIngreso()">Guardar ingreso</button></div>';
+  el.innerHTML='<div class="tabs-row"><button class="prod-tab" id="tt-stock" onclick="mostrarTelas()">Stock</button><button class="prod-tab active" id="tt-ingreso" onclick="mostrarFormIngreso()">Ingreso</button></div>'+insert;
 }
 
-async function guardarIngreso() {
-  var btn = document.getElementById("btn-gi");
-  var tela = document.getElementById("pi-tela").value;
-  var kg = document.getElementById("pi-kg").value;
-  if (!tela || !kg) { showToast("Completa tela y kg", "err"); return; }
-  btn.disabled = true; btn.textContent = "Guardando...";
-  try {
-    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action:"guardarIngreso", telaId:tela, kg:kg, marca:document.getElementById("pi-marca").value, notas:document.getElementById("pi-notas").value }) });
-    var data = await res.json();
-    if (data.ok) { showToast("Ingreso guardado", "ok"); telaTab("stock"); }
-    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
-  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
+async function guardarIngreso(){
+  var btn=document.getElementById("btn-gi");
+  var tela=document.getElementById("pi-tela").value, kg=document.getElementById("pi-kg").value;
+  if(!tela||!kg){showToast("Completa tela y kg","err");return;}
+  btn.disabled=true; btn.textContent="Guardando...";
+  try{
+    var data=await postProd({action:"guardarIngreso",telaId:tela,kg:kg,partida:document.getElementById("pi-partida").value,marca:document.getElementById("pi-marca").value,notas:document.getElementById("pi-notas").value});
+    if(data.ok){showToast("Ingreso guardado","ok"); mostrarTelas();}
+    else{showToast("Error: "+(data.error||""),"err");btn.disabled=false;btn.textContent="Guardar ingreso";}
+  }catch(e){showToast("Error de conexion","err");btn.disabled=false;btn.textContent="Guardar ingreso";}
 }
 
-// CORTES
-function mostrarSeccionCortes() {
-  document.getElementById("prod-content").innerHTML =
-    '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
-    '<button class="prod-tab active" id="ctab-lista" onclick="corteTab(\'lista\')">Lista</button>' +
-    '<button class="prod-tab" id="ctab-nuevo" onclick="corteTab(\'nuevo\')">Nuevo</button>' +
-    '<button class="prod-tab" id="ctab-peticion" onclick="corteTab(\'peticion\')">Peticion</button>' +
-    '</div>' +
-    '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="corte-filtros"></div>' +
-    '<div id="corte-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>' +
-    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
+// ─── CORTES ───
+async function mostrarCortes(){
+  var el=document.getElementById("prod-content");
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  // Pre-cargar telas, talleres y numeros en paralelo
+  try{
+    var res=await Promise.all([callProd("stock-tela"),callProd("talleres"),callProd("numeros")]);
+    telasList=res[0].telas||[];
+    talleresList=res[1].talleres||[];
+    cortesNumeros=res[2].numeros||[];
+  }catch(e){}
+  var tallOpts=talleresList.map(function(t){return '<option value="'+t.nombre+'">'+t.nombre+'</option>';}).join("");
+  var html='<div class="tabs-row"><button class="prod-tab active" id="ct-lista" onclick="corteTab(\'lista\')">Lista</button><button class="prod-tab" id="ct-nuevo" onclick="corteTab(\'nuevo\')">Nuevo</button><button class="prod-tab" id="ct-peticion" onclick="corteTab(\'peticion\')">Peticion</button></div>';
+  html+='<div id="corte-content"><div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div></div>';
+  el.innerHTML=html;
   corteTab("lista");
 }
 
-async function corteTab(tab) {
-  ["lista","nuevo","peticion"].forEach(function(t) {
-    var el = document.getElementById("ctab-" + t);
-    if (el) el.classList.toggle("active", t === tab);
-  });
-  document.getElementById("corte-filtros").innerHTML = "";
-  if (tab === "lista") {
-    document.getElementById("corte-filtros").innerHTML =
-      '<select id="fil-estado" class="form-control" style="flex:1;padding:8px;font-size:13px" onchange="cargarCortes()">' +
-      '<option value="">Todos los estados</option><option value="En Taller">En Taller</option>' +
-      '<option value="Esperando Taller">Esperando Taller</option><option value="Terminado">Terminado</option>' +
-      '</select>' +
-      '<select id="fil-marca" class="form-control" style="flex:1;padding:8px;font-size:13px" onchange="cargarCortes()">' +
-      '<option value="">Todas las marcas</option><option value="Tussy">Tussy</option><option value="Shato">Shato</option><option value="Blanks">Blanks</option>' +
-      '</select>';
-    cargarCortes();
-  } else if (tab === "nuevo") {
-    await mostrarFormCorte();
-  } else if (tab === "peticion") {
-    await mostrarFormPeticion();
-  }
+function corteTabActivo(tab){
+  ["lista","nuevo","peticion"].forEach(function(t){ var b=document.getElementById("ct-"+t); if(b) b.classList.toggle("active",t===tab); });
 }
 
-async function cargarCortes() {
-  document.getElementById("corte-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div>';
-  var estado = (document.getElementById("fil-estado") && document.getElementById("fil-estado").value) || "";
-  var marca = (document.getElementById("fil-marca") && document.getElementById("fil-marca").value) || "";
-  try {
-    var res = await fetch("/api/produccion?tab=cortes&estado=" + encodeURIComponent(estado) + "&marca=" + encodeURIComponent(marca));
-    var data = await res.json();
-    cortesData = data.cortes || [];
-    if (cortesData.length === 0) {
-      document.getElementById("corte-content").innerHTML = '<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes registrados</p></div>';
-      return;
-    }
-    var html = "";
-    cortesData.forEach(function(c, idx) {
-      var estadoColor = { "En Taller":"estado-taller", "Esperando Taller":"estado-espera", "Terminado":"estado-listo", "Entregado":"estado-listo" }[c.estado] || "estado-espera";
-      html += '<div class="corte-card" onclick="verDetalleCorte(' + idx + ')">' +
-        '<div class="corte-header"><div class="corte-num">Corte #' + (c.numero||"—") + ' <span style="font-size:11px;color:#aaa">' + (c.marca||"") + '</span></div>' +
-        '<span class="corte-estado ' + estadoColor + '">' + (c.estado||"—") + '</span></div>' +
-        '<div class="corte-tela">' + (c.telaId||"—") + ' · ' + (c.fecha||"—") + ' · ' + (c.taller||"Sin asignar") + '</div>' +
-        '<div class="corte-grid">' +
-        '<div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">' + (c.kg||"—") + '</div></div>' +
-        '<div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">' + (c.totalPrendas||c.qPrendas||"—") + '</div></div>' +
-        '<div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">' + (c.rinde||"—") + '</div></div>' +
-        '</div>' +
-        (c.descripcion ? '<div style="font-size:12px;color:#888;margin-top:6px">' + c.descripcion + '</div>' : '') +
-        '</div>';
-    });
-    document.getElementById("corte-content").innerHTML = html;
-  } catch(e) {
-    document.getElementById("corte-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
-  }
+async function corteTab(tab){
+  corteTabActivo(tab);
+  if(tab==="lista") await cargarListaCortes();
+  else if(tab==="nuevo") await renderFormCorte();
+  else if(tab==="peticion") await renderFormPeticion();
 }
 
-function verDetalleCorte(idx) {
-  var c = cortesData[idx];
-  if (!c) return;
-  var estadoOpts = ["En Taller","Esperando Taller","Terminado","Entregado"].map(function(e) {
-    return '<option' + (c.estado === e ? " selected" : "") + ">" + e + "</option>";
-  }).join("");
-  document.getElementById("corte-content").innerHTML =
-    '<div class="card">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-    '<div class="card-title" style="margin:0">Corte #' + (c.numero||"") + '</div>' +
-    '<button onclick="cargarCortes()" class="btn-back">← Volver</button></div>' +
-    '<div class="corte-grid" style="margin-bottom:12px">' +
-    '<div class="corte-dato"><div class="corte-dato-label">Kg tela</div><div class="corte-dato-val">' + (c.kg||"—") + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">' + (c.totalPrendas||"—") + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">' + (c.rinde||"—") + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">TU</div><div class="corte-dato-val">' + (c.tu||0) + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">S</div><div class="corte-dato-val">' + (c.s||0) + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">M</div><div class="corte-dato-val">' + (c.m||0) + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">L</div><div class="corte-dato-val">' + (c.l||0) + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">XL</div><div class="corte-dato-val">' + (c.xl||0) + '</div></div>' +
-    '<div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">' + (c.faltantes||0) + '</div></div>' +
-    '</div>' +
-    '<div style="font-size:13px;color:#666;margin-bottom:12px">' + (c.telaId||"—") + ' · ' + (c.marca||"—") + ' · ' + (c.taller||"—") + ' · ' + (c.fecha||"—") + '</div>' +
-    (c.descripcion ? '<div style="font-size:13px;color:#666;margin-bottom:12px">' + c.descripcion + '</div>' : '') +
-    (c.notas ? '<div style="font-size:13px;color:#888;margin-bottom:12px">' + c.notas + '</div>' : '') +
-    '<div class="form-group"><label class="form-label">Actualizar estado</label><select id="det-estado" class="form-control">' + estadoOpts + '</select></div>' +
-    '<div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="det-precio" class="form-control" value="' + (c.precioCostura||0) + '" placeholder="0"></div>' +
-    '<button class="btn-submit" onclick="actualizarCorte(\'' + c.id + '\')">Guardar cambios</button>' +
+async function cargarListaCortes(estado,marca,taller){
+  var el=document.getElementById("corte-content");
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div>';
+  var tallOpts='<option value="">Todos</option>'+talleresList.map(function(t){return '<option value="'+t.nombre+'">'+t.nombre+'</option>';}).join("");
+  var filtrosHTML='<div class="filtros-row">'+
+    '<select class="filtro-sel" id="fil-estado" onchange="cargarListaCortes(this.value,document.getElementById(\'fil-marca\').value,document.getElementById(\'fil-taller\').value)">'+
+    '<option value="">Todos estados</option><option value="En Taller">En Taller</option><option value="Esperando Taller">Esperando Taller</option><option value="Terminado">Terminado</option><option value="Entregado">Entregado</option></select>'+
+    '<select class="filtro-sel" id="fil-marca" onchange="cargarListaCortes(document.getElementById(\'fil-estado\').value,this.value,document.getElementById(\'fil-taller\').value)">'+
+    '<option value="">Todas marcas</option><option value="Tussy">Tussy</option><option value="Shato">Shato</option><option value="Blanks">Blanks</option></select>'+
+    '</div>'+
+    '<div class="filtros-row">'+
+    '<select class="filtro-sel" id="fil-taller" onchange="cargarListaCortes(document.getElementById(\'fil-estado\').value,document.getElementById(\'fil-marca\').value,this.value)">'+
+    '<option value="">Todos talleres</option>'+tallOpts+'</select>'+
     '</div>';
+  try{
+    var params={};
+    if(estado) params.estado=estado;
+    if(marca) params.marca=marca;
+    if(taller) params.taller=taller;
+    var data=await callProd("cortes",params);
+    cortesData=data.cortes||[];
+    var html=filtrosHTML;
+    if(estado) document.getElementById&&setTimeout(function(){var el2=document.getElementById("fil-estado");if(el2)el2.value=estado;},10);
+    if(cortesData.length===0){ html+='<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes con ese filtro</p></div>'; el.innerHTML=html; return; }
+    cortesData.forEach(function(c,idx){
+      var ec={"En Taller":"estado-taller","Esperando Taller":"estado-espera","Terminado":"estado-listo","Entregado":"estado-listo","Pendiente":"estado-pendiente"}[c.estado]||"estado-espera";
+      html+='<div class="corte-card" onclick="verDetalleCorte('+idx+')">';
+      html+='<div class="corte-header"><div class="corte-num">Corte #'+(c.numero||"—")+' <span style="font-size:11px;color:#aaa">'+c.marca+'</span></div><span class="corte-estado '+ec+'">'+(c.estado||"—")+"</span></div>";
+      html+='<div class="corte-tela">'+c.telaNombre+' · '+c.fecha+' · 👤 '+(c.taller||"Sin asignar")+"</div>";
+      html+='<div class="corte-grid"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">'+(c.rinde||"—")+'</div></div></div>';
+      if(c.descripcion) html+='<div style="font-size:12px;color:#888;margin-top:6px">'+c.descripcion+"</div>";
+      html+="</div>";
+    });
+    el.innerHTML=html;
+    if(estado) setTimeout(function(){var fe=document.getElementById("fil-estado");if(fe)fe.value=estado;if(marca){var fm=document.getElementById("fil-marca");if(fm)fm.value=marca;}if(taller){var ft=document.getElementById("fil-taller");if(ft)ft.value=taller;}},50);
+  }catch(e){ el.innerHTML=filtrosHTML+'<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
 }
 
-async function actualizarCorte(id) {
-  var estado = document.getElementById("det-estado").value;
-  var precio = document.getElementById("det-precio").value;
-  try {
-    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action:"actualizarEstado", id:id, estado:estado, precioCostura:precio }) });
-    var data = await res.json();
-    if (data.ok) { showToast("Actualizado", "ok"); cargarCortes(); }
-    else showToast("Error: " + (data.error||""), "err");
-  } catch(e) { showToast("Error de conexion", "err"); }
+function verDetalleCorte(idx){
+  var c=cortesData[idx]; if(!c) return;
+  var ec={"En Taller":"estado-taller","Esperando Taller":"estado-espera","Terminado":"estado-listo","Entregado":"estado-listo"}[c.estado]||"estado-espera";
+  var estadoOpts=["En Taller","Esperando Taller","Terminado","Entregado"].map(function(e){return '<option'+(c.estado===e?" selected":"")+">"+e+"</option>";}).join("");
+  var html='<button onclick="cargarListaCortes()" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">← Volver a lista</button>';
+  html+='<div class="card"><div class="corte-header" style="margin-bottom:12px"><div class="corte-num">Corte #'+(c.numero||"")+'</div><span class="corte-estado '+ec+'">'+(c.estado||"—")+"</span></div>";
+  html+='<div style="font-size:13px;color:#666;margin-bottom:10px">'+c.telaNombre+' · '+c.marca+' · 👤 '+(c.taller||"—")+' · '+c.fecha+"</div>";
+  if(c.descripcion) html+='<div style="font-size:13px;color:#666;margin-bottom:10px">'+c.descripcion+"</div>";
+  html+='<div class="corte-grid" style="margin-bottom:12px"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">'+(c.rinde||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">TU</div><div class="corte-dato-val">'+(c.tu||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">S</div><div class="corte-dato-val">'+(c.s||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">M</div><div class="corte-dato-val">'+(c.m||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">L</div><div class="corte-dato-val">'+(c.l||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">XL</div><div class="corte-dato-val">'+(c.xl||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">'+(c.faltantes||0)+"</div></div></div>";
+  if(c.notas) html+='<div style="font-size:13px;color:#888;margin-bottom:12px">'+c.notas+"</div>";
+  html+='<div class="form-group"><label class="form-label">Actualizar estado</label><select id="det-estado" class="form-control">'+estadoOpts+"</select></div>";
+  html+='<div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="det-precio" class="form-control" value="'+(c.precioCostura||0)+'" placeholder="0"></div>';
+  html+='<button class="btn-submit" onclick="actualizarCorte(\''+c.id+'\')">Guardar cambios</button></div>';
+  document.getElementById("corte-content").innerHTML=html;
 }
 
-async function mostrarFormCorte() {
-  var telaRes = await fetch("/api/produccion?tab=stock-tela").then(function(r){return r.json();});
-  var tallRes = await fetch("/api/produccion?tab=talleres").then(function(r){return r.json();});
-  var telaOpts = telaRes.telas ? telaRes.telas.map(function(t){return '<option value="' + t.id + '">' + t.nombre + ' (' + parseFloat(t.stock||0).toFixed(1) + ' kg)</option>';}).join("") : "";
-  var tallOpts = tallRes.talleres ? tallRes.talleres.map(function(t){return '<option>' + t.nombre + '</option>';}).join("") : "";
-  document.getElementById("corte-content").innerHTML =
-    '<div class="card"><div class="card-title">Nuevo corte</div>' +
-    '<div class="form-group"><label class="form-label">N de Corte</label><input type="number" id="pc-num" class="form-control" placeholder="Ej: 125"></div>' +
-    '<div class="form-group"><label class="form-label">Producto / Descripcion</label><input type="text" id="pc-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>' +
-    '<div class="form-group"><label class="form-label">Tela</label><select id="pc-tela" class="form-control">' + telaOpts + '</select></div>' +
-    '<div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pc-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>' +
-    '<div class="form-group"><label class="form-label">Marca</label><select id="pc-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>' +
-    '<div class="form-group"><label class="form-label">N Partida</label><input type="text" id="pc-partida" class="form-control" placeholder="Opcional"></div>' +
-    '<div class="form-group"><label class="form-label">Taller</label><select id="pc-taller" class="form-control">' + tallOpts + '</select></div>' +
-    '<div class="form-group"><label class="form-label">Estado</label><select id="pc-estado" class="form-control"><option>Esperando Taller</option><option>En Taller</option></select></div>' +
-    '<div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="pc-precio" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-    '<div class="form-group"><label class="form-label">Talles</label>' +
-    '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">' +
-    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">TU</label><input type="number" id="pc-tu" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
-    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">S</label><input type="number" id="pc-s" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
-    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">M</label><input type="number" id="pc-m" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
-    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">L</label><input type="number" id="pc-l" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
-    '<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">XL</label><input type="number" id="pc-xl" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>' +
-    '</div></div>' +
-    '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pc-notas" class="form-control" placeholder="Opcional"></div>' +
-    '<button class="btn-submit" id="btn-gc" onclick="guardarCorte()">Guardar corte</button></div>';
+async function actualizarCorte(id){
+  var e=document.getElementById("det-estado").value, p=document.getElementById("det-precio").value;
+  try{
+    var data=await postProd({action:"actualizarEstado",id:id,estado:e,precioCostura:p});
+    if(data.ok){showToast("Actualizado","ok"); cargarListaCortes();}
+    else showToast("Error: "+(data.error||""),"err");
+  }catch(e){showToast("Error de conexion","err");}
 }
 
-async function guardarCorte() {
-  var btn = document.getElementById("btn-gc");
-  var num = document.getElementById("pc-num").value;
-  var tela = document.getElementById("pc-tela").value;
-  var kg = document.getElementById("pc-kg").value;
-  var prod = document.getElementById("pc-prod").value;
-  if (!num || !tela || !kg || !prod) { showToast("Completa numero, producto, tela y kg", "err"); return; }
-  btn.disabled = true; btn.textContent = "Guardando...";
-  try {
-    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action:"guardarCorte", numero:num, producto:prod, telaId:tela, kg:kg,
-        marca:document.getElementById("pc-marca").value, partida:document.getElementById("pc-partida").value,
-        taller:document.getElementById("pc-taller").value, estado:document.getElementById("pc-estado").value,
-        precioCostura:document.getElementById("pc-precio").value||0,
-        tu:document.getElementById("pc-tu").value||0, s:document.getElementById("pc-s").value||0,
-        m:document.getElementById("pc-m").value||0, l:document.getElementById("pc-l").value||0,
-        xl:document.getElementById("pc-xl").value||0, notas:document.getElementById("pc-notas").value }) });
-    var data = await res.json();
-    if (data.ok) { showToast("Corte guardado", "ok"); corteTab("lista"); }
-    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
-  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Guardar corte"; }
+async function renderFormCorte(){
+  var el=document.getElementById("corte-content");
+  // Buscador de telas en select
+  var telaOpts=telasList.map(function(t){return '<option value="'+t.id+'">'+t.nombre+' ('+parseFloat(t.stock||0).toFixed(1)+' kg)</option>';}).join("");
+  var tallOpts=talleresList.map(function(t){return '<option>'+t.nombre+'</option>';}).join("");
+  var html='<div class="card"><div class="card-title">Nuevo corte</div>';
+  html+='<div class="form-group"><label class="form-label">N de Corte</label><input type="number" id="pc-num" class="form-control" placeholder="Ej: 125" oninput="validarNumCorte(this.value)"><div id="pc-num-err" style="font-size:12px;color:var(--rojo);margin-top:4px"></div></div>';
+  html+='<div class="form-group"><label class="form-label">Producto / Descripcion</label><input type="text" id="pc-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>';
+  html+='<div class="form-group"><label class="form-label">Tela</label>';
+  html+='<input type="text" id="pc-tela-search" class="search-box" placeholder="Buscar tela..." oninput="filtrarSelectTela()" style="margin-bottom:6px">';
+  html+='<select id="pc-tela" class="form-control" size="4" style="height:auto">'+telaOpts+'</select></div>';
+  html+='<div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pc-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>';
+  html+='<div class="form-group"><label class="form-label">Marca</label><select id="pc-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>';
+  html+='<div class="form-group"><label class="form-label">N Partida</label><input type="text" id="pc-partida" class="form-control" placeholder="Opcional"></div>';
+  html+='<div class="form-group"><label class="form-label">Taller</label><select id="pc-taller" class="form-control">'+tallOpts+'</select></div>';
+  html+='<div class="form-group"><label class="form-label">Estado</label><select id="pc-estado" class="form-control"><option>Esperando Taller</option><option>En Taller</option></select></div>';
+  html+='<div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="pc-precio" class="form-control" placeholder="0" inputmode="numeric"></div>';
+  html+='<div class="form-group"><label class="form-label">Talles</label><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">';
+  ["TU","S","M","L","XL"].forEach(function(t){ html+='<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">'+t+'</label><input type="number" id="pc-'+t.toLowerCase()+'" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>'; });
+  html+='</div></div>';
+  html+='<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pc-notas" class="form-control" placeholder="Opcional"></div>';
+  html+='<button class="btn-submit" id="btn-gc" onclick="guardarCorte()">Guardar corte</button></div>';
+  el.innerHTML=html;
 }
 
-async function mostrarFormPeticion() {
-  var telaRes = await fetch("/api/produccion?tab=stock-tela").then(function(r){return r.json();});
-  var tallRes = await fetch("/api/produccion?tab=talleres").then(function(r){return r.json();});
-  var telaOpts = telaRes.telas ? telaRes.telas.map(function(t){return '<option value="' + t.id + '">' + t.nombre + '</option>';}).join("") : "";
-  var tallOpts = tallRes.talleres ? tallRes.talleres.map(function(t){return '<option>' + t.nombre + '</option>';}).join("") : "";
-  document.getElementById("corte-content").innerHTML =
-    '<div class="card"><div class="card-title">Peticion de corte</div>' +
-    '<div class="form-group"><label class="form-label">Producto</label><input type="text" id="pet-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>' +
-    '<div class="form-group"><label class="form-label">Tela</label><select id="pet-tela" class="form-control">' + telaOpts + '</select></div>' +
-    '<div class="form-group"><label class="form-label">Kg estimados</label><input type="number" id="pet-kg" class="form-control" placeholder="0.0" step="0.1"></div>' +
-    '<div class="form-group"><label class="form-label">Taller sugerido</label><select id="pet-taller" class="form-control"><option value="">Sin asignar</option>' + tallOpts + '</select></div>' +
-    '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pet-notas" class="form-control" placeholder="Detalles adicionales..."></div>' +
-    '<button class="btn-submit" id="btn-pet" onclick="guardarPeticion()">Enviar peticion</button></div>';
+function validarNumCorte(val){
+  var errEl=document.getElementById("pc-num-err"); if(!errEl) return;
+  if(val&&cortesNumeros.indexOf(String(val))>=0) errEl.textContent="Este numero de corte ya existe";
+  else errEl.textContent="";
 }
 
-async function guardarPeticion() {
-  var btn = document.getElementById("btn-pet");
-  var prod = document.getElementById("pet-prod").value;
-  if (!prod) { showToast("Ingresa el producto", "err"); return; }
-  btn.disabled = true; btn.textContent = "Guardando...";
-  try {
-    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action:"peticionCorte", producto:prod,
-        telaId:document.getElementById("pet-tela").value, kg:document.getElementById("pet-kg").value,
-        taller:document.getElementById("pet-taller").value, notas:document.getElementById("pet-notas").value }) });
-    var data = await res.json();
-    if (data.ok) { showToast("Peticion enviada", "ok"); corteTab("lista"); }
-    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Enviar peticion"; }
-  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Enviar peticion"; }
+function filtrarSelectTela(){
+  var q=(document.getElementById("pc-tela-search").value||"").toLowerCase();
+  var sel=document.getElementById("pc-tela"); if(!sel) return;
+  var opts=telasList.filter(function(t){return !q||t.nombre.toLowerCase().includes(q);});
+  sel.innerHTML=opts.map(function(t){return '<option value="'+t.id+'">'+t.nombre+' ('+parseFloat(t.stock||0).toFixed(1)+' kg)</option>';}).join("");
 }
 
-// TALLERES
-function mostrarSeccionTalleres() {
-  document.getElementById("prod-content").innerHTML =
-    '<div style="display:flex;gap:8px;margin-bottom:12px">' +
-    '<button class="prod-tab active" id="ttab-lista" onclick="tallerTab(\'lista\')">Talleres</button>' +
-    '<button class="prod-tab" id="ttab-nuevo" onclick="tallerTab(\'nuevo\')">Nuevo</button>' +
-    '</div>' +
-    '<div id="taller-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>' +
-    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
+async function guardarCorte(){
+  var btn=document.getElementById("btn-gc");
+  var num=document.getElementById("pc-num").value, tela=document.getElementById("pc-tela").value;
+  var kg=document.getElementById("pc-kg").value, prod=document.getElementById("pc-prod").value;
+  if(!num||!tela||!kg||!prod){showToast("Completa numero, producto, tela y kg","err");return;}
+  if(cortesNumeros.indexOf(String(num))>=0){showToast("El numero de corte ya existe","err");return;}
+  btn.disabled=true; btn.textContent="Guardando...";
+  try{
+    var data=await postProd({action:"guardarCorte",numero:num,producto:prod,telaId:tela,kg:kg,
+      marca:document.getElementById("pc-marca").value,partida:document.getElementById("pc-partida").value,
+      taller:document.getElementById("pc-taller").value,estado:document.getElementById("pc-estado").value,
+      precioCostura:document.getElementById("pc-precio").value||0,
+      tu:(document.getElementById("pc-tu")||{value:0}).value||0,
+      s:(document.getElementById("pc-s")||{value:0}).value||0,
+      m:(document.getElementById("pc-m")||{value:0}).value||0,
+      l:(document.getElementById("pc-l")||{value:0}).value||0,
+      xl:(document.getElementById("pc-xl")||{value:0}).value||0,
+      notas:document.getElementById("pc-notas").value});
+    if(data.ok){showToast("Corte guardado","ok"); cortesNumeros.push(String(num)); corteTab("lista");}
+    else{showToast("Error: "+(data.error||""),"err");btn.disabled=false;btn.textContent="Guardar corte";}
+  }catch(e){showToast("Error de conexion","err");btn.disabled=false;btn.textContent="Guardar corte";}
+}
+
+async function renderFormPeticion(){
+  var el=document.getElementById("corte-content");
+  // Cargar peticiones existentes
+  var petsData={peticiones:[]};
+  try{ petsData=await callProd("peticiones"); }catch(e){}
+  var html='<div class="card"><div class="card-title">Nueva peticion de corte</div>';
+  html+='<div class="form-group"><label class="form-label">Producto</label><input type="text" id="pet-prod" class="form-control" placeholder="Ej: Remera Oversize Roots"></div>';
+  html+='<div class="form-group"><label class="form-label">Marca</label><select id="pet-marca" class="form-control"><option>Tussy</option><option>Shato</option><option>Blanks</option></select></div>';
+  html+='<div class="form-group"><label class="form-label">Talles</label><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">';
+  ["TU","S","M","L","XL"].forEach(function(t){ html+='<div><label style="font-size:10px;color:#aaa;display:block;text-align:center">'+t+'</label><input type="number" id="pet-'+t.toLowerCase()+'" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>'; });
+  html+='</div></div>';
+  html+='<div class="form-group"><label class="form-label">Notas</label><input type="text" id="pet-notas" class="form-control" placeholder="Opcional"></div>';
+  html+='<button class="btn-submit" id="btn-pet" onclick="guardarPeticion()">Enviar peticion</button></div>';
+  if(petsData.peticiones&&petsData.peticiones.length>0){
+    html+='<div class="card"><div class="card-title">Peticiones recientes</div>';
+    petsData.peticiones.slice(0,10).forEach(function(p){
+      html+='<div class="pet-card"><div class="pet-prod">'+p.producto+'</div>';
+      html+='<div class="pet-talles">TU:'+p.tu+' S:'+p.s+' M:'+p.m+' L:'+p.l+' XL:'+p.xl+' · '+p.marca+'</div>';
+      html+='<span class="pet-estado '+(p.estado==="Pendiente"?"estado-espera":"estado-listo")+'">'+p.estado+"</span></div>";
+    });
+    html+="</div>";
+  }
+  el.innerHTML=html;
+}
+
+async function guardarPeticion(){
+  var btn=document.getElementById("btn-pet"), prod=document.getElementById("pet-prod").value;
+  if(!prod){showToast("Ingresa el producto","err");return;}
+  btn.disabled=true; btn.textContent="Guardando...";
+  try{
+    var data=await postProd({action:"peticionCorte",producto:prod,marca:document.getElementById("pet-marca").value,
+      tu:(document.getElementById("pet-tu")||{value:0}).value||0,
+      s:(document.getElementById("pet-s")||{value:0}).value||0,
+      m:(document.getElementById("pet-m")||{value:0}).value||0,
+      l:(document.getElementById("pet-l")||{value:0}).value||0,
+      xl:(document.getElementById("pet-xl")||{value:0}).value||0,
+      notas:document.getElementById("pet-notas").value});
+    if(data.ok){showToast("Peticion enviada","ok"); renderFormPeticion();}
+    else{showToast("Error: "+(data.error||""),"err");btn.disabled=false;btn.textContent="Enviar peticion";}
+  }catch(e){showToast("Error de conexion","err");btn.disabled=false;btn.textContent="Enviar peticion";}
+}
+
+// ─── TALLERES ───
+async function mostrarTalleres(){
+  var el=document.getElementById("prod-content");
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  var html='<div class="tabs-row"><button class="prod-tab active" id="tall-lista" onclick="tallerTab(\'lista\')">Talleres</button><button class="prod-tab" id="tall-nuevo" onclick="tallerTab(\'nuevo\')">Nuevo</button></div>';
+  html+='<div id="taller-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>';
+  el.innerHTML=html;
   tallerTab("lista");
 }
 
-async function tallerTab(tab) {
-  document.getElementById("ttab-lista").classList.toggle("active", tab === "lista");
-  document.getElementById("ttab-nuevo").classList.toggle("active", tab === "nuevo");
-  if (tab === "lista") {
-    try {
-      var res = await fetch("/api/produccion?tab=talleres");
-      var data = await res.json();
-      if (!data.talleres || data.talleres.length === 0) {
-        document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">👥</div><p>Sin talleres registrados</p></div>';
-        return;
-      }
-      var html = '<div class="card"><div class="card-title">Talleres activos</div>';
-      data.talleres.forEach(function(t) {
-        html += '<div class="tx-item" onclick="verCortesTaller(\'' + t.nombre.replace(/'/g,"") + '\')">' +
-          '<div class="tx-left"><div class="tx-desc">👤 ' + t.nombre + '</div><div class="tx-cat">' + (t.telefono||"Sin telefono") + '</div></div>' +
-          '<div style="font-size:12px;color:#aaa">Ver cortes →</div></div>';
+async function tallerTab(tab){
+  var el=document.getElementById("taller-content"); if(!el) return;
+  document.getElementById("tall-lista").classList.toggle("active",tab==="lista");
+  document.getElementById("tall-nuevo").classList.toggle("active",tab==="nuevo");
+  if(tab==="lista"){
+    try{
+      var data=await callProd("talleres");
+      talleresList=data.talleres||[];
+      if(talleresList.length===0){el.innerHTML='<div class="empty"><div class="e-icon">👥</div><p>Sin talleres</p></div>';return;}
+      var html="";
+      talleresList.forEach(function(t,idx){
+        html+='<div class="taller-card" onclick="verDetalleTaller('+idx+')">';
+        html+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+        html+='<div><div class="taller-nombre">👤 '+t.nombre+'</div>';
+        html+='<div class="taller-info">'+(t.telefono||"Sin telefono")+(t.direccion?" · "+t.direccion:"")+'</div></div>';
+        html+='<div style="font-size:12px;color:#aaa">Ver →</div></div></div>';
       });
-      html += "</div>";
-      document.getElementById("taller-content").innerHTML = html;
-    } catch(e) {
-      document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
-    }
+      el.innerHTML=html;
+    }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';}
   } else {
-    document.getElementById("taller-content").innerHTML =
-      '<div class="card"><div class="card-title">Nuevo taller</div>' +
-      '<div class="form-group"><label class="form-label">Nombre</label><input type="text" id="nt-nombre" class="form-control" placeholder="Nombre del taller"></div>' +
-      '<div class="form-group"><label class="form-label">Telefono</label><input type="tel" id="nt-tel" class="form-control" placeholder="Opcional"></div>' +
-      '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="nt-notas" class="form-control" placeholder="Opcional"></div>' +
+    el.innerHTML='<div class="card"><div class="card-title">Nuevo taller</div>'+
+      '<div class="form-group"><label class="form-label">Nombre</label><input type="text" id="nt-nombre" class="form-control" placeholder="Nombre del taller"></div>'+
+      '<div class="form-group"><label class="form-label">Telefono</label><input type="tel" id="nt-tel" class="form-control" placeholder="Opcional"></div>'+
+      '<div class="form-group"><label class="form-label">Direccion</label><input type="text" id="nt-dir" class="form-control" placeholder="Opcional"></div>'+
+      '<div class="form-group"><label class="form-label">DNI</label><input type="text" id="nt-dni" class="form-control" placeholder="Opcional"></div>'+
+      '<div class="form-group"><label class="form-label">Notas</label><input type="text" id="nt-notas" class="form-control" placeholder="Opcional"></div>'+
       '<button class="btn-submit" id="btn-nt" onclick="guardarTaller()">Guardar taller</button></div>';
   }
 }
 
-async function verCortesTaller(taller) {
-  document.getElementById("taller-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando cortes...</p></div>';
-  try {
-    var res = await fetch("/api/produccion?tab=cortes&taller=" + encodeURIComponent(taller));
-    var data = await res.json();
-    cortesData = data.cortes || [];
-    var html = '<button onclick="tallerTab(\'lista\')" class="btn-back">← Volver a talleres</button>';
-    html += '<div class="card-title" style="margin-bottom:12px">Cortes de ' + taller + ' (' + cortesData.length + ')</div>';
-    if (cortesData.length === 0) {
-      html += '<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes asignados</p></div>';
-    } else {
-      cortesData.forEach(function(c, idx) {
-        var estadoColor = { "En Taller":"estado-taller", "Esperando Taller":"estado-espera", "Terminado":"estado-listo" }[c.estado] || "estado-espera";
-        html += '<div class="corte-card" onclick="verDetalleCorte(' + idx + ')">' +
-          '<div class="corte-header"><div class="corte-num">Corte #' + (c.numero||"—") + '</div><span class="corte-estado ' + estadoColor + '">' + (c.estado||"—") + '</span></div>' +
-          '<div class="corte-tela">' + (c.descripcion||"—") + ' · ' + (c.fecha||"—") + '</div>' +
-          '<div class="corte-grid">' +
-          '<div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">' + (c.kg||"—") + '</div></div>' +
-          '<div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">' + (c.totalPrendas||"—") + '</div></div>' +
-          '<div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">' + (c.faltantes||0) + '</div></div>' +
-          '</div></div>';
-      });
-    }
-    document.getElementById("taller-content").innerHTML = html;
-  } catch(e) {
-    document.getElementById("taller-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error</p></div>';
-  }
+function verDetalleTaller(idx){
+  var t=talleresList[idx]; if(!t) return;
+  var el=document.getElementById("taller-content");
+  var html='<button onclick="tallerTab(\'lista\')" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">← Volver</button>';
+  html+='<div class="card"><div style="font-size:18px;font-weight:900;margin-bottom:12px">👤 '+t.nombre+'</div>';
+  if(t.telefono) html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">Telefono</div></div><div style="font-size:14px;font-weight:600">'+t.telefono+'</div></div>';
+  if(t.direccion) html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">Direccion</div></div><div style="font-size:14px;font-weight:600">'+t.direccion+'</div></div>';
+  if(t.dni) html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">DNI</div></div><div style="font-size:14px;font-weight:600">'+t.dni+'</div></div>';
+  if(t.notas) html+='<div style="margin-top:8px;font-size:13px;color:#888">'+t.notas+'</div>';
+  html+='</div>';
+  // Filtro de etapa para cortes del taller
+  html+='<div class="card-title" style="margin-bottom:8px">Cortes de '+t.nombre+'</div>';
+  html+='<div class="filtros-row"><select class="filtro-sel" id="tall-fil-estado" onchange="cargarCortesTaller(\''+t.nombre.replace(/'/g,"")+'\',this.value)"><option value="">Todos estados</option><option value="En Taller">En Taller</option><option value="Esperando Taller">Esperando Taller</option><option value="Terminado">Terminado</option></select></div>';
+  html+='<div id="tall-cortes-list"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>';
+  el.innerHTML=html;
+  cargarCortesTaller(t.nombre,"");
 }
 
-async function guardarTaller() {
-  var btn = document.getElementById("btn-nt");
-  var nombre = document.getElementById("nt-nombre").value;
-  if (!nombre) { showToast("Ingresa el nombre", "err"); return; }
-  btn.disabled = true; btn.textContent = "Guardando...";
-  try {
-    var res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ action:"guardarTaller", nombre:nombre,
-        telefono:document.getElementById("nt-tel").value, notas:document.getElementById("nt-notas").value }) });
-    var data = await res.json();
-    if (data.ok) { showToast("Taller guardado", "ok"); tallerTab("lista"); }
-    else { showToast("Error: " + (data.error||""), "err"); btn.disabled = false; btn.textContent = "Guardar taller"; }
-  } catch(e) { showToast("Error de conexion", "err"); btn.disabled = false; btn.textContent = "Guardar taller"; }
+async function cargarCortesTaller(taller,estado){
+  var el=document.getElementById("tall-cortes-list"); if(!el) return;
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  try{
+    var params={taller:taller}; if(estado) params.estado=estado;
+    var data=await callProd("cortes",params);
+    var cortes=data.cortes||[];
+    if(cortes.length===0){el.innerHTML='<div class="empty" style="padding:20px"><div class="e-icon" style="font-size:32px">✂️</div><p>Sin cortes'+(estado?" con este estado":"")+'</p></div>';return;}
+    var html="";
+    cortes.forEach(function(c,idx){
+      cortesData[idx]=c;
+      var ec={"En Taller":"estado-taller","Esperando Taller":"estado-espera","Terminado":"estado-listo"}[c.estado]||"estado-espera";
+      html+='<div class="corte-card" onclick="verDetalleCorteEnTaller('+idx+')">';
+      html+='<div class="corte-header"><div class="corte-num">Corte #'+(c.numero||"—")+'</div><span class="corte-estado '+ec+'">'+(c.estado||"—")+"</span></div>";
+      html+='<div class="corte-tela">'+c.telaNombre+' · '+c.fecha+"</div>";
+      html+='<div class="corte-grid"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">'+(c.faltantes||0)+"</div></div></div></div>";
+    });
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error</p></div>';}
 }
 
-// ESTADISTICAS
-function mostrarSeccionEstadisticas() {
-  document.getElementById("prod-content").innerHTML =
-    '<div class="mes-row" style="margin-bottom:16px">' +
-    '<input type="date" id="stat-desde" class="form-control">' +
-    '<input type="date" id="stat-hasta" class="form-control">' +
-    '<button class="mes-btn" onclick="fetchEstadisticas()">Ver</button>' +
-    '</div>' +
-    '<div id="stat-content"><div class="loading"><div class="spinner"></div><p>Calculando...</p></div></div>' +
-    '<button class="btn-secondary" onclick="volverProdHome()">← Volver</button>';
+function verDetalleCorteEnTaller(idx){ verDetalleCorte(idx); }
+
+async function guardarTaller(){
+  var btn=document.getElementById("btn-nt"), nombre=document.getElementById("nt-nombre").value;
+  if(!nombre){showToast("Ingresa el nombre","err");return;}
+  btn.disabled=true; btn.textContent="Guardando...";
+  try{
+    var data=await postProd({action:"guardarTaller",nombre:nombre,
+      telefono:document.getElementById("nt-tel").value,
+      direccion:document.getElementById("nt-dir").value,
+      dni:document.getElementById("nt-dni").value,
+      notas:document.getElementById("nt-notas").value});
+    if(data.ok){showToast("Taller guardado","ok"); tallerTab("lista");}
+    else{showToast("Error: "+(data.error||""),"err");btn.disabled=false;btn.textContent="Guardar taller";}
+  }catch(e){showToast("Error de conexion","err");btn.disabled=false;btn.textContent="Guardar taller";}
+}
+
+// ─── ESTADISTICAS ───
+async function mostrarEstadisticas(){
+  var el=document.getElementById("prod-content");
+  var hoy=new Date(), pad=function(n){return String(n).padStart(2,"0");};
+  var priMes=hoy.getFullYear()+"-"+pad(hoy.getMonth()+1)+"-01";
+  var hoyStr=hoy.getFullYear()+"-"+pad(hoy.getMonth()+1)+"-"+pad(hoy.getDate());
+  el.innerHTML='<div class="mes-row"><input type="date" id="stat-desde" class="form-control" value="'+priMes+'"><input type="date" id="stat-hasta" class="form-control" value="'+hoyStr+'"><button class="mes-btn" onclick="fetchEstadisticas()">Ver</button></div><div id="stat-content"><div class="loading"><div class="spinner"></div><p>Calculando...</p></div></div>';
   fetchEstadisticas();
 }
 
-async function fetchEstadisticas() {
-  document.getElementById("stat-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Calculando...</p></div>';
-  var desde = document.getElementById("stat-desde").value;
-  var hasta = document.getElementById("stat-hasta").value;
-  try {
-    var url = "/api/produccion?tab=estadisticas" + (desde ? "&desde="+desde : "") + (hasta ? "&hasta="+hasta : "");
-    var res = await fetch(url);
-    var data = await res.json();
-    mostrarEstadisticas(data);
-  } catch(e) {
-    document.getElementById("stat-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
-  }
+async function fetchEstadisticas(){
+  var el=document.getElementById("stat-content"); if(!el) return;
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Calculando...</p></div>';
+  var desde=document.getElementById("stat-desde").value, hasta=document.getElementById("stat-hasta").value;
+  try{
+    var data=await callProd("estadisticas",{desde:desde,hasta:hasta});
+    mostrarEstadisticasHTML(data);
+  }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';}
 }
 
-function mostrarEstadisticas(data) {
-  var html = "";
-  html += '<div class="stats">' +
-    '<div class="stat"><div class="stat-label">Total prendas</div><div class="stat-value">' + ((data.totalPrendas||0)).toLocaleString("es-AR") + '</div></div>' +
-    '<div class="stat"><div class="stat-label">Total kg tela</div><div class="stat-value">' + parseFloat(data.totalKg||0).toFixed(1) + '</div></div>' +
-    '</div>';
-  var renderBar = function(obj, titulo, unit) {
-    if (!obj || Object.keys(obj).length === 0) return "";
-    var entries = Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
-    var max = entries[0][1];
-    var h = '<div class="card"><div class="card-title">' + titulo + '</div>';
-    entries.forEach(function(e) {
-      var w = Math.round(e[1] / max * 100);
-      var val = typeof e[1] === "number" && e[1] % 1 !== 0 ? e[1].toFixed(1) : e[1];
-      h += '<div class="cat-item"><div class="cat-row"><span class="cat-name">' + e[0] + '</span><span class="cat-monto">' + val + ' ' + unit + '</span></div><div class="bar-wrap"><div class="bar" style="width:' + w + '%;background:var(--negro)"></div></div></div>';
+function mostrarEstadisticasHTML(data){
+  var el=document.getElementById("stat-content"); if(!el) return;
+  var html='<div class="stats"><div class="stat"><div class="stat-label">Total prendas</div><div class="stat-value">'+(data.totalPrendas||0).toLocaleString("es-AR")+'</div></div><div class="stat"><div class="stat-label">Total kg tela</div><div class="stat-value">'+parseFloat(data.totalKg||0).toFixed(1)+"</div></div></div>";
+
+  var renderBar=function(obj,titulo){
+    if(!obj||Object.keys(obj).length===0) return "";
+    var entries=Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
+    var max=entries[0][1];
+    var h='<div class="card"><div class="card-title">'+titulo+"</div>";
+    entries.forEach(function(e){
+      var w=Math.round(e[1]/max*100);
+      var val=typeof e[1]==="number"&&e[1]%1!==0?e[1].toFixed(1):e[1];
+      h+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+e[0]+'</span><span class="cat-monto">'+val+'</span></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:var(--negro)"></div></div></div>';
     });
-    return h + '</div>';
+    return h+"</div>";
   };
-  html += renderBar(data.porTipoTela, "Prendas por tipo de tela", "prendas");
-  html += renderBar(data.porProducto, "Prendas por tipo de producto", "prendas");
-  html += renderBar(data.porKgTela, "Kg cortados por tela", "kg");
-  html += renderBar(data.porTaller, "Prendas por taller", "prendas");
-  document.getElementById("stat-content").innerHTML = html || '<div class="empty"><div class="e-icon">📊</div><p>Sin datos</p></div>';
+
+  // TOP5 para tipo de producto con "Otros"
+  var renderTop5=function(obj,titulo){
+    if(!obj||Object.keys(obj).length===0) return "";
+    var entries=Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
+    var top=entries.slice(0,5), resto=entries.slice(5);
+    var max=entries[0][1];
+    var h='<div class="card"><div class="card-title">'+titulo+"</div>";
+    top.forEach(function(e){
+      var w=Math.round(e[1]/max*100);
+      h+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+e[0]+'</span><span class="cat-monto">'+e[1]+'</span></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:var(--negro)"></div></div></div>';
+    });
+    if(resto.length>0){
+      var totalResto=resto.reduce(function(s,e){return s+e[1];},0);
+      var wR=Math.round(totalResto/max*100);
+      var detalle=resto.map(function(e){return e[0]+": "+e[1];}).join(", ");
+      h+='<div class="cat-item" onclick="this.querySelector(\'.otros-det\').style.display=this.querySelector(\'.otros-det\').style.display===\'none\'?\'block\':\'none\'">';
+      h+='<div class="cat-row" style="cursor:pointer"><span class="cat-name">Otros ('+resto.length+')</span><span class="cat-monto">'+totalResto+' ▾</span></div>';
+      h+='<div class="bar-wrap"><div class="bar" style="width:'+wR+'%;background:#aaa"></div></div>';
+      h+='<div class="otros-det" style="display:none;font-size:11px;color:#aaa;margin-top:6px;line-height:1.6">'+detalle+'</div></div>';
+    }
+    return h+"</div>";
+  };
+
+  // KG por tela: ordenado de menor a mayor (mas interesante ver cuales se usan menos)
+  var renderKg=function(obj,titulo){
+    if(!obj||Object.keys(obj).length===0) return "";
+    var entries=Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
+    var max=entries[0][1];
+    var h='<div class="card"><div class="card-title">'+titulo+"</div>";
+    entries.forEach(function(e){
+      var w=Math.round(e[1]/max*100);
+      h+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+e[0]+'</span><span class="cat-monto">'+parseFloat(e[1]).toFixed(1)+' kg</span></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:var(--azul)"></div></div></div>';
+    });
+    return h+"</div>";
+  };
+
+  html+=renderBar(data.porTipoTela,"Prendas por tipo de tela");
+  html+=renderTop5(data.porProducto,"Prendas por tipo de producto");
+  html+=renderKg(data.porKgTela,"Kg cortados por tela (mayor a menor)");
+  html+=renderBar(data.porTaller,"Prendas por taller");
+  el.innerHTML=html||'<div class="empty"><div class="e-icon">📊</div><p>Sin datos</p></div>';
 }
 
-// FORM
-function setTipo(tipo) {
-  tipoActual = tipo;
-  document.getElementById("btn-gasto").classList.toggle("active", tipo === "Gasto");
-  document.getElementById("btn-ingreso").classList.toggle("active", tipo === "Ingreso");
+// ══ FORM FINANZAS ══
+function setTipo(tipo){
+  tipoActual=tipo;
+  document.getElementById("btn-gasto").classList.toggle("active",tipo==="Gasto");
+  document.getElementById("btn-ingreso").classList.toggle("active",tipo==="Ingreso");
   updateCatSelect();
 }
-function updateCatSelect() {
-  var sel = document.getElementById("f-cat");
-  var cats = tipoActual === "Gasto" ? catsGasto : catsIngreso;
-  if (cats && cats.length > 0) sel.innerHTML = cats.map(function(c){return '<option>' + c + '</option>';}).join("");
+function updateCatSelect(){
+  var sel=document.getElementById("f-cat"), cats=tipoActual==="Gasto"?catsGasto:catsIngreso;
+  if(cats&&cats.length>0) sel.innerHTML=cats.map(function(c){return '<option>'+c+'</option>';}).join("");
 }
-
-async function guardarTransaccion() {
-  var fecha = document.getElementById("f-fecha").value;
-  var desc = document.getElementById("f-desc").value.trim();
-  var cat = document.getElementById("f-cat").value;
-  var medio = document.getElementById("f-medio").value;
-  var monto = document.getElementById("f-monto").value;
-  var notas = document.getElementById("f-notas").value.trim();
-  if (!fecha || !desc || !monto || parseFloat(monto) <= 0) { showToast("Completa fecha, descripcion y monto", "err"); return; }
-  var btn = document.getElementById("btn-guardar");
-  btn.disabled = true; btn.textContent = "Guardando...";
-  callScript("agregarTransaccion", { fecha:fecha, descripcion:desc, categoria:cat, tipo:tipoActual, medio:medio, monto:monto, notas:notas }, function() {
-    showToast("Guardado correctamente", "ok");
-    btn.disabled = false; btn.textContent = "Guardar transaccion";
-    document.getElementById("f-desc").value = "";
-    document.getElementById("f-monto").value = "";
-    document.getElementById("f-notas").value = "";
+async function guardarTransaccion(){
+  var fecha=document.getElementById("f-fecha").value, desc=document.getElementById("f-desc").value.trim();
+  var cat=document.getElementById("f-cat").value, medio=document.getElementById("f-medio").value;
+  var monto=document.getElementById("f-monto").value, notas=document.getElementById("f-notas").value.trim();
+  if(!fecha||!desc||!monto||parseFloat(monto)<=0){showToast("Completa fecha, descripcion y monto","err");return;}
+  var btn=document.getElementById("btn-guardar"); btn.disabled=true; btn.textContent="Guardando...";
+  callScript("agregarTransaccion",{fecha:fecha,descripcion:desc,categoria:cat,tipo:tipoActual,medio:medio,monto:monto,notas:notas},function(){
+    showToast("Guardado correctamente","ok");
+    btn.disabled=false; btn.textContent="Guardar transaccion";
+    document.getElementById("f-desc").value=""; document.getElementById("f-monto").value=""; document.getElementById("f-notas").value="";
   });
 }
 
-function showToast(msg, tipo) {
-  var t = document.getElementById("toast");
-  t.textContent = msg; t.className = "toast " + (tipo||"");
-  t.classList.add("show");
-  setTimeout(function() { t.classList.remove("show"); }, 3000);
+// ══ TOAST ══
+function showToast(msg,tipo){
+  var t=document.getElementById("toast"); t.textContent=msg; t.className="toast "+(tipo||"");
+  t.classList.add("show"); setTimeout(function(){t.classList.remove("show");},3000);
 }
 </script>
 </body>
