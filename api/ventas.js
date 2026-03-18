@@ -54,12 +54,11 @@ Y en `getTNData` asegurate que el filtro de payment_status sea solo pedidos paga
       })) : []
     };
   }
-
-  async function getTNData() {
+async function getTNData() {
     let page = 1, total = 0, cantidad = 0, primerPedidos = [];
     while (true) {
       const r = await fetch(
-        `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${inicioUTC}&created_at_max=${finUTC}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number`,
+        `https://api.tiendanube.com/v1/${TN_USER}/orders?created_at_min=${inicioUTC}&created_at_max=${finUTC}&per_page=200&page=${page}&fields=id,total,payment_status,contact_name,number&payment_status=paid`,
         { headers: { "Authentication": `bearer ${TN_TOKEN}`, "User-Agent": "TussyApp/1.0" } }
       );
       const data = await r.json();
@@ -80,6 +79,7 @@ Y en `getTNData` asegurate que el filtro de payment_status sea solo pedidos paga
       }))
     };
   }
+  
 
   try {
     const [palermo, laplata, tn] = await Promise.all([
