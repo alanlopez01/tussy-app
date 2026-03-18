@@ -1062,7 +1062,7 @@ function verDetalleCorte(id) {
         🧵 ${c.telaId||"—"} · 🏷️ ${c.marca||"—"} · 👤 ${c.taller||"—"} · 📅 ${c.fecha||"—"}
       </div>
       ${c.descripcion ? `<div style="font-size:13px;color:#666;margin-bottom:12px">📦 ${c.descripcion}</div>` : ""}
-      ${c.precioCostura ? `<div style="font-size:13px;color:#666;margin-bottom:12px">💰 Precio costura: $${c.precioCostura}</div>` : ""}
+      ${c.precioCostura ? '<div style="font-size:13px;color:#666;margin-bottom:12px">💰 Precio costura: $' + c.precioCostura + '</div>' : ""}
       ${c.notas ? `<div style="font-size:13px;color:#888;margin-bottom:12px">📝 ${c.notas}</div>` : ""}
       <div class="form-group" style="margin-top:8px">
         <label class="form-label">Actualizar estado</label>
