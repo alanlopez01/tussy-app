@@ -248,7 +248,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         </div>
         <div id="stock-content"></div>
       </div>
-
+<!-- COMPARACION -->
+      <div class="section" id="sec-comparacion">
+        <div id="comparacion-content">
+          <div class="loading"><div class="spinner"></div><p>Cargando...</p></div>
+        </div>
+      </div>
       <!-- CARGAR -->
       <div class="section" id="sec-cargar">
         <div class="card">
@@ -303,6 +308,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
     </button>
     <button class="bottom-btn" id="nav-stock" onclick="showSection('stock')">
       <span class="icon">📦</span>Stock
+    </button>
+    <button class="bottom-btn" id="nav-comparacion" onclick="showSection('comparacion')">
+      <span class="icon">📈</span>Locales
     </button>
     <button class="bottom-btn" id="nav-cargar" onclick="showSection('cargar')">
       <span class="icon">➕</span>Cargar
@@ -403,6 +411,9 @@ function entrarApp(rol, nombre) {
 
   // Encargados: solo stock
   if (rol === "encargado") {
+    document.getElementById("nav-comparacion").style.display = "none";
+  }
+  if (rol === "encargado") {
     document.getElementById("nav-resumen").style.display = "none";
     document.getElementById("nav-ventas").style.display = "none";
     document.getElementById("nav-cargar").style.display = "none";
@@ -468,6 +479,7 @@ function showSection(id) {
   document.getElementById("sec-" + id).classList.add("active");
   document.getElementById("nav-" + id).classList.add("active");
   if (id === "ventas") cargarVentas();
+  if (id === "comparacion") cargarComparacion();
   if (id === "stock") document.getElementById("stock-q").focus();
 }
 
@@ -684,7 +696,89 @@ function mostrarStock(data) {
   });
   document.getElementById("stock-content").innerHTML = html;
 }
+// ══ COMPARACION ══
+async function cargarComparacion() {
+  document.getElementById("comparacion-content").innerHTML =
+    '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  try {
+    const res = await fetch("/api/comparacion");
+    const data = await res.json();
+    mostrarComparacion(data);
+  } catch(err) {
+    document.getElementById("comparacion-content").innerHTML =
+      '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';
+  }
+}
 
+function mostrarComparacion(data) {
+  const delta = (actual, ant) => {
+    if (!ant || ant === 0) return "";
+    const d = ((actual - ant) / ant * 100).toFixed(1);
+    const cls = d >= 0 ? "up" : "down";
+    return `<span class="stat-delta ${cls}" style="font-size:12px">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}% vs mes ant.</span>`;
+  };
+
+  let html = "";
+
+  // Total del día
+  html += `<div class="saldo-card">
+    <div class="saldo-label">💰 Total vendido hoy</div>
+    <div class="saldo-value">${fmt(data.totalHoy)}</div>
+  </div>`;
+
+  // Ventas del día por local
+  html += `<div class="card"><div class="card-title">📅 Hoy por local</div>`;
+  data.locales.forEach(l => {
+    html += `<div class="tx-item">
+      <div class="tx-left"><div class="tx-desc">${l.nombre}</div><div class="tx-cat">${l.hoy.cantidad} pedidos</div></div>
+      <div class="tx-monto ingreso">${fmt(l.hoy.total)}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Ranking del mes
+  html += `<div class="card"><div class="card-title">🏆 Ranking del mes</div>`;
+  const medallas = ["🥇","🥈","🥉"];
+  const maxMes = data.ranking[0]?.mes.total || 1;
+  data.ranking.forEach((l, i) => {
+    const pct = Math.round(l.mes.total / data.totalMes * 100);
+    const w = Math.round(l.mes.total / maxMes * 100);
+    html += `<div class="cat-item">
+      <div class="cat-row">
+        <span class="cat-name">${medallas[i] || "  "} ${l.nombre}</span>
+        <div class="cat-right">
+          <span class="cat-pct">${pct}%</span>
+          <span class="cat-monto ingreso">${fmt(l.mes.total)}</span>
+        </div>
+      </div>
+      <div class="bar-wrap"><div class="bar" style="width:${w}%;background:#27AE60"></div></div>
+    </div>`;
+  });
+  html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;font-weight:700;color:var(--texto)">Total del mes</span>
+    <div style="text-align:right">
+      <div style="font-size:18px;font-weight:900;color:var(--negro)">${fmt(data.totalMes)}</div>
+      ${delta(data.totalMes, data.totalAnt)}
+    </div>
+  </div></div>`;
+
+  // Comparación mes anterior por local
+  html += `<div class="card"><div class="card-title">📊 Este mes vs mes anterior</div>`;
+  data.locales.forEach(l => {
+    const d = l.ant.total > 0 ? ((l.mes.total - l.ant.total) / l.ant.total * 100).toFixed(1) : null;
+    const cls = d >= 0 ? "up" : "down";
+    html += `<div class="tx-item">
+      <div class="tx-left">
+        <div class="tx-desc">${l.nombre}</div>
+        <div class="tx-cat">Ant: ${fmt(l.ant.total)} ${d !== null ? `<span class="stat-delta ${cls}">${d >= 0 ? "▲" : "▼"} ${Math.abs(d)}%</span>` : ""}</div>
+      </div>
+      <div class="tx-monto ingreso">${fmt(l.mes.total)}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  document.getElementById("comparacion-content").innerHTML = html;
+}
 // ══ FORM ══
 function setTipo(tipo) {
   tipoActual = tipo;
