@@ -22,7 +22,7 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gris);color:var(--texto);display:flex;flex-direction:column}
 
-/* ── LOGIN ── */
+/* LOGIN */
 .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--negro);padding:32px;padding-top:calc(32px + var(--safe-top))}
 .login-logo{width:200px;margin-bottom:32px}
 .login-card{background:rgba(255,255,255,0.06);border-radius:20px;padding:28px;width:100%;max-width:340px}
@@ -38,12 +38,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .login-btn:disabled{opacity:0.5}
 .login-error{color:#E74C3C;font-size:13px;margin-top:12px;min-height:20px;font-weight:600;text-align:center}
 
-/* ── APP SHELL ── */
+/* APP */
 .app{display:none;flex-direction:column;height:100%}
 .header{background:var(--negro);color:white;padding:12px 20px;padding-top:calc(12px + var(--safe-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .header-left{display:flex;align-items:center;gap:10px}
-.header-back{background:none;border:none;color:rgba(255,255,255,0.6);font-size:20px;cursor:pointer;padding:4px;display:none}
-.header-title{color:white;font-size:16px;font-weight:800;letter-spacing:0.5px}
+.header-back{background:none;border:none;color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;padding:4px;display:none;line-height:1}
+.header-title{color:white;font-size:16px;font-weight:800;letter-spacing:0.5px;display:none}
 .header-right{display:flex;align-items:center;gap:10px}
 .rol-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700}
 .rol-badge.admin{background:#F39C12;color:#000}
@@ -55,14 +55,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .content{padding:16px;max-width:480px;margin:0 auto;padding-bottom:24px}
 .section{display:none}.section.active{display:block}
 
-/* ── HOME ── */
+/* HOME */
 .home-header{background:linear-gradient(135deg,var(--negro),#2C3E6E);padding:24px 20px 28px;color:white;margin:-16px -16px 20px;border-radius:0 0 24px 24px}
 .home-saludo{font-size:13px;opacity:0.6;margin-bottom:4px}
 .home-nombre{font-size:24px;font-weight:900}
 .home-fecha{font-size:12px;opacity:0.5;margin-top:2px}
 .home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.home-card{background:white;border-radius:18px;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.08);transition:transform 0.15s,box-shadow 0.15s;border:none;text-align:left;width:100%}
-.home-card:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.home-card{background:white;border-radius:18px;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.08);transition:transform 0.15s;border:none;text-align:left;width:100%}
+.home-card:active{transform:scale(0.97)}
 .home-card.full{grid-column:1/-1;flex-direction:row;align-items:center;gap:16px}
 .home-icon{font-size:32px;line-height:1}
 .home-card.full .home-icon{font-size:36px}
@@ -70,9 +70,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .home-card-title{font-size:15px;font-weight:800;color:var(--negro);margin-bottom:2px}
 .home-card-sub{font-size:11px;color:#aaa;font-weight:600}
 .home-card-arrow{font-size:18px;color:#ddd;margin-left:auto}
-.home-card-accent{width:4px;height:36px;border-radius:4px;margin-right:4px}
 
-/* ── CARDS GENERALES ── */
+/* CARDS */
 .card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .card-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#aaa;margin-bottom:16px}
 .mes-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
@@ -80,13 +79,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .form-control:focus{outline:none;border-color:var(--negro)}
 .mes-btn{padding:12px 18px;background:var(--negro);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
 
-/* ── SALDO ── */
+/* SALDO */
 .saldo-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);color:white;border-radius:16px;padding:22px 20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(26,26,46,0.3)}
 .saldo-label{font-size:12px;opacity:0.55;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .saldo-value{font-size:36px;font-weight:900;letter-spacing:-1px}
 .saldo-neg{color:#E74C3C}
 
-/* ── STATS ── */
+/* STATS */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .stat{background:white;border-radius:14px;padding:16px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .stat.full{grid-column:1/-1}
@@ -113,7 +112,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tx-cat{font-size:12px;color:#aaa;margin-top:2px}
 .tx-monto{font-size:16px;font-weight:900;margin-left:12px;white-space:nowrap}
 
-/* ── VENTAS ── */
+/* VENTAS */
 .consolidado{background:linear-gradient(135deg,#1E8449,#27AE60);color:white;border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;box-shadow:0 4px 16px rgba(30,132,73,0.3)}
 .consolidado-label{font-size:12px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .consolidado-value{font-size:36px;font-weight:900;letter-spacing:-1px}
@@ -135,7 +134,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .pedido-estado{font-size:11px;color:#aaa;margin-top:1px}
 .pedido-monto{font-weight:800;color:var(--verde)}
 
-/* ── STOCK ── */
+/* STOCK */
 .producto-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .producto-nombre{font-size:16px;font-weight:800;color:var(--negro);margin-bottom:4px}
 .producto-sku{font-size:11px;color:#aaa;margin-bottom:12px}
@@ -151,7 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .badge-si{background:#D5F5E3;color:#1E8449}
 .badge-no{background:#FADBD8;color:#C0392B}
 
-/* ── REPORTES ── */
+/* REPORTES */
 .ranking-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F3F4F6}
 .ranking-item:last-child{border-bottom:none}
 .ranking-pos{font-size:20px;width:32px;text-align:center}
@@ -161,8 +160,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ranking-cant{font-size:18px;font-weight:900;color:var(--negro);text-align:right}
 .ranking-cant span{font-size:11px;color:#aaa;font-weight:600;display:block}
 
-/* ── PRODUCCION ── */
-.prod-tab-bar{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px}
+/* PRODUCCION */
+.prod-tab-bar{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
 .prod-tab{padding:8px 16px;border:2px solid var(--borde);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:white;color:#aaa;white-space:nowrap;transition:all 0.2s}
 .prod-tab.active{background:var(--negro);border-color:var(--negro);color:white}
 .corte-card{background:white;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
@@ -171,7 +170,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .corte-estado{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700}
 .estado-espera{background:#FEF9E7;color:#D4AC0D}
 .estado-taller{background:#EBF5FB;color:#1A5276}
-.estado-listo{background:#EAFAF1;color:#1E8449}
 .corte-tela{font-size:13px;color:#666;margin-bottom:6px}
 .corte-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .corte-dato{background:#F8F9FA;border-radius:8px;padding:6px 8px;text-align:center}
@@ -185,7 +183,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tela-stock.bajo{color:var(--rojo)}
 .tela-stock.ok{color:var(--verde)}
 
-/* ── FORM ── */
+/* FORM */
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;font-weight:800;color:#666;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.3px}
 .tipo-toggle{display:flex;gap:10px}
@@ -194,9 +192,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tipo-btn.ingreso.active{background:#F0FFF4;border-color:var(--verde);color:var(--verde)}
 .btn-submit{width:100%;padding:18px;background:var(--negro);color:white;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;margin-top:8px}
 .btn-submit:disabled{opacity:0.4}
-.btn-secondary{width:100%;padding:14px;background:var(--gris);color:var(--texto);border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
 
-/* ── MISC ── */
+/* MISC */
 .empty{text-align:center;padding:40px 20px;color:#bbb}
 .empty .e-icon{font-size:48px;margin-bottom:12px}
 .empty p{font-size:15px;font-weight:600}
@@ -233,15 +230,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 
 <!-- APP -->
 <div class="app" id="app">
-  <div class="header" id="app-header">
+  <div class="header">
     <div class="header-left">
       <button class="header-back" id="btn-back" onclick="volverHome()">←</button>
       <img src="logo.png" id="header-logo" style="height:40px;filter:invert(1)" alt="Tussy">
-      <span class="header-title" id="header-title" style="display:none"></span>
+      <span class="header-title" id="header-title"></span>
     </div>
     <div class="header-right">
       <span class="rol-badge" id="rol-badge"></span>
-      <button class="logout-btn" onclick="logout()" title="Salir">↩</button>
+      <button class="logout-btn" onclick="logout()">↩</button>
     </div>
   </div>
 
@@ -258,21 +255,70 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div class="home-grid" id="home-grid"></div>
       </div>
 
-      <!-- RESUMEN -->
+      <!-- RESUMEN (Finanzas: Info + Cargar) -->
       <div class="section" id="sec-resumen">
-        <div class="mes-row">
-          <select id="sel-mes">
-            <option value="1">Enero</option><option value="2">Febrero</option>
-            <option value="3">Marzo</option><option value="4">Abril</option>
-            <option value="5">Mayo</option><option value="6">Junio</option>
-            <option value="7">Julio</option><option value="8">Agosto</option>
-            <option value="9">Septiembre</option><option value="10">Octubre</option>
-            <option value="11">Noviembre</option><option value="12">Diciembre</option>
-          </select>
-          <select id="sel-anio" style="width:90px;flex:none"></select>
-          <button class="mes-btn" onclick="cargarDashboard()">Ver</button>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="prod-tab active" id="fin-tab-info" onclick="finTab('info')">📊 Info</button>
+          <button class="prod-tab" id="fin-tab-cargar" onclick="finTab('cargar')">➕ Cargar</button>
         </div>
-        <div id="dashboard-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+
+        <!-- Info -->
+        <div id="fin-info">
+          <div class="mes-row">
+            <select id="sel-mes">
+              <option value="1">Enero</option><option value="2">Febrero</option>
+              <option value="3">Marzo</option><option value="4">Abril</option>
+              <option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option>
+              <option value="9">Septiembre</option><option value="10">Octubre</option>
+              <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+            <select id="sel-anio" style="width:90px;flex:none"></select>
+            <button class="mes-btn" onclick="cargarDashboard()">Ver</button>
+          </div>
+          <div id="dashboard-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+        </div>
+
+        <!-- Cargar -->
+        <div id="fin-cargar" style="display:none">
+          <div class="card">
+            <div class="card-title">Nueva transacción</div>
+            <div class="form-group">
+              <label class="form-label">Tipo</label>
+              <div class="tipo-toggle">
+                <button class="tipo-btn gasto active" id="btn-gasto" onclick="setTipo('Gasto')">📤 Gasto</button>
+                <button class="tipo-btn ingreso" id="btn-ingreso" onclick="setTipo('Ingreso')">📥 Ingreso</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha</label>
+              <input type="date" id="f-fecha" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Descripción</label>
+              <input type="text" id="f-desc" class="form-control" placeholder="Ej: Tela Juan, Sueldo María...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categoría</label>
+              <select id="f-cat" class="form-control"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Medio de pago</label>
+              <select id="f-medio" class="form-control">
+                <option>Efectivo</option><option>Transferencia</option><option>Cheque</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monto ($)</label>
+              <input type="number" id="f-monto" class="form-control" placeholder="0" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notas (opcional)</label>
+              <input type="text" id="f-notas" class="form-control" placeholder="Aclaraciones...">
+            </div>
+            <button class="btn-submit" id="btn-guardar" onclick="guardarTransaccion()">Guardar transacción</button>
+          </div>
+        </div>
       </div>
 
       <!-- VENTAS -->
@@ -310,68 +356,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
-       <!-- REPORTES -->
-<div class="section" id="sec-reportes">
-  <div class="mes-row">
-    <select id="rep-canal" class="form-control" style="flex:1">
-      <option value="online">🌐 Online (Tiendanube)</option>
-      <option value="fisico">🏪 Físico (Locales)</option>
-    </select>
-  </div>
-  <div class="mes-row">
-    <select id="rep-periodo" class="form-control" style="flex:1" onchange="toggleRepCustom()">
-      <option value="mes">Este mes</option>
-      <option value="custom">Personalizado</option>
-    </select>
-    <button class="mes-btn" onclick="cargarReportes()">Ver</button>
-  </div>
-  <div id="rep-custom" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
-    <input type="date" id="rep-desde" class="form-control">
-    <input type="date" id="rep-hasta" class="form-control">
-  </div>
-  <div id="reportes-content">
-    <div class="empty"><div class="e-icon">📊</div><p>Seleccioná canal y período</p></div>
-  </div>
-</div>
-      <!-- CARGAR -->
-      <div class="section" id="sec-cargar">
-        <div class="card">
-          <div class="card-title">Nueva transacción</div>
-          <div class="form-group">
-            <label class="form-label">Tipo</label>
-            <div class="tipo-toggle">
-              <button class="tipo-btn gasto active" id="btn-gasto" onclick="setTipo('Gasto')">📤 Gasto</button>
-              <button class="tipo-btn ingreso" id="btn-ingreso" onclick="setTipo('Ingreso')">📥 Ingreso</button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Fecha</label>
-            <input type="date" id="f-fecha" class="form-control">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Descripción</label>
-            <input type="text" id="f-desc" class="form-control" placeholder="Ej: Tela Juan, Sueldo María...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Categoría</label>
-            <select id="f-cat" class="form-control"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Medio de pago</label>
-            <select id="f-medio" class="form-control">
-              <option>Efectivo</option><option>Transferencia</option><option>Cheque</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Monto ($)</label>
-            <input type="number" id="f-monto" class="form-control" placeholder="0" inputmode="numeric">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Notas (opcional)</label>
-            <input type="text" id="f-notas" class="form-control" placeholder="Aclaraciones...">
-          </div>
-          <button class="btn-submit" id="btn-guardar" onclick="guardarTransaccion()">Guardar transacción</button>
+      <!-- REPORTES -->
+      <div class="section" id="sec-reportes">
+        <div class="mes-row">
+          <select id="rep-canal" class="form-control" style="flex:1">
+            <option value="online">🌐 Online (Tiendanube)</option>
+            <option value="fisico">🏪 Físico (Locales)</option>
+          </select>
         </div>
+        <div class="mes-row">
+          <select id="rep-periodo" class="form-control" style="flex:1" onchange="toggleRepCustom()">
+            <option value="mes">Este mes</option>
+            <option value="custom">Personalizado</option>
+          </select>
+          <button class="mes-btn" onclick="cargarReportes()">Ver</button>
+        </div>
+        <div id="rep-custom" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
+          <input type="date" id="rep-desde" class="form-control">
+          <input type="date" id="rep-hasta" class="form-control">
+        </div>
+        <div id="reportes-content"><div class="empty"><div class="e-icon">📊</div><p>Seleccioná canal y período</p></div></div>
       </div>
 
       <!-- PRODUCCION -->
@@ -402,13 +406,13 @@ let nombreActual = "";
 let catsGasto = [], catsIngreso = [];
 let tipoActual = "Gasto";
 let chartGasto = null, chartIngreso = null;
-let seccionActual = "home";
 let prodTabActual = "stock-tela";
 
 // ══ INIT ══
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("login-pass").addEventListener("keydown", e => { if (e.key === "Enter") hacerLogin(); });
   document.getElementById("login-user").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("login-pass").focus(); });
+  document.getElementById("stock-q").addEventListener("keydown", e => { if (e.key === "Enter") buscarStock(); });
 
   const recuerda = localStorage.getItem("tussy_remember");
   if (recuerda === "1") {
@@ -457,6 +461,30 @@ async function hacerLogin() {
 }
 
 // ══ APP ══
+const SECCIONES = {
+  admin: [
+    { id:"resumen",     icon:"📊", title:"Finanzas",   sub:"Info y cargar transacciones", color:"#1A1A2E" },
+    { id:"ventas",      icon:"🛍️", title:"Ventas",     sub:"Hoy, ayer y este mes",        color:"#1E8449" },
+    { id:"stock",       icon:"📦", title:"Stock",      sub:"Buscar por local y talle",    color:"#1A5276" },
+    { id:"comparacion", icon:"📈", title:"Locales",    sub:"Ranking y proyección",        color:"#D4AC0D" },
+    { id:"reportes",    icon:"🏆", title:"Reportes",   sub:"Mejores productos",           color:"#8E44AD" },
+    { id:"produccion",  icon:"✂️", title:"Producción", sub:"Cortes, telas y talleres",   color:"#C0392B" },
+  ],
+  socio: [
+    { id:"resumen",     icon:"📊", title:"Finanzas",   sub:"Gastos e ingresos del mes",   color:"#1A1A2E" },
+    { id:"ventas",      icon:"🛍️", title:"Ventas",     sub:"Hoy, ayer y este mes",        color:"#1E8449" },
+    { id:"stock",       icon:"📦", title:"Stock",      sub:"Buscar por local y talle",    color:"#1A5276" },
+    { id:"comparacion", icon:"📈", title:"Locales",    sub:"Ranking y proyección",        color:"#D4AC0D" },
+    { id:"reportes",    icon:"🏆", title:"Reportes",   sub:"Mejores productos",           color:"#8E44AD" },
+  ],
+  encargado: [
+    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle", color:"#1A5276", full:true },
+  ],
+  produccion: [
+    { id:"produccion", icon:"✂️", title:"Producción", sub:"Cortes, telas y talleres", color:"#C0392B", full:true },
+  ],
+};
+
 function entrarApp(rol, nombre) {
   rolActual = rol; nombreActual = nombre || "";
   document.getElementById("login-screen").style.display = "none";
@@ -481,55 +509,32 @@ function entrarApp(rol, nombre) {
 
   construirHome(rol);
 
-  if (rol === "produccion") {
-    showSection("produccion");
-    prodTab("stock-tela");
-  } else if (rol === "encargado") {
-    showSection("stock");
-  } else {
+  // Socios no pueden cargar (ocultar tab)
+  if (rol === "socio") {
+    document.getElementById("fin-tab-cargar").style.display = "none";
+  }
+
+  if (rol !== "encargado" && rol !== "produccion") {
     callScript("getCategorias", {}, data => {
       catsGasto = data.gasto; catsIngreso = data.ingreso; updateCatSelect();
     });
   }
-}
 
-// ══ HOME ══
-const SECCIONES = {
-  admin: [
-    { id:"resumen",     icon:"📊", title:"Finanzas",    sub:"Gastos e ingresos del mes",  color:"#1A1A2E" },
-    { id:"ventas",      icon:"🛍️", title:"Ventas",      sub:"Hoy, ayer y este mes",       color:"#1E8449" },
-    { id:"stock",       icon:"📦", title:"Stock",       sub:"Buscar por local y talle",   color:"#1A5276" },
-    { id:"comparacion", icon:"📈", title:"Locales",     sub:"Ranking y proyección",       color:"#D4AC0D" },
-    { id:"reportes",    icon:"🏆", title:"Reportes",    sub:"Mejores productos",           color:"#8E44AD" },
-    { id:"produccion",  icon:"✂️", title:"Producción",  sub:"Cortes, telas y talleres",   color:"#C0392B" },
-    { id:"cargar",      icon:"➕", title:"Cargar",      sub:"Nueva transacción",          color:"#2C3E50" },
-  ],
-  socio: [
-    { id:"resumen",     icon:"📊", title:"Finanzas",    sub:"Gastos e ingresos del mes",  color:"#1A1A2E" },
-    { id:"ventas",      icon:"🛍️", title:"Ventas",      sub:"Hoy, ayer y este mes",       color:"#1E8449" },
-    { id:"stock",       icon:"📦", title:"Stock",       sub:"Buscar por local y talle",   color:"#1A5276" },
-    { id:"comparacion", icon:"📈", title:"Locales",     sub:"Ranking y proyección",       color:"#D4AC0D" },
-    { id:"reportes",    icon:"🏆", title:"Reportes",    sub:"Mejores productos",           color:"#8E44AD" },
-  ],
-  encargado: [
-    { id:"stock", icon:"📦", title:"Stock", sub:"Buscar por local y talle", color:"#1A5276", full:true },
-  ],
-  produccion: [
-    { id:"produccion", icon:"✂️", title:"Producción", sub:"Cortes, telas y talleres", color:"#C0392B", full:true },
-  ],
-};
+  if (rol === "produccion") showSection("produccion");
+  else if (rol === "encargado") showSection("stock");
+}
 
 function construirHome(rol) {
   const grid = document.getElementById("home-grid");
   const items = SECCIONES[rol] || SECCIONES.encargado;
   grid.innerHTML = items.map(s => `
-    <button class="home-card ${s.full ? 'full' : ''}" onclick="showSection('${s.id}')">
+    <button class="home-card${s.full ? " full" : ""}" onclick="showSection('${s.id}')">
       <div class="home-icon">${s.icon}</div>
       <div class="home-card-info">
         <div class="home-card-title">${s.title}</div>
         <div class="home-card-sub">${s.sub}</div>
       </div>
-      ${s.full ? '<div class="home-card-arrow">→</div>' : ''}
+      ${s.full ? '<div class="home-card-arrow">→</div>' : ""}
     </button>
   `).join("");
 }
@@ -538,24 +543,20 @@ function construirHome(rol) {
 function showSection(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById("sec-" + id).classList.add("active");
-  seccionActual = id;
 
   const esHome = id === "home";
   document.getElementById("btn-back").style.display = esHome ? "none" : "block";
   document.getElementById("header-logo").style.display = esHome ? "block" : "none";
-  const titles = { resumen:"Finanzas", ventas:"Ventas", stock:"Stock", comparacion:"Locales", reportes:"Reportes", cargar:"Cargar", produccion:"Producción" };
+  const titles = { resumen:"Finanzas", ventas:"Ventas", stock:"Stock", comparacion:"Locales", reportes:"Reportes", produccion:"Producción" };
   const titleEl = document.getElementById("header-title");
   titleEl.style.display = esHome ? "none" : "block";
   titleEl.textContent = titles[id] || "";
 
+  if (id === "resumen") cargarDashboard();
   if (id === "ventas") cargarVentas();
   if (id === "comparacion") cargarComparacion();
-  if (id === "resumen") cargarDashboard();
   if (id === "stock") setTimeout(() => document.getElementById("stock-q").focus(), 100);
-  if (id === "produccion" && !prodTabActual) prodTab("stock-tela");
-  if (id === "reportes") document.getElementById("rep-periodo").addEventListener("change", () => {
-    document.getElementById("rep-custom").style.display = document.getElementById("rep-periodo").value === "custom" ? "flex" : "none";
-  });
+  if (id === "produccion") prodTab(prodTabActual || "stock-tela");
 }
 
 function volverHome() { showSection("home"); }
@@ -568,7 +569,16 @@ function logout() {
   document.getElementById("login-error").textContent = "";
   document.getElementById("login-btn").disabled = false;
   document.getElementById("login-btn").textContent = "Ingresar";
-  showSection("home");
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.getElementById("sec-home").classList.add("active");
+}
+
+// ══ FINANZAS TABS ══
+function finTab(tab) {
+  document.getElementById("fin-tab-info").classList.toggle("active", tab === "info");
+  document.getElementById("fin-tab-cargar").classList.toggle("active", tab === "cargar");
+  document.getElementById("fin-info").style.display = tab === "info" ? "" : "none";
+  document.getElementById("fin-cargar").style.display = tab === "cargar" ? "" : "none";
 }
 
 // ══ APPS SCRIPT ══
@@ -602,7 +612,7 @@ function deltaHtml(actual, ant) {
 function mostrarDashboard(data) {
   const netoClass = data.neto >= 0 ? "pos" : "neg";
   let html = "";
-  html += `<div class="saldo-card"><div class="saldo-label">💵 Saldo acumulado en caja</div><div class="saldo-value ${data.saldoActual < 0 ? 'saldo-neg' : ''}">${fmt(data.saldoActual || 0)}</div></div>`;
+  html += `<div class="saldo-card"><div class="saldo-label">💵 Saldo acumulado en caja</div><div class="saldo-value ${data.saldoActual < 0 ? "saldo-neg" : ""}">${fmt(data.saldoActual || 0)}</div></div>`;
   html += `<div class="stats">
     <div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">${fmt(data.totalGasto)}</div>${deltaHtml(data.totalGasto, data.totalGastoAnt)}</div>
     <div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">${fmt(data.totalIngreso)}</div>${deltaHtml(data.totalIngreso, data.totalIngresoAnt)}</div>
@@ -610,8 +620,8 @@ function mostrarDashboard(data) {
   </div>`;
   const gEntries = Object.entries(data.porCatGasto || {}).sort((a,b) => b[1]-a[1]).slice(0,8);
   if (gEntries.length > 0) {
-    html += `<div class="card"><div class="card-title">📤 Gastos por categoría</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">`;
     const maxG = gEntries[0][1];
+    html += `<div class="card"><div class="card-title">📤 Gastos por categoría</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">`;
     gEntries.forEach(([cat, monto]) => {
       const pct = (monto / data.totalGasto * 100).toFixed(1);
       html += `<li class="cat-item"><div class="cat-row"><span class="cat-name">${cat}</span><div class="cat-right"><span class="cat-pct">${pct}%</span><span class="cat-monto gasto">${fmt(monto)}</span></div></div><div class="bar-wrap"><div class="bar" style="width:${Math.round(monto/maxG*100)}%;background:#E74C3C"></div></div></li>`;
@@ -620,8 +630,8 @@ function mostrarDashboard(data) {
   }
   const iEntries = Object.entries(data.porCatIngreso || {}).sort((a,b) => b[1]-a[1]).slice(0,8);
   if (iEntries.length > 0) {
-    html += `<div class="card"><div class="card-title">📥 Ingresos por categoría</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">`;
     const maxI = iEntries[0][1];
+    html += `<div class="card"><div class="card-title">📥 Ingresos por categoría</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">`;
     iEntries.forEach(([cat, monto]) => {
       const pct = (monto / data.totalIngreso * 100).toFixed(1);
       html += `<li class="cat-item"><div class="cat-row"><span class="cat-name">${cat}</span><div class="cat-right"><span class="cat-pct">${pct}%</span><span class="cat-monto ingreso">${fmt(monto)}</span></div></div><div class="bar-wrap"><div class="bar" style="width:${Math.round(monto/maxI*100)}%;background:#27AE60"></div></div></li>`;
@@ -630,9 +640,7 @@ function mostrarDashboard(data) {
   }
   if (data.txHoy && data.txHoy.length > 0) {
     html += `<div class="card"><div class="card-title">🕐 Movimientos de hoy</div>`;
-    data.txHoy.forEach(tx => {
-      html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${tx.desc}</div><div class="tx-cat">${tx.cat}</div></div><div class="tx-monto ${tx.monto < 0 ? 'gasto' : 'ingreso'}">${fmt(Math.abs(tx.monto))}</div></div>`;
-    });
+    data.txHoy.forEach(tx => { html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${tx.desc}</div><div class="tx-cat">${tx.cat}</div></div><div class="tx-monto ${tx.monto < 0 ? "gasto" : "ingreso"}">${fmt(Math.abs(tx.monto))}</div></div>`; });
     html += `</div>`;
   }
   if (gEntries.length === 0 && iEntries.length === 0) html += `<div class="empty"><div class="e-icon">📭</div><p>Sin movimientos este mes</p></div>`;
@@ -706,11 +714,6 @@ function mostrarVentas(data, periodo) {
 }
 
 // ══ STOCK ══
-document.addEventListener("DOMContentLoaded", () => {
-  const sq = document.getElementById("stock-q");
-  if (sq) sq.addEventListener("keydown", e => { if (e.key === "Enter") buscarStock(); });
-});
-
 async function buscarStock() {
   const q = document.getElementById("stock-q").value.trim();
   if (q.length < 2) { showToast("Ingresá al menos 2 caracteres", "err"); return; }
@@ -736,7 +739,7 @@ function mostrarStock(data) {
     locales.forEach(({ key, label, clase }) => {
       if (!p.locales[key]) return;
       html += `<div class="local-titulo ${clase}">${label}</div>`;
-      p.locales[key].forEach(v => { html += `<div class="variante-row"><span class="variante-attr">${v.atributos}</span><div class="variante-right"><span class="variante-precio">$${Math.round(v.precio).toLocaleString("es-AR")}</span><span class="badge-stock ${v.tiene_stock ? 'badge-si' : 'badge-no'}">${v.tiene_stock ? "✓ Stock" : "Sin stock"}</span></div></div>`; });
+      p.locales[key].forEach(v => { html += `<div class="variante-row"><span class="variante-attr">${v.atributos}</span><div class="variante-right"><span class="variante-precio">$${Math.round(v.precio).toLocaleString("es-AR")}</span><span class="badge-stock ${v.tiene_stock ? "badge-si" : "badge-no"}">${v.tiene_stock ? "✓ Stock" : "Sin stock"}</span></div></div>`; });
       html += `<div style="margin-bottom:8px"></div>`;
     });
     html += `</div>`;
@@ -799,21 +802,17 @@ function mostrarComparacion(data) {
 
 // ══ REPORTES ══
 function toggleRepCustom() {
-  document.getElementById("rep-custom").style.display =
-    document.getElementById("rep-periodo").value === "custom" ? "flex" : "none";
+  document.getElementById("rep-custom").style.display = document.getElementById("rep-periodo").value === "custom" ? "flex" : "none";
 }
 
 async function cargarReportes() {
   const canal = document.getElementById("rep-canal").value;
   const periodo = document.getElementById("rep-periodo").value;
-  document.getElementById("reportes-content").innerHTML =
-    '<div class="loading"><div class="spinner"></div><p>Buscando productos...</p></div>';
-
+  document.getElementById("reportes-content").innerHTML = '<div class="loading"><div class="spinner"></div><p>Buscando productos...</p></div>';
   const ahora = new Date();
   const argTime = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2, "0");
   const fmtDate = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
-
   let desde, hasta;
   if (periodo === "custom") {
     desde = document.getElementById("rep-desde").value;
@@ -823,21 +822,18 @@ async function cargarReportes() {
     desde = `${argTime.getUTCFullYear()}-${pad(argTime.getUTCMonth()+1)}-01`;
     hasta = fmtDate(argTime);
   }
-
   try {
     const res = await fetch(`/api/reportes?desde=${desde}&hasta=${hasta}&canal=${canal}`);
     const data = await res.json();
     mostrarReportes(data, canal);
   } catch(err) {
-    document.getElementById("reportes-content").innerHTML =
-      '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar reportes</p></div>';
+    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">❌</div><p>Error al cargar reportes</p></div>';
   }
 }
 
 function mostrarReportes(data, canal) {
   if (!data.productos || data.productos.length === 0) {
-    document.getElementById("reportes-content").innerHTML =
-      '<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el período</p></div>';
+    document.getElementById("reportes-content").innerHTML = '<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el período</p></div>';
     return;
   }
   const titulo = canal === "online" ? "🌐 Más vendidos Online (Tiendanube)" : "🏪 Más vendidos Físico (Locales)";
@@ -848,7 +844,7 @@ function mostrarReportes(data, canal) {
       <div class="ranking-pos">${medallas[i] || `${i+1}`}</div>
       <div class="ranking-info">
         <div class="ranking-nombre">${p.nombre}</div>
-        <div class="ranking-detalle">${p.fuentes}${p.sku ? ` · SKU: ${p.sku}` : ""}</div>
+        <div class="ranking-detalle">${p.fuentes}</div>
       </div>
       <div class="ranking-cant">${p.cantidad}<span>unidades</span></div>
     </div>`;
@@ -856,13 +852,14 @@ function mostrarReportes(data, canal) {
   html += `</div>`;
   document.getElementById("reportes-content").innerHTML = html;
 }
+
 // ══ PRODUCCION ══
 function prodTab(tab) {
   prodTabActual = tab;
   document.querySelectorAll(".prod-tab").forEach(b => b.classList.remove("active"));
   const tabs = ["stock-tela","cortes-espera","cortes-taller","nuevo-corte","ingreso-tela","historial"];
   const idx = tabs.indexOf(tab);
-  document.querySelectorAll(".prod-tab")[idx]?.classList.add("active");
+  if (idx >= 0) document.querySelectorAll(".prod-tab")[idx].classList.add("active");
   cargarProdTab(tab);
 }
 
@@ -890,36 +887,28 @@ function mostrarStockTela(data) {
   data.telas.forEach(t => {
     const stockNum = parseFloat(t.stock || 0);
     const cls = stockNum < 50 ? "bajo" : "ok";
-    html += `<div class="tela-item">
-      <div><div class="tela-nombre">${t.nombre}</div><div class="tela-tipo">${t.tipo || ""}</div></div>
-      <div class="tela-stock ${cls}">${stockNum.toFixed(1)} kg</div>
-    </div>`;
+    html += `<div class="tela-item"><div><div class="tela-nombre">${t.nombre}</div><div class="tela-tipo">${t.tipo || ""}</div></div><div class="tela-stock ${cls}">${stockNum.toFixed(1)} kg</div></div>`;
   });
   html += `</div>`;
   document.getElementById("prod-content").innerHTML = html;
 }
 
 function mostrarCortes(data, tab) {
-  const titulo = tab === "cortes-espera" ? "⏳ Cortes esperando taller" : "✂️ Cortes en taller";
   if (!data.cortes || data.cortes.length === 0) {
     document.getElementById("prod-content").innerHTML = `<div class="empty"><div class="e-icon">${tab === "cortes-espera" ? "⏳" : "✂️"}</div><p>Sin cortes en este estado</p></div>`;
     return;
   }
-  let html = `<div class="card-title" style="padding:0 0 12px">${titulo} (${data.cortes.length})</div>`;
+  let html = "";
   data.cortes.forEach(c => {
     const estadoCls = tab === "cortes-espera" ? "estado-espera" : "estado-taller";
     html += `<div class="corte-card">
-      <div class="corte-header">
-        <div class="corte-num">Corte #${c.numero || "—"}</div>
-        <span class="corte-estado ${estadoCls}">${tab === "cortes-espera" ? "En espera" : "En taller"}</span>
-      </div>
+      <div class="corte-header"><div class="corte-num">Corte #${c.numero || "—"}</div><span class="corte-estado ${estadoCls}">${tab === "cortes-espera" ? "En espera" : "En taller"}</span></div>
       <div class="corte-tela">🧵 ${c.tela || "—"} · 📅 ${c.fecha || "—"}</div>
       <div class="corte-grid">
         <div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">${c.kg || "—"}</div></div>
         <div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">${c.prendas || "—"}</div></div>
         <div class="corte-dato"><div class="corte-dato-label">Taller</div><div class="corte-dato-val">${c.taller || "—"}</div></div>
       </div>
-      ${c.talles ? `<div style="margin-top:8px;font-size:12px;color:#aaa">TU:${c.tu||0} S:${c.s||0} M:${c.m||0} L:${c.l||0} XL:${c.xl||0}</div>` : ""}
     </div>`;
   });
   document.getElementById("prod-content").innerHTML = html;
@@ -933,21 +922,14 @@ function mostrarHistorial(data) {
   let html = `<div class="card"><div class="card-title">📜 Últimos movimientos</div>`;
   data.movimientos.slice(0, 50).forEach(m => {
     const esEntrada = m.tipo === "Entrada";
-    html += `<div class="tx-item">
-      <div class="tx-left">
-        <div class="tx-desc">${m.tela || "—"}</div>
-        <div class="tx-cat">${m.fecha || ""} · ${m.descripcion || ""}</div>
-      </div>
-      <div class="tx-monto ${esEntrada ? 'ingreso' : 'gasto'}">${esEntrada ? "+" : "−"}${m.kg || 0} kg</div>
-    </div>`;
+    html += `<div class="tx-item"><div class="tx-left"><div class="tx-desc">${m.tela || "—"}</div><div class="tx-cat">${m.fecha || ""} · ${m.descripcion || ""}</div></div><div class="tx-monto ${esEntrada ? "ingreso" : "gasto"}">${esEntrada ? "+" : "−"}${m.kg || 0} kg</div></div>`;
   });
   html += `</div>`;
   document.getElementById("prod-content").innerHTML = html;
 }
 
 function mostrarFormCorte() {
-  const html = `
-  <div class="card">
+  const html = `<div class="card">
     <div class="card-title">✂️ Nuevo corte</div>
     <div class="form-group"><label class="form-label">N° de Corte</label><input type="number" id="pc-num" class="form-control" placeholder="Ej: 125"></div>
     <div class="form-group"><label class="form-label">Tela</label><select id="pc-tela" class="form-control"><option value="">Cargando...</option></select></div>
@@ -960,18 +942,17 @@ function mostrarFormCorte() {
     <div class="form-group"><label class="form-label">Estado</label><select id="pc-estado" class="form-control"><option>Esperando Taller</option><option>En Taller</option></select></div>
     <div class="form-group"><label class="form-label">Talles (opcional)</label>
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
-        <div><label style="font-size:10px;color:#aaa">TU</label><input type="number" id="pc-tu" class="form-control" placeholder="0" style="padding:8px"></div>
-        <div><label style="font-size:10px;color:#aaa">S</label><input type="number" id="pc-s" class="form-control" placeholder="0" style="padding:8px"></div>
-        <div><label style="font-size:10px;color:#aaa">M</label><input type="number" id="pc-m" class="form-control" placeholder="0" style="padding:8px"></div>
-        <div><label style="font-size:10px;color:#aaa">L</label><input type="number" id="pc-l" class="form-control" placeholder="0" style="padding:8px"></div>
-        <div><label style="font-size:10px;color:#aaa">XL</label><input type="number" id="pc-xl" class="form-control" placeholder="0" style="padding:8px"></div>
+        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">TU</label><input type="number" id="pc-tu" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">S</label><input type="number" id="pc-s" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">M</label><input type="number" id="pc-m" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">L</label><input type="number" id="pc-l" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
+        <div><label style="font-size:10px;color:#aaa;display:block;text-align:center">XL</label><input type="number" id="pc-xl" class="form-control" placeholder="0" style="padding:8px;text-align:center"></div>
       </div>
     </div>
     <div class="form-group"><label class="form-label">Notas</label><input type="text" id="pc-notas" class="form-control" placeholder="Opcional"></div>
     <button class="btn-submit" id="btn-guardar-corte" onclick="guardarCorte()">Guardar corte</button>
   </div>`;
   document.getElementById("prod-content").innerHTML = html;
-  // Cargar telas
   fetch("/api/produccion?tab=stock-tela").then(r => r.json()).then(data => {
     const sel = document.getElementById("pc-tela");
     if (sel && data.telas) sel.innerHTML = data.telas.map(t => `<option value="${t.id}">${t.nombre}</option>`).join("");
@@ -979,8 +960,7 @@ function mostrarFormCorte() {
 }
 
 function mostrarFormIngreso() {
-  const html = `
-  <div class="card">
+  const html = `<div class="card">
     <div class="card-title">📦 Ingreso de tela</div>
     <div class="form-group"><label class="form-label">Tela</label><select id="pi-tela" class="form-control"><option value="">Cargando...</option></select></div>
     <div class="form-group"><label class="form-label">Cantidad (kg)</label><input type="number" id="pi-kg" class="form-control" placeholder="0.0" step="0.1" inputmode="decimal"></div>
@@ -1003,11 +983,16 @@ async function guardarCorte() {
   if (!num || !tela || !kg) { showToast("Completá número, tela y kg", "err"); return; }
   btn.disabled = true; btn.textContent = "Guardando...";
   const payload = {
-    numero: num, telaId: tela, kg, partida: document.getElementById("pc-partida").value,
-    taller: document.getElementById("pc-taller").value, estado: document.getElementById("pc-estado").value,
-    tu: document.getElementById("pc-tu").value || 0, s: document.getElementById("pc-s").value || 0,
-    m: document.getElementById("pc-m").value || 0, l: document.getElementById("pc-l").value || 0,
-    xl: document.getElementById("pc-xl").value || 0, notas: document.getElementById("pc-notas").value
+    numero: num, telaId: tela, kg,
+    partida: document.getElementById("pc-partida").value,
+    taller: document.getElementById("pc-taller").value,
+    estado: document.getElementById("pc-estado").value,
+    tu: document.getElementById("pc-tu").value || 0,
+    s: document.getElementById("pc-s").value || 0,
+    m: document.getElementById("pc-m").value || 0,
+    l: document.getElementById("pc-l").value || 0,
+    xl: document.getElementById("pc-xl").value || 0,
+    notas: document.getElementById("pc-notas").value
   };
   try {
     const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ accion:"nuevo-corte", ...payload }) });
@@ -1023,9 +1008,8 @@ async function guardarIngreso() {
   const kg = document.getElementById("pi-kg").value;
   if (!tela || !kg) { showToast("Completá tela y kg", "err"); return; }
   btn.disabled = true; btn.textContent = "Guardando...";
-  const payload = { telaId: tela, kg, marca: document.getElementById("pi-marca").value, notas: document.getElementById("pi-notas").value };
   try {
-    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ accion:"ingreso-tela", ...payload }) });
+    const res = await fetch("/api/produccion", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ accion:"ingreso-tela", telaId: tela, kg, marca: document.getElementById("pi-marca").value, notas: document.getElementById("pi-notas").value }) });
     const data = await res.json();
     if (data.ok) { showToast("✅ Ingreso guardado", "ok"); prodTab("stock-tela"); }
     else { showToast("Error: " + (data.error || ""), "err"); btn.disabled = false; btn.textContent = "Guardar ingreso"; }
