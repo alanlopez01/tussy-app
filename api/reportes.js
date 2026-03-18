@@ -13,6 +13,27 @@ module.exports = async function handler(req, res) {
   const TN_USER    = process.env.TN_USER_ID;
   const pad = n => String(n).padStart(2, "0");
 
+  // Determinar qué period usar en WooCommerce basado en las fechas
+  function getWooPeriod(desde, hasta) {
+    const hoy = new Date();
+    const ahora = new Date(hoy.getTime() - 3 * 60 * 60 * 1000);
+    const inicioMes = `${ahora.getUTCFullYear()}-${pad(ahora.getUTCMonth()+1)}-01`;
+    const mesAnt = new Date(ahora.getUTCFullYear(), ahora.getUTCMonth()-1, 1);
+    const inicioMesAnt = `${mesAnt.getFullYear()}-${pad(mesAnt.getMonth()+1)}-01`;
+
+    if (desde === inicioMes) return "month";
+    if (desde === inicioMesAnt) return "last_month";
+
+    // Semana actual
+    const inicioSemana = new Date(ahora);
+    inicioSemana.setUTCDate(ahora.getUTCDate() - ahora.getUTCDay());
+    const inicioSemanaStr = `${inicioSemana.getUTCFullYear()}-${pad(inicioSemana.getUTCMonth()+1)}-${pad(inicioSemana.getUTCDate())}`;
+    if (desde === inicioSemanaStr) return "week";
+
+    // Por defecto usar month
+    return "month";
+  }
+
   function toUTC(fecha, esInicio) {
     const [y, m, d] = fecha.split("-").map(Number);
     if (esInicio) return `${y}-${pad(m)}-${pad(d)}T03:00:00+0000`;
@@ -22,20 +43,20 @@ module.exports = async function handler(req, res) {
 
   const inicioUTC = toUTC(desde, true);
   const finUTC    = toUTC(hasta, false);
+  const wooPeriod = getWooPeriod(desde, hasta);
 
-  // WooCommerce tiene endpoint especifico para top sellers
   async function getWooTopSellers(url, key, secret, localNombre) {
     const auth = Buffer.from(`${key}:${secret}`).toString("base64");
     const headers = { "Authorization": `Basic ${auth}` };
     const r = await fetch(
-      `${url}/wp-json/wc/v3/reports/top_sellers?date_min=${desde}&date_max=${hasta}&period=custom&per_page=50`,
+      `${url}/wp-json/wc/v3/reports/top_sellers?period=${wooPeriod}&per_page=50`,
       { headers }
     );
     const data = await r.json();
     if (!Array.isArray(data)) return {};
     const mapa = {};
     data.forEach(item => {
-      const key = item.product_id || item.name;
+      const key = String(item.product_id);
       mapa[key] = {
         nombre: item.name || "",
         cantidad: parseInt(item.quantity || 0),
@@ -57,8 +78,7 @@ module.exports = async function handler(req, res) {
       if (!Array.isArray(orders) || orders.length === 0) break;
       orders.forEach(o => {
         (o.products || []).forEach(item => {
-          const productId = item.product_id;
-          // Nombre base: quitar variante (ej: "Remera Roots - Negro / M" → "Remera Roots")
+          const productId = String(item.product_id);
           const nombreCompleto = (item.name || "").trim();
           const nombreBase = nombreCompleto.split(" - ")[0].trim();
           if (!nombreBase) return;
@@ -80,12 +100,10 @@ module.exports = async function handler(req, res) {
       const tn = await getTNProducts();
       productos = Object.values(tn);
     } else {
-      // Físico: usar top_sellers de WooCommerce
       const [wooP, wooLP] = await Promise.all([
         getWooTopSellers(WOO_P_URL, WOO_P_KEY, WOO_P_SEC, "Palermo"),
         getWooTopSellers(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC, "La Plata")
       ]);
-      // Unificar por product_id
       const merged = { ...wooP };
       Object.entries(wooLP).forEach(([key, val]) => {
         if (merged[key]) {
@@ -104,7 +122,7 @@ module.exports = async function handler(req, res) {
       .slice(0, 30)
       .map(p => ({ ...p, fuentes: p.locales.join(" · ") }));
 
-    res.status(200).json({ productos });
+    res.status(200).json({ productos, periodo: wooPeriod });
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
