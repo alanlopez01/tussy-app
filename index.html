@@ -300,29 +300,25 @@ body{
         </div>
       </div>
 
-
-      <!-- VENTAS -->
+     <!-- VENTAS -->
       <div class="section" id="sec-ventas">
         <div class="mes-row">
-         <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
-          <option value="hoy">Hoy</option>
-          <option value="mes">Este mes</option>
-          <option value="ayer">Ayer</option>
-          <option value="custom">Personalizado</option>
-         </select>
-         <div class="mes-row">
-  <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
-    <option value="hoy">Hoy</option>
-    <option value="mes">Este mes</option>
-    <option value="ayer">Ayer</option>
-    <option value="custom">Personalizado</option>
-  </select>
-  <button class="mes-btn" onclick="cargarVentas()">Ver</button>
-</div>
-<div id="custom-fechas" style="display:none;gap:8px;margin-bottom:14px">
-  <input type="date" id="v-desde" class="form-control" style="flex:1">
-  <input type="date" id="v-hasta" class="form-control" style="flex:1">
-</div>
+          <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
+            <option value="hoy">Hoy</option>
+            <option value="mes">Este mes</option>
+            <option value="ayer">Ayer</option>
+            <option value="custom">Personalizado</option>
+          </select>
+          <button class="mes-btn" onclick="cargarVentas()">Ver</button>
+        </div>
+        <div id="custom-fechas" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
+          <input type="date" id="v-desde" class="form-control">
+          <input type="date" id="v-hasta" class="form-control">
+        </div>
+        <div id="ventas-content">
+          <div class="loading"><div class="spinner"></div><p>Cargando...</p></div>
+        </div>
+      </div>
       <!-- STOCK -->
       <div class="section" id="sec-stock">
         <div class="card">
