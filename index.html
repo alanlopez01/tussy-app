@@ -140,6 +140,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .local-titulo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:6px 10px;border-radius:8px;margin:8px 0;display:inline-block}
 .local-palermo{background:#D6EAF8;color:#1A5276}
 .local-laplata{background:#D5F5E3;color:#1E8449}
+.local-dot{background:#FDEDEC;color:#C0392B}
+.local-abasto{background:#F4ECF7;color:#7D3C98}
+.local-cordoba{background:#FEF9E7;color:#B7950B}
 .variante-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F3F4F6;font-size:13px}
 .variante-row:last-child{border-bottom:none}
 .variante-attr{font-weight:600;color:var(--texto)}
@@ -395,6 +398,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <script>
 var APPS_SCRIPT_URL = "/api/proxy";
 var PROD_SCRIPT_URL = "/api/produccion";
+var DF_URL = "/api/dragonfish";
 var rolActual = "";
 var nombreActual = "";
 var catsGasto = [], catsIngreso = [];
@@ -649,19 +653,33 @@ async function cargarVentas(){
   else if(periodo==="custom"){ desde=document.getElementById("v-desde").value; hasta=document.getElementById("v-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
   else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
   try{
-    var res=await fetch("/api/ventas?desde="+desde+"&hasta="+hasta);
-    var data=await res.json(); mostrarVentas(data,periodo);
+    var resultados=await Promise.allSettled([
+      fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}),
+      fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();})
+    ]);
+    var dataWoo=resultados[0].status==="fulfilled"?resultados[0].value:{};
+    var dataDf=resultados[1].status==="fulfilled"?resultados[1].value:{};
+    mostrarVentas(dataWoo,dataDf,periodo);
   } catch(err){ document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar ventas</p></div>'; }
 }
-function mostrarVentas(data,periodo){
+function mostrarVentas(data,dataDf,periodo){
   var tx={hoy:"hoy",ayer:"ayer",mes:"este mes",custom:"el periodo"};
   var pt=tx[periodo]||"el periodo";
-  var html='<div class="consolidado"><div class="consolidado-label">Total vendido '+pt+'</div><div class="consolidado-value">'+fmt(data.total||0)+"</div></div>";
-  var canales=["tiendanube","palermo","laplata"], nombres={tiendanube:"Tiendanube",palermo:"Palermo",laplata:"La Plata"};
+  // Calcular total global (WooCommerce + Dragonfish)
+  var totalDf=((dataDf&&dataDf.dot?dataDf.dot.total:0)+(dataDf&&dataDf.abasto?dataDf.abasto.total:0)+(dataDf&&dataDf.cordoba?dataDf.cordoba.total:0));
+  var totalGlobal=(data.total||0)+totalDf;
+  var html='<div class="consolidado"><div class="consolidado-label">Total vendido '+pt+'</div><div class="consolidado-value">'+fmt(totalGlobal)+"</div></div>";
+  // Mini cards — todos los canales
+  var canalesWoo=["tiendanube","palermo","laplata"], nombresWoo={tiendanube:"Tiendanube",palermo:"Palermo",laplata:"La Plata"};
+  var canalesDf=[{key:"dot",nombre:"Dot"},{key:"abasto",nombre:"Abasto"},{key:"cordoba",nombre:"Córdoba"}];
   html+='<div class="canales-grid">';
-  canales.forEach(function(c){ if(data[c]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+nombres[c]+'</div><div class="canal-mini-total">'+fmt(data[c].total||0)+'</div><div class="canal-mini-cant">'+(data[c].cantidad||0)+" pedidos</div></div>"; });
+  canalesWoo.forEach(function(c){ if(data[c]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+nombresWoo[c]+'</div><div class="canal-mini-total">'+fmt(data[c].total||0)+'</div><div class="canal-mini-cant">'+(data[c].cantidad||0)+" pedidos</div></div>"; });
+  if(dataDf&&!dataDf.error){
+    canalesDf.forEach(function(c){ if(dataDf[c.key]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+c.nombre+'</div><div class="canal-mini-total">'+fmt(dataDf[c.key].total||0)+'</div><div class="canal-mini-cant">'+(dataDf[c.key].cantidad||0)+" facturas</div></div>"; });
+  }
   html+="</div>";
-  canales.forEach(function(c){
+  // Cards detalle — WooCommerce
+  canalesWoo.forEach(function(c){
     if(!data[c]) return;
     var canal=data[c];
     html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+canal.nombre+'</span><span class="canal-badge">'+canal.cantidad+' pedidos</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
@@ -671,6 +689,25 @@ function mostrarVentas(data,periodo){
     } else html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas '+pt+"</div>";
     html+="</div>";
   });
+  // Cards detalle — Dragonfish
+  if(dataDf&&!dataDf.error){
+    canalesDf.forEach(function(c){
+      var canal=dataDf[c.key]; if(!canal) return;
+      if(canal.error){
+        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+c.nombre+'</span><span class="canal-badge" style="background:#FADBD8;color:#C0392B">Sin conexión</span></div>';
+        html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">'+(canal.error||"API no disponible")+"</div></div>";
+      } else {
+        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">🐟 '+c.nombre+'</span><span class="canal-badge">'+canal.cantidad+' facturas</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
+        if(canal.pedidos&&canal.pedidos.length>0){
+          html+='<div class="canal-divider"></div>';
+          canal.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Consumidor Final")+'</div><div class="pedido-estado">Fac #'+p.numero+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
+        } else html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas '+pt+"</div>";
+        html+="</div>";
+      }
+    });
+  } else if(dataDf&&dataDf.error){
+    html+='<div class="canal-card" style="border:1.5px dashed #E5E7EB"><div style="text-align:center;padding:20px"><div style="font-size:24px;margin-bottom:8px">🔌</div><div style="font-size:13px;font-weight:700;color:#aaa">Dragonfish sin conexión</div><div style="font-size:12px;color:#bbb;margin-top:4px">Configurá la IP pública o DDNS en Vercel</div></div></div>';
+  }
   document.getElementById("ventas-content").innerHTML=html;
 }
 
@@ -680,24 +717,50 @@ async function buscarStock(){
   if(q.length<2){showToast("Ingresa al menos 2 caracteres","err");return;}
   document.getElementById("stock-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
   try{
-    var res=await fetch("/api/stock?q="+encodeURIComponent(q));
-    var data=await res.json(); mostrarStock(data);
+    var resultados=await Promise.allSettled([
+      fetch("/api/stock?q="+encodeURIComponent(q)).then(function(r){return r.json();}),
+      fetch(DF_URL+"?action=stock&q="+encodeURIComponent(q)).then(function(r){return r.json();})
+    ]);
+    var dataWoo=resultados[0].status==="fulfilled"?resultados[0].value:{resultados:[]};
+    var dataDf=resultados[1].status==="fulfilled"?resultados[1].value:{resultados:[]};
+    mostrarStock(dataWoo,dataDf,q);
   } catch(err){ document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>'; }
 }
-function mostrarStock(data){
-  if(!data.resultados||data.resultados.length===0){ document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "'+data.query+'"</p></div>'; return; }
+function mostrarStock(dataWoo,dataDf,queryStr){
+  var tieneWoo=dataWoo&&dataWoo.resultados&&dataWoo.resultados.length>0;
+  var tieneDf=dataDf&&dataDf.resultados&&dataDf.resultados.length>0;
+  if(!tieneWoo&&!tieneDf){
+    document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "'+queryStr+'"</p></div>'; return;
+  }
   var html="";
-  data.resultados.forEach(function(p){
-    html+='<div class="producto-card"><div class="producto-nombre">'+p.nombre+'</div><div class="producto-sku">'+(p.sku?"SKU: "+p.sku:"")+"</div>";
-    var locs=[{key:"palermo",label:"Local Palermo",clase:"local-palermo"},{key:"laplata",label:"Local La Plata",clase:"local-laplata"}];
-    locs.forEach(function(loc){
-      if(!p.locales[loc.key]) return;
-      html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
-      p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"✓ Stock":"Sin stock")+"</span></div></div>"; });
-      html+='<div style="margin-bottom:8px"></div>';
+  if(tieneWoo){
+    html+='<div class="card-title" style="margin-bottom:8px;font-size:11px;font-weight:800;text-transform:uppercase;color:#aaa">Palermo &amp; La Plata (WooCommerce)</div>';
+    dataWoo.resultados.forEach(function(p){
+      html+='<div class="producto-card"><div class="producto-nombre">'+p.nombre+'</div><div class="producto-sku">'+(p.sku?"SKU: "+p.sku:"")+"</div>";
+      [{key:"palermo",label:"Palermo",clase:"local-palermo"},{key:"laplata",label:"La Plata",clase:"local-laplata"}].forEach(function(loc){
+        if(!p.locales[loc.key]) return;
+        html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
+        p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"✓ Stock":"Sin stock")+"</span></div></div>"; });
+        html+='<div style="margin-bottom:8px"></div>';
+      });
+      html+="</div>";
     });
-    html+="</div>";
-  });
+  }
+  if(tieneDf){
+    html+='<div class="card-title" style="margin:16px 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;color:#aaa">🐟 Dragonfish — Dot · Abasto · Córdoba</div>';
+    dataDf.resultados.forEach(function(p){
+      html+='<div class="producto-card"><div class="producto-nombre">'+p.nombre+'</div><div class="producto-sku">'+(p.sku?"SKU: "+p.sku:"")+"</div>";
+      [{key:"dot",label:"Dot",clase:"local-dot"},{key:"abasto",label:"Abasto",clase:"local-abasto"},{key:"cordoba",label:"Córdoba",clase:"local-cordoba"}].forEach(function(loc){
+        if(!p.locales[loc.key]||!p.locales[loc.key].length) return;
+        html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
+        p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"✓ Stock":"Sin stock")+"</span></div></div>"; });
+        html+='<div style="margin-bottom:8px"></div>';
+      });
+      html+="</div>";
+    });
+  } else if(dataDf&&dataDf.error){
+    html+='<div style="background:#F8F9FA;border-radius:12px;padding:14px;text-align:center;margin-top:12px"><div style="font-size:20px;margin-bottom:6px">🔌</div><div style="font-size:12px;font-weight:700;color:#aaa">Dragonfish no disponible</div><div style="font-size:11px;color:#bbb;margin-top:2px">Configurá IP pública o DDNS en Vercel</div></div>';
+  }
   document.getElementById("stock-content").innerHTML=html;
 }
 
@@ -705,35 +768,68 @@ function mostrarStock(data){
 async function cargarComparacion(){
   document.getElementById("comparacion-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
   try{
-    var res=await fetch("/api/comparacion"); var data=await res.json(); mostrarComparacion(data);
+    var resultados=await Promise.allSettled([
+      fetch("/api/comparacion").then(function(r){return r.json();}),
+      fetch(DF_URL+"?action=comparacion").then(function(r){return r.json();})
+    ]);
+    var dataWoo=resultados[0].status==="fulfilled"?resultados[0].value:null;
+    var dataDf=resultados[1].status==="fulfilled"?resultados[1].value:null;
+    mostrarComparacion(dataWoo,dataDf);
   } catch(err){ document.getElementById("comparacion-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
 }
-function mostrarComparacion(data){
+function mostrarComparacion(data,dataDf){
   var delta=function(actual,ant){
     if(!ant||ant===0) return "";
     var d=((actual-ant)/ant*100).toFixed(1);
     return '<span class="stat-delta '+(d>=0?"up":"down")+'" style="font-size:12px">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"% vs mes ant.</span>";
   };
-  var html='<div class="saldo-card"><div class="saldo-label">Total vendido hoy</div><div class="saldo-value">'+fmt(data.totalHoy)+"</div></div>";
-  html+='<div class="card"><div class="card-title">Hoy por local</div>';
-  data.locales.forEach(function(l){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">'+l.hoy.cantidad+' pedidos</div></div><div class="tx-monto ingreso">'+fmt(l.hoy.total)+"</div></div>"; });
-  html+="</div>";
-  html+='<div class="card"><div class="card-title">Ranking del mes</div>';
-  var med=["🥇","🥈","🥉"], mM=data.ranking[0]?data.ranking[0].mes.total:1;
-  data.ranking.forEach(function(l,i){
-    var pct=Math.round(l.mes.total/data.totalMes*100), w=Math.round(l.mes.total/mM*100);
-    html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(med[i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#27AE60"></div></div></div>';
-  });
-  html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700">Total del mes</span><div style="text-align:right"><div style="font-size:18px;font-weight:900">'+fmt(data.totalMes)+"</div>"+delta(data.totalMes,data.totalAnt)+"</div></div>";
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#1E8449">Proyeccion del mes</span><span style="font-size:16px;font-weight:900;color:#1E8449">'+fmt(data.proyeccionTotal)+"</span></div>";
-  html+='<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">Basado en '+data.diaDelMes+" dias - Comparado con primeros "+data.diasComparados+" dias del mes ant.</div></div></div>";
-  html+='<div class="card"><div class="card-title">Este mes vs mes anterior (mismos dias)</div>';
-  data.locales.forEach(function(l){
-    var d=l.ant.total>0?((l.mes.total-l.ant.total)/l.ant.total*100).toFixed(1):null;
-    html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">Ant: '+fmt(l.ant.total)+" - Proy: "+fmt(l.proyeccion)+(d!==null?' <span class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"%</span>":"")+'</div></div><div class="tx-monto ingreso">'+fmt(l.mes.total)+"</div></div>";
-  });
-  html+="</div>";
+  // ── WooCommerce ──
+  var html="";
+  if(data){
+    html+='<div class="saldo-card"><div class="saldo-label">Total vendido hoy (online + Woo)</div><div class="saldo-value">'+fmt(data.totalHoy)+"</div></div>";
+    html+='<div class="card"><div class="card-title">Hoy por local (WooCommerce)</div>';
+    data.locales.forEach(function(l){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">'+l.hoy.cantidad+' pedidos</div></div><div class="tx-monto ingreso">'+fmt(l.hoy.total)+"</div></div>"; });
+    html+="</div>";
+    html+='<div class="card"><div class="card-title">Ranking del mes (WooCommerce)</div>';
+    var med=["🥇","🥈","🥉"], mM=data.ranking[0]?data.ranking[0].mes.total:1;
+    data.ranking.forEach(function(l,i){
+      var pct=Math.round(l.mes.total/data.totalMes*100), w=Math.round(l.mes.total/mM*100);
+      html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(med[i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#27AE60"></div></div></div>';
+    });
+    html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700">Total del mes</span><div style="text-align:right"><div style="font-size:18px;font-weight:900">'+fmt(data.totalMes)+"</div>"+delta(data.totalMes,data.totalAnt)+"</div></div>";
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#1E8449">Proyección del mes</span><span style="font-size:16px;font-weight:900;color:#1E8449">'+fmt(data.proyeccionTotal)+"</span></div>";
+    html+='<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">'+data.diaDelMes+" días – Comparado con primeros "+data.diasComparados+" días del mes ant.</div></div></div>";
+    html+='<div class="card"><div class="card-title">Este mes vs mes anterior (mismos días)</div>';
+    data.locales.forEach(function(l){
+      var d=l.ant.total>0?((l.mes.total-l.ant.total)/l.ant.total*100).toFixed(1):null;
+      html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">Ant: '+fmt(l.ant.total)+" – Proy: "+fmt(l.proyeccion)+(d!==null?' <span class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"%</span>":"")+'</div></div><div class="tx-monto ingreso">'+fmt(l.mes.total)+"</div></div>";
+    });
+    html+="</div>";
+  }
+  // ── Dragonfish (Dot, Abasto, Córdoba) ──
+  if(dataDf&&!dataDf.error&&dataDf.locales){
+    html+='<div class="card"><div class="card-title">🐟 Dragonfish — Hoy</div>';
+    dataDf.locales.forEach(function(l){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">'+l.hoy.cantidad+' facturas</div></div><div class="tx-monto ingreso">'+fmt(l.hoy.total)+"</div></div>"; });
+    html+="</div>";
+    if(dataDf.locales.length>0){
+      html+='<div class="card"><div class="card-title">🐟 Dragonfish — Ranking del mes</div>';
+      var mDf=dataDf.ranking[0]?dataDf.ranking[0].mes.total:1;
+      dataDf.ranking.forEach(function(l,i){
+        var pct=dataDf.totalMes>0?Math.round(l.mes.total/dataDf.totalMes*100):0;
+        var w=Math.round(l.mes.total/mDf*100);
+        html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(["🥇","🥈","🥉"][i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#8E44AD"></div></div></div>';
+      });
+      html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700">Total Dragonfish del mes</span><div style="text-align:right"><div style="font-size:18px;font-weight:900">'+fmt(dataDf.totalMes)+"</div>"+delta(dataDf.totalMes,dataDf.totalAnt)+"</div></div>";
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F9F0FF;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#8E44AD">Proyección del mes</span><span style="font-size:16px;font-weight:900;color:#8E44AD">'+fmt(dataDf.proyeccionTotal)+"</span></div>";
+      html+="</div></div>";
+    }
+  } else if(!data&&(!dataDf||dataDf.error)){
+    html='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar datos</p></div>';
+  } else if(!dataDf||dataDf.error){
+    html+='<div style="background:#F8F9FA;border-radius:12px;padding:14px;text-align:center;margin-top:4px"><div style="font-size:20px;margin-bottom:6px">🔌</div><div style="font-size:12px;font-weight:700;color:#aaa">Dragonfish sin conexión</div><div style="font-size:11px;color:#bbb;margin-top:2px">Dot · Abasto · Córdoba no disponibles</div></div>';
+  }
   document.getElementById("comparacion-content").innerHTML=html;
 }
 
