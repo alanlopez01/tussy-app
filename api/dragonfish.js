@@ -126,7 +126,7 @@ module.exports = async function handler(req, res) {
         const data = await dfFetch(
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
-          { limit: 50, page, sort: "-Fecha", createdafter: desde },
+          { limit: 20, page, sort: "-Fecha" },
           sessionToken, local.idCliente
         );
 
@@ -154,7 +154,7 @@ module.exports = async function handler(req, res) {
           }
         }
 
-        if (resultados.length < 50 || hayMasViejas) sigue = false;
+        if (resultados.length < 20 || hayMasViejas) sigue = false;
         else page++;
 
       } catch (e) {
