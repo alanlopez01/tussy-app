@@ -110,68 +110,87 @@ module.exports = async function handler(req, res) {
   }
 
   async function getVentasLocal(local, desde, hasta) {
-    // Autenticar primero
     const sessionToken = await autenticar(local);
 
-    // Calcular timestamps para filtrar del lado cliente
     const tsInicio = diaARG(desde, true).getTime();
     const tsFin    = diaARG(hasta || desde, false).getTime();
 
+    const LIMIT = 50;
+
+    // Primer request para saber cuántos registros hay
+    const primerData = await dfFetch(
+      local.url, local.token, local.baseDatos,
+      "/Facturaagrupada/",
+      { limit: LIMIT, page: 1, sort: "-Fecha", createdafter: desde },
+      sessionToken, local.idCliente
+    );
+
+    const totalRegistros = primerData.TotalRegistros || 0;
+    const totalPages = Math.ceil(totalRegistros / LIMIT);
+
+    // Procesar primera página
     let total = 0;
     let cantidad = 0;
     let ultimosPedidos = [];
-    let page = 1;
-    let sigue = true;
+    let hayMasViejas = false;
 
-    while (sigue) {
-      try {
-        const data = await dfFetch(
-          local.url, local.token, local.baseDatos,
-          "/Facturaagrupada/",
-          { limit: 50, page, sort: "-Fecha" },
-          sessionToken,
-          local.idCliente
+    function procesarPagina(resultados) {
+      for (const f of resultados) {
+        const fechaF = parseDFDate(f.Fecha);
+        if (fechaF) {
+          const ts = fechaF.getTime();
+          if (ts < tsInicio) { hayMasViejas = true; continue; }
+          if (ts > tsFin) continue;
+        }
+        const monto = parseFloat(f.Total || 0);
+        total += monto;
+        cantidad++;
+        if (ultimosPedidos.length < 3) {
+          ultimosPedidos.push({
+            numero: f.Numero || "",
+            total: monto,
+            estado: `Fac ${f.Letra || ""}${f.PuntoDeVenta || ""}-${f.Numero || ""}`,
+            cliente: f.ClienteDescripcion || f.Cliente || "Consumidor Final",
+          });
+        }
+      }
+    }
+
+    const primerResultados = Array.isArray(primerData) ? primerData : (primerData.Resultados || []);
+    procesarPagina(primerResultados);
+
+    // Si hay más páginas y no encontramos facturas viejas todavía, pedir el resto en paralelo
+    if (totalPages > 1 && !hayMasViejas) {
+      const paginas = [];
+      for (let p = 2; p <= Math.min(totalPages, 10); p++) {
+        paginas.push(p);
+      }
+
+      // Pedir de a 3 páginas en paralelo para no sobrecargar la PC
+      const BATCH = 3;
+      for (let i = 0; i < paginas.length; i += BATCH) {
+        if (hayMasViejas) break;
+        const batch = paginas.slice(i, i + BATCH);
+        const results = await Promise.allSettled(
+          batch.map(p => dfFetch(
+            local.url, local.token, local.baseDatos,
+            "/Facturaagrupada/",
+            { limit: LIMIT, page: p, sort: "-Fecha", createdafter: desde },
+            sessionToken, local.idCliente
+          ))
         );
-
-        // La respuesta viene en data.Resultados
-        const resultados = Array.isArray(data) ? data : (data.Resultados || []);
-        if (!resultados || resultados.length === 0) break;
-
-        for (const f of resultados) {
-          const fechaF = parseDFDate(f.Fecha);
-          if (fechaF) {
-            const ts = fechaF.getTime();
-            if (ts < tsInicio || ts > tsFin) continue;
-          }
-
-          const monto = parseFloat(f.Total || 0);
-          total += monto;
-          cantidad++;
-          if (ultimosPedidos.length < 3) {
-            ultimosPedidos.push({
-              numero: f.Numero || "",
-              total: monto,
-              estado: `Fac ${f.Letra || ""}${f.PuntoDeVenta || ""}-${f.Numero || ""}`,
-              cliente: f.ClienteDescripcion || f.Cliente || "Consumidor Final",
-            });
+        for (const r of results) {
+          if (r.status === "fulfilled") {
+            const res = Array.isArray(r.value) ? r.value : (r.value.Resultados || []);
+            procesarPagina(res);
           }
         }
-
-        // Si el último resultado es más viejo que nuestro rango, parar
-        if (resultados.length < 50) {
-          sigue = false;
-        } else {
-          const ultimaFecha = parseDFDate(resultados[resultados.length - 1].Fecha);
-          if (ultimaFecha && ultimaFecha.getTime() < tsInicio) sigue = false;
-          else page++;
-        }
-      } catch (e) {
-        return { total, cantidad, pedidos: ultimosPedidos, error: `page ${page}: ${e.message}` };
       }
     }
 
     return { total: Math.round(total), cantidad, pedidos: ultimosPedidos };
   }
+
   async function getStockLocal(local, query) {
     const sessionToken = await autenticar(local);
     const data = await dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
