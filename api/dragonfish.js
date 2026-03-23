@@ -132,15 +132,10 @@ module.exports = async function handler(req, res) {
   async function getVentasLocal(local, desde, hasta) {
     // Autenticar primero
     const sessionToken = await autenticar(local);
-    // Dragonfish acepta Fecha en formato DD/MM/YYYY
-    // Para rangos se itera con createdafter (formato YYYY-MM-DD)
-    const params = {
-      limit: 200,
-      page: 1,
-      sort: "-Fecha",
-    };
-    if (desde) params.createdafter = desde;    // YYYY-MM-DD
-    // "hasta" se filtra del lado nuestro porque la API no tiene "createdbefore"
+
+    // Calcular timestamps para filtrar del lado cliente
+    const tsInicio = diaARG(desde, true).getTime();
+    const tsFin    = diaARG(hasta || desde, false).getTime();
 
     let total = 0;
     let cantidad = 0;
@@ -148,57 +143,48 @@ module.exports = async function handler(req, res) {
     let page = 1;
     let sigue = true;
 
-    // Consultamos los tres tipos de factura posibles
-    const endpoints = [
-      "/Facturaagrupada/",
-      "/Facturaelectronica/",
-      "/Factura/",          // manual
-    ];
+    while (sigue) {
+      try {
+        const data = await dfFetch(
+          local.url, local.token, local.baseDatos,
+          "/Facturaagrupada/",
+          { limit: 200, page, sort: "-Fecha", createdafter: desde },
+          sessionToken
+        );
 
-    for (const ep of endpoints) {
-      page = 1;
-      sigue = true;
-      while (sigue) {
-        try {
-          const data = await dfFetch(local.url, local.token, local.baseDatos, ep, { ...params, page }, sessionToken);
-          if (!Array.isArray(data) || data.length === 0) break;
+        // La respuesta viene en data.Resultados
+        const resultados = Array.isArray(data) ? data : (data.Resultados || []);
+        if (!resultados || resultados.length === 0) break;
 
-          for (const f of data) {
-            // Filtrar por rango usando timestamps Unix de Dragonfish
-            const fechaF = parseDFDate(f.Fecha);
-            if (fechaF) {
-              const inicio = diaARG(desde, true);
-              const fin = diaARG(hasta || desde, false);
-              if (fechaF < inicio || fechaF > fin) continue;
-            }
-
-            const monto = parseFloat(f.Total || 0);
-            total += monto;
-            cantidad++;
-            if (ultimosPedidos.length < 3) {
-              ultimosPedidos.push({
-                numero: f.Numero || f.id || "",
-                total: monto,
-                estado: "Facturado",
-                cliente: f.ClienteDescripcion || f.Cliente || "Consumidor Final",
-              });
-            }
+        for (const f of resultados) {
+          const fechaF = parseDFDate(f.Fecha);
+          if (fechaF) {
+            const ts = fechaF.getTime();
+            if (ts < tsInicio || ts > tsFin) continue;
           }
 
-          if (data.length < 200) sigue = false;
-          else page++;
-        } catch (e) {
-          sigue = false; // Si falla un tipo de factura, seguimos con el siguiente
+          const monto = parseFloat(f.Total || 0);
+          total += monto;
+          cantidad++;
+          if (ultimosPedidos.length < 3) {
+            ultimosPedidos.push({
+              numero: f.Numero || "",
+              total: monto,
+              estado: `Fac ${f.Letra || ""}${f.PuntoDeVenta || ""}-${f.Numero || ""}`,
+              cliente: f.ClienteDescripcion || f.Cliente || "Consumidor Final",
+            });
+          }
         }
+
+        if (resultados.length < 200) sigue = false;
+        else page++;
+      } catch (e) {
+        sigue = false;
       }
     }
 
     return { total, cantidad, pedidos: ultimosPedidos };
   }
-
-
-
-  // ─── Función: Stock por búsqueda ─────────────────────────────────────────────
   async function getStockLocal(local, query) {
     const sessionToken = await autenticar(local);
     const data = await dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
