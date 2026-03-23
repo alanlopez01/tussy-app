@@ -112,6 +112,23 @@ module.exports = async function handler(req, res) {
   // Dragonfish filtra por Fecha exacta (DD/MM/YYYY) o podemos usar createdafter/modifiedafter.
   // Para un rango usamos paginación con limit=200.
 
+  // Convierte "/Date(1763780400000-0300)/" a objeto Date
+  function parseDFDate(dfDate) {
+    if (!dfDate) return null;
+    const match = String(dfDate).match(/\/Date\((\d+)([+-]\d+)?\)\//);
+    if (!match) return null;
+    return new Date(parseInt(match[1]));
+  }
+
+  // Convierte "YYYY-MM-DD" a timestamp inicio/fin del día en Argentina (UTC-3)
+  function diaARG(fechaStr, esInicio) {
+    const [y, m, d] = fechaStr.split("-").map(Number);
+    // Argentina es UTC-3, entonces inicio del día ARG = UTC 03:00
+    if (esInicio) return new Date(Date.UTC(y, m-1, d, 3, 0, 0));
+    // Fin del día ARG = UTC siguiente día 02:59:59
+    return new Date(Date.UTC(y, m-1, d+1, 2, 59, 59));
+  }
+
   async function getVentasLocal(local, desde, hasta) {
     // Autenticar primero
     const sessionToken = await autenticar(local);
@@ -147,9 +164,13 @@ module.exports = async function handler(req, res) {
           if (!Array.isArray(data) || data.length === 0) break;
 
           for (const f of data) {
-            // Filtrar por rango si hace falta
-            const fechaF = parseFechaDragonfish(f.Fecha);
-            if (hasta && fechaF && fechaF > new Date(hasta + "T23:59:59")) continue;
+            // Filtrar por rango usando timestamps Unix de Dragonfish
+            const fechaF = parseDFDate(f.Fecha);
+            if (fechaF) {
+              const inicio = diaARG(desde, true);
+              const fin = diaARG(hasta || desde, false);
+              if (fechaF < inicio || fechaF > fin) continue;
+            }
 
             const monto = parseFloat(f.Total || 0);
             total += monto;
@@ -175,15 +196,7 @@ module.exports = async function handler(req, res) {
     return { total, cantidad, pedidos: ultimosPedidos };
   }
 
-  function parseFechaDragonfish(fechaStr) {
-    // Dragonfish devuelve "DD/MM/YYYY" o "YYYY-MM-DD"
-    if (!fechaStr) return null;
-    if (fechaStr.includes("/")) {
-      const [d, m, y] = fechaStr.split("/");
-      return new Date(`${y}-${m}-${d}`);
-    }
-    return new Date(fechaStr);
-  }
+
 
   // ─── Función: Stock por búsqueda ─────────────────────────────────────────────
   async function getStockLocal(local, query) {
