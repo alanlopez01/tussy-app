@@ -127,7 +127,7 @@ module.exports = async function handler(req, res) {
         const data = await dfFetch(
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
-          { limit: 20, page, sort: "-Fecha" },
+          { limit: 100, page, sort: "-Fecha" },
           sessionToken
         );
 
@@ -156,7 +156,7 @@ module.exports = async function handler(req, res) {
         }
 
         // Si el último resultado es más viejo que nuestro rango, parar
-        if (resultados.length < 200) {
+        if (resultados.length < 100) {
           sigue = false;
         } else {
           const ultimaFecha = parseDFDate(resultados[resultados.length - 1].Fecha);
