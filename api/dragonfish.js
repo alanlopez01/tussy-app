@@ -168,7 +168,7 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    return { total, cantidad, pedidos: ultimosPedidos };
+    return { total: Math.round(total), cantidad, pedidos: ultimosPedidos };
   }
   async function getStockLocal(local, query) {
     const sessionToken = await autenticar(local);
