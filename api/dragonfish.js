@@ -148,7 +148,7 @@ module.exports = async function handler(req, res) {
         const data = await dfFetch(
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
-          { limit: 200, page, sort: "-Fecha", createdafter: desde },
+          { limit: 200, page, sort: "-Fecha" },
           sessionToken
         );
 
@@ -176,8 +176,14 @@ module.exports = async function handler(req, res) {
           }
         }
 
-        if (resultados.length < 200) sigue = false;
-        else page++;
+        // Si el último resultado es más viejo que nuestro rango, parar
+        if (resultados.length < 200) {
+          sigue = false;
+        } else {
+          const ultimaFecha = parseDFDate(resultados[resultados.length - 1].Fecha);
+          if (ultimaFecha && ultimaFecha.getTime() < tsInicio) sigue = false;
+          else page++;
+        }
       } catch (e) {
         sigue = false;
       }
