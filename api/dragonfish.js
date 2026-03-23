@@ -389,13 +389,21 @@ module.exports = async function handler(req, res) {
           local: local.nombre,
           baseDatos: local.baseDatos,
           totalRegistros: data.TotalRegistros || resultados.length,
-          primerosRegistros: resultados.slice(0, 3).map(f => ({
-            Numero: f.Numero,
-            Fecha_raw: f.Fecha,
-            Fecha_parsed: parseDFDate(f.Fecha),
-            Total: f.Total,
-            Letra: f.Letra,
-          })),
+          primerosRegistros: resultados.slice(0, 3).map(f => {
+            const fechaP = parseDFDate(f.Fecha);
+            const ts = fechaP ? fechaP.getTime() : null;
+            const tsI = diaARG("2026-03-01", true).getTime();
+            const tsF = diaARG("2026-03-23", false).getTime();
+            return {
+              Numero: f.Numero,
+              Fecha_raw: f.Fecha,
+              Fecha_parsed: fechaP,
+              Fecha_ts: ts,
+              Total: f.Total,
+              Letra: f.Letra,
+              pasa_filtro_marzo: ts ? (ts >= tsI && ts <= tsF) : "no-ts",
+            };
+          }),
           debug_timestamps: {
             desde_2026_03_01: diaARG("2026-03-01", true).getTime(),
             hasta_2026_03_23: diaARG("2026-03-23", false).getTime(),
