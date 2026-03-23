@@ -358,39 +358,6 @@ module.exports = async function handler(req, res) {
       if (!local) return res.status(404).json({ error: `Local '${localKey}' no configurado` });
       try {
         const sessionToken = await autenticar(local);
-
-        // Mostrar exactamente qué headers vamos a mandar
-        const headersUsados = {
-          "idCliente": local.idCliente,
-          "Authorization": local.token ? local.token.substring(0, 20) + "..." : "NO TOKEN",
-          "BaseDeDatos": local.baseDatos,
-        };
-
-        // Probar primero con ObtenerFechaYHora que no necesita auth
-        const testBasico = await fetch(`${local.url}/api.Dragonfish/ObtenerFechaYHora`, {
-          headers: { "idCliente": local.idCliente, "Authorization": local.token, "BaseDeDatos": local.baseDatos },
-          signal: AbortSignal.timeout(10000),
-        });
-        const testBasicoStatus = testBasico.status;
-
-        // Probar con Facturaagrupada
-        const testFactura = await fetch(`${local.url}/api.Dragonfish/Facturaagrupada/?limit=1`, {
-          headers: { "idCliente": local.idCliente, "Authorization": local.token, "BaseDeDatos": local.baseDatos },
-          signal: AbortSignal.timeout(10000),
-        });
-        const testFacturaStatus = testFactura.status;
-        const testFacturaBody = await testFactura.text().catch(() => "no body");
-
-        return res.status(200).json({
-          local: local.nombre,
-          baseDatos: local.baseDatos,
-          idCliente: local.idCliente,
-          headers_usados: headersUsados,
-          test_ObtenerFechaYHora: testBasicoStatus,
-          test_Facturaagrupada_status: testFacturaStatus,
-          test_Facturaagrupada_body: testFacturaBody.substring(0, 500),
-        });
-
         const data = await dfFetch(
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
