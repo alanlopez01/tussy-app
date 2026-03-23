@@ -29,23 +29,25 @@ module.exports = async function handler(req, res) {
       nombre: "Dot",
       url: process.env.DF_DOT_URL,
       token: process.env.DF_JWTOKEN_DOT,
+      baseDatos: process.env.DF_BASE_DATOS_DOT || "DOT",
     },
     {
       key: "abasto",
       nombre: "Abasto",
       url: process.env.DF_ABASTO_URL,
       token: process.env.DF_JWTOKEN_ABASTO,
+      baseDatos: process.env.DF_BASE_DATOS_ABASTO || "ABASTO",
     },
     {
       key: "cordoba",
       nombre: "Córdoba",
       url: process.env.DF_CORDOBA_URL,
       token: process.env.DF_JWTOKEN_CORDOBA,
+      baseDatos: process.env.DF_BASE_DATOS_CORDOBA || "CORDOBA",
     },
   ];
 
   const ID_CLIENTE = process.env.DF_ID_CLIENTE || "API";
-  const BASE_DATOS = process.env.DF_BASE_DATOS || "";
 
   // Verificar que haya al menos una URL configurada
   const localesConfigurados = LOCALES.filter(l => l.url && l.token);
@@ -58,21 +60,47 @@ module.exports = async function handler(req, res) {
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
-  function buildHeaders(token) {
+  // Cache de sesiones autenticadas por local (en memoria, dura mientras corre la función)
+  const sessionCache = {};
+
+  // Paso 1: POST /Autenticar con IdCliente + JWToken → devuelve sesión en headers
+  async function autenticar(local) {
+    const cacheKey = local.key;
+    if (sessionCache[cacheKey]) return sessionCache[cacheKey];
+
+    const r = await fetch(`${local.url}/api.Dragonfish/Autenticar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        IdCliente: ID_CLIENTE,
+        JWToken: local.token,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!r.ok) throw new Error(`Error autenticando ${local.nombre}: HTTP ${r.status}`);
+
+    // La sesión viene en el header Authorization de la respuesta
+    const sessionToken = r.headers.get("Authorization") || local.token;
+    sessionCache[cacheKey] = sessionToken;
+    return sessionToken;
+  }
+
+  function buildHeaders(sessionToken, baseDatos) {
     const h = {
       "Content-Type": "application/json",
       "idCliente": ID_CLIENTE,
-      "Authorization": token,
+      "Authorization": sessionToken,
     };
-    if (BASE_DATOS) h["BaseDeDatos"] = BASE_DATOS;
+    if (baseDatos) h["BaseDeDatos"] = baseDatos;
     return h;
   }
 
-  async function dfFetch(url, token, path, params = {}) {
+  async function dfFetch(url, token, baseDatos, path, params = {}, sessionToken) {
     const qs = new URLSearchParams(params).toString();
     const fullUrl = `${url}/api.Dragonfish${path}${qs ? "?" + qs : ""}`;
     const r = await fetch(fullUrl, {
-      headers: buildHeaders(token),
+      headers: buildHeaders(sessionToken || token, baseDatos),
       signal: AbortSignal.timeout(15000),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status} en ${path}`);
@@ -85,6 +113,8 @@ module.exports = async function handler(req, res) {
   // Para un rango usamos paginación con limit=200.
 
   async function getVentasLocal(local, desde, hasta) {
+    // Autenticar primero
+    const sessionToken = await autenticar(local);
     // Dragonfish acepta Fecha en formato DD/MM/YYYY
     // Para rangos se itera con createdafter (formato YYYY-MM-DD)
     const params = {
@@ -113,7 +143,7 @@ module.exports = async function handler(req, res) {
       sigue = true;
       while (sigue) {
         try {
-          const data = await dfFetch(local.url, local.token, ep, { ...params, page });
+          const data = await dfFetch(local.url, local.token, local.baseDatos, ep, { ...params, page }, sessionToken);
           if (!Array.isArray(data) || data.length === 0) break;
 
           for (const f of data) {
@@ -157,11 +187,12 @@ module.exports = async function handler(req, res) {
 
   // ─── Función: Stock por búsqueda ─────────────────────────────────────────────
   async function getStockLocal(local, query) {
-    const data = await dfFetch(local.url, local.token, "/ConsultaStockYPrecios/", {
+    const sessionToken = await autenticar(local);
+    const data = await dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
       query,
       limit: 200,
       stockcero: false,
-    });
+    }, sessionToken);
 
     if (!Array.isArray(data)) return [];
 
