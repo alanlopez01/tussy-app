@@ -30,6 +30,7 @@ module.exports = async function handler(req, res) {
       url: process.env.DF_DOT_URL,
       token: process.env.DF_JWTOKEN_DOT,
       baseDatos: process.env.DF_BASE_DATOS_DOT || "DOT",
+      idCliente: process.env.DF_ID_CLIENTE_DOT || process.env.DF_ID_CLIENTE || "API",
     },
     {
       key: "abasto",
@@ -37,6 +38,7 @@ module.exports = async function handler(req, res) {
       url: process.env.DF_ABASTO_URL,
       token: process.env.DF_JWTOKEN_ABASTO,
       baseDatos: process.env.DF_BASE_DATOS_ABASTO || "ABASTO",
+      idCliente: process.env.DF_ID_CLIENTE_ABASTO || process.env.DF_ID_CLIENTE || "API",
     },
     {
       key: "cordoba",
@@ -44,10 +46,9 @@ module.exports = async function handler(req, res) {
       url: process.env.DF_CORDOBA_URL,
       token: process.env.DF_JWTOKEN_CORDOBA,
       baseDatos: process.env.DF_BASE_DATOS_CORDOBA || "CORDOBA",
+      idCliente: process.env.DF_ID_CLIENTE_CORDOBA || process.env.DF_ID_CLIENTE || "API",
     },
   ];
-
-  const ID_CLIENTE = process.env.DF_ID_CLIENTE || "API";
 
   // Verificar que haya al menos una URL configurada
   const localesConfigurados = LOCALES.filter(l => l.url && l.token);
@@ -65,21 +66,21 @@ module.exports = async function handler(req, res) {
     return local.token;
   }
 
-  function buildHeaders(sessionToken, baseDatos) {
+  function buildHeaders(sessionToken, baseDatos, idCliente) {
     const h = {
       "Content-Type": "application/json",
-      "idCliente": ID_CLIENTE,
+      "idCliente": idCliente || "API",
       "Authorization": sessionToken,
     };
     if (baseDatos) h["BaseDeDatos"] = baseDatos;
     return h;
   }
 
-  async function dfFetch(url, token, baseDatos, path, params = {}, sessionToken) {
+  async function dfFetch(url, token, baseDatos, path, params = {}, sessionToken, idCliente) {
     const qs = new URLSearchParams(params).toString();
     const fullUrl = `${url}/api.Dragonfish${path}${qs ? "?" + qs : ""}`;
     const r = await fetch(fullUrl, {
-      headers: buildHeaders(sessionToken || token, baseDatos),
+      headers: buildHeaders(sessionToken || token, baseDatos, idCliente),
       signal: AbortSignal.timeout(15000),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status} en ${path}`);
@@ -128,7 +129,8 @@ module.exports = async function handler(req, res) {
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
           { limit: 50, page, sort: "-Fecha" },
-          sessionToken
+          sessionToken,
+          local.idCliente
         );
 
         // La respuesta viene en data.Resultados
@@ -176,7 +178,7 @@ module.exports = async function handler(req, res) {
       query,
       limit: 200,
       stockcero: false,
-    }, sessionToken);
+    }, sessionToken, local.idCliente);
 
     if (!Array.isArray(data)) return [];
 
@@ -360,7 +362,8 @@ module.exports = async function handler(req, res) {
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
           { limit: 3, sort: "-Fecha" },
-          sessionToken
+          sessionToken,
+          local.idCliente
         );
         // Mostrar los primeros registros con sus fechas parseadas
         const resultados = Array.isArray(data) ? data : (data.Resultados || []);
