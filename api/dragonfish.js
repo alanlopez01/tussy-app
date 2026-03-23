@@ -115,7 +115,7 @@ module.exports = async function handler(req, res) {
     const tsInicio = diaARG(desde, true).getTime();
     const tsFin    = diaARG(hasta || desde, false).getTime();
 
-    const LIMIT = 100;
+    const LIMIT = 50;
 
     // Primer request para saber cuántos registros hay
     const primerData = await dfFetch(
@@ -167,7 +167,7 @@ module.exports = async function handler(req, res) {
       }
 
       // Pedir de a 3 páginas en paralelo para no sobrecargar la PC
-      const BATCH = 5;
+      const BATCH = 2;
       for (let i = 0; i < paginas.length; i += BATCH) {
         if (hayMasViejas) break;
         const batch = paginas.slice(i, i + BATCH);
