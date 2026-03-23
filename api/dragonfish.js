@@ -60,30 +60,9 @@ module.exports = async function handler(req, res) {
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
-  // Cache de sesiones autenticadas por local (en memoria, dura mientras corre la función)
-  const sessionCache = {};
-
-  // Paso 1: POST /Autenticar con IdCliente + JWToken → devuelve sesión en headers
+  // Usar el token directamente en cada request (v14 no requiere /Autenticar previo)
   async function autenticar(local) {
-    const cacheKey = local.key;
-    if (sessionCache[cacheKey]) return sessionCache[cacheKey];
-
-    const r = await fetch(`${local.url}/api.Dragonfish/Autenticar`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        IdCliente: ID_CLIENTE,
-        JWToken: local.token,
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-
-    if (!r.ok) throw new Error(`Error autenticando ${local.nombre}: HTTP ${r.status}`);
-
-    // La sesión viene en el header Authorization de la respuesta
-    const sessionToken = r.headers.get("Authorization") || local.token;
-    sessionCache[cacheKey] = sessionToken;
-    return sessionToken;
+    return local.token;
   }
 
   function buildHeaders(sessionToken, baseDatos) {
