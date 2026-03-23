@@ -127,7 +127,7 @@ module.exports = async function handler(req, res) {
         const data = await dfFetch(
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
-          { limit: 200, page, sort: "-Fecha" },
+          { limit: 20, page, sort: "-Fecha" },
           sessionToken
         );
 
@@ -164,7 +164,7 @@ module.exports = async function handler(req, res) {
           else page++;
         }
       } catch (e) {
-        sigue = false;
+        return { total, cantidad, pedidos: ultimosPedidos, error: `page ${page}: ${e.message}` };
       }
     }
 
