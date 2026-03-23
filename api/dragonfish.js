@@ -364,6 +364,42 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // ── GET /api/dragonfish?action=debug&local=dot ──
+    if (action === "debug") {
+      const localKey = req.query.local || "dot";
+      const local = localesConfigurados.find(l => l.key === localKey);
+      if (!local) return res.status(404).json({ error: `Local '${localKey}' no configurado` });
+      try {
+        const sessionToken = await autenticar(local);
+        const data = await dfFetch(
+          local.url, local.token, local.baseDatos,
+          "/Facturaagrupada/",
+          { limit: 3, sort: "-Fecha" },
+          sessionToken
+        );
+        // Mostrar los primeros registros con sus fechas parseadas
+        const resultados = Array.isArray(data) ? data : (data.Resultados || []);
+        return res.status(200).json({
+          local: local.nombre,
+          baseDatos: local.baseDatos,
+          totalRegistros: data.TotalRegistros || resultados.length,
+          primerosRegistros: resultados.slice(0, 3).map(f => ({
+            Numero: f.Numero,
+            Fecha_raw: f.Fecha,
+            Fecha_parsed: parseDFDate(f.Fecha),
+            Total: f.Total,
+            Letra: f.Letra,
+          })),
+          debug_timestamps: {
+            desde_2026_03_01: diaARG("2026-03-01", true).getTime(),
+            hasta_2026_03_23: diaARG("2026-03-23", false).getTime(),
+          }
+        });
+      } catch(e) {
+        return res.status(500).json({ error: e.message });
+      }
+    }
+
     return res.status(400).json({ error: `Acción desconocida: ${action}` });
 
   } catch (err) {
