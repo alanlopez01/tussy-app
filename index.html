@@ -595,6 +595,12 @@ function setMarca(marca) {
   if (tabCargar) tabCargar.style.display = rolActual === "admin" ? "" : "none";
   // Volver a info al cambiar de marca
   finTab("info");
+  // Recargar categorías según la marca
+  callScript("getCategorias", {}, function(d) {
+    catsGasto = d.gasto || [];
+    catsIngreso = d.ingreso || [];
+    updateCatSelect();
+  });
   // Recargar dashboard con la marca seleccionada
   cargarDashboard();
 }
