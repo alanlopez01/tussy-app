@@ -223,6 +223,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .toast.ok{background:var(--verde)}.toast.err{background:var(--rojo)}
 .tabs-row{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.refresh-btn{background:none;border:1.5px solid var(--borde);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;color:#666;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:12px;width:100%}
+.refresh-btn:active{background:#f0f0f0}
+.refresh-icon{display:inline-block;transition:transform 0.5s}
+.refresh-icon.spinning{transform:rotate(360deg)}
 </style>
 </head>
 <body>
@@ -322,6 +326,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
           </select>
           <button class="mes-btn" onclick="cargarVentas()">Ver</button>
         </div>
+        <button class="refresh-btn" onclick="refreshSeccion('ventas')"><span class="refresh-icon" id="ri-ventas">🔄</span> Actualizar</button>
         <div id="custom-fechas" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
           <input type="date" id="v-desde" class="form-control">
           <input type="date" id="v-hasta" class="form-control">
@@ -338,16 +343,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
             <button class="mes-btn" onclick="buscarStock()">Buscar</button>
           </div>
         </div>
+        <button class="refresh-btn" id="refresh-stock-btn" onclick="refreshSeccion('stock')" style="display:none"><span class="refresh-icon" id="ri-stock">🔄</span> Actualizar búsqueda</button>
         <div id="stock-content"></div>
       </div>
 
       <!-- LOCALES -->
       <div class="section" id="sec-comparacion">
+        <button class="refresh-btn" onclick="refreshSeccion('comparacion')"><span class="refresh-icon" id="ri-comparacion">🔄</span> Actualizar</button>
         <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
       <!-- REPORTES -->
       <div class="section" id="sec-reportes">
+        <button class="refresh-btn" onclick="refreshSeccion('reportes')"><span class="refresh-icon" id="ri-reportes">🔄</span> Actualizar</button>
         <div class="mes-row">
           <select id="rep-canal" class="form-control" style="flex:1">
             <option value="online">Online (Tiendanube)</option>
@@ -653,13 +661,76 @@ async function cargarVentas(){
   else if(periodo==="custom"){ desde=document.getElementById("v-desde").value; hasta=document.getElementById("v-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
   else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
   try{
-    var resultados=await Promise.allSettled([
-      fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}),
-      fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();})
-    ]);
-    var dataWoo=resultados[0].status==="fulfilled"?resultados[0].value:{};
-    var dataDf=resultados[1].status==="fulfilled"?resultados[1].value:{};
-    mostrarVentas(dataWoo,dataDf,periodo);
+    // Cache inteligente para Dragonfish
+    var hoy = hoyStr();
+    var dfData = null;
+    var desdeCache = false;
+
+    if (periodo === "mes") {
+      // Lógica especial para el mes: combinar cache pasado + hoy fresco
+      var cacheInfo = await getVentasMesConCache(desde, hasta);
+
+      if (cacheInfo && cacheInfo.desdeCache) {
+        // Cache completo disponible
+        dfData = cacheInfo.data;
+        desdeCache = true;
+      } else if (cacheInfo && cacheInfo.parcial) {
+        // Tenemos días pasados en cache, solo pedimos hoy
+        var resHoy = await fetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}).catch(function(){return {};});
+        // Combinar totales
+        var pasado = cacheInfo.cachePasado;
+        dfData = {};
+        ["dot","abasto","cordoba"].forEach(function(k){
+          if (pasado[k] || resHoy[k]) {
+            dfData[k] = {
+              nombre: (pasado[k]||resHoy[k]).nombre,
+              total: ((pasado[k]||{}).total||0) + ((resHoy[k]||{}).total||0),
+              cantidad: ((pasado[k]||{}).cantidad||0) + ((resHoy[k]||{}).cantidad||0),
+              pedidos: (resHoy[k]||{}).pedidos||[]
+            };
+          }
+        });
+        dfData.total = ((pasado.total)||0) + ((resHoy.total)||0);
+        // Guardar cache de días pasados
+        var cache = getCache();
+        cache[cacheInfo.keyPasado] = cache[cacheInfo.keyPasado] || { data: pasado, ts: Date.now(), eterno: true };
+        // No cacheamos el completo (tiene hoy que cambia)
+        setCache(cache);
+        desdeCache = true; // parcialmente
+      } else {
+        // Sin cache — cargar todo y cachear los días pasados
+        dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
+        // Cachear días pasados (hasta ayer)
+        if (hasta === hoy) {
+          // Guardar solo hasta ayer como eterno
+          var ayerStr = (function(){
+            var d=new Date(hoy+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()-1);
+            var pad=function(n){return String(n).padStart(2,"0");};
+            return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
+          })();
+          // No tenemos datos separados por día, guardamos el total del mes
+          // Se renovará automáticamente mañana igual porque hay cache
+          cachearVentasDF(desde, hasta, dfData);
+        } else {
+          cachearVentasDF(desde, hasta, dfData);
+        }
+      }
+    } else {
+      // Para hoy/ayer/custom — cache simple de 5 minutos
+      var cachedDf = getCachedVentasDF(desde, hasta);
+      if (cachedDf) {
+        dfData = cachedDf;
+        desdeCache = true;
+      } else {
+        dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
+        cachearVentasDF(desde, hasta, dfData);
+      }
+    }
+
+    var resWoo = await fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
+    mostrarVentas(resWoo, dfData, periodo);
+    if(desdeCache) showToast("⚡ Dragonfish desde caché","ok");
+    limpiarCacheViejo();
   } catch(err){ document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar ventas</p></div>'; }
 }
 function mostrarVentas(data,dataDf,periodo){
@@ -762,6 +833,8 @@ function mostrarStock(dataWoo,dataDf,queryStr){
     html+='<div style="background:#F8F9FA;border-radius:12px;padding:14px;text-align:center;margin-top:12px"><div style="font-size:20px;margin-bottom:6px">🔌</div><div style="font-size:12px;font-weight:700;color:#aaa">Dragonfish no disponible</div><div style="font-size:11px;color:#bbb;margin-top:2px">Configurá IP pública o DDNS en Vercel</div></div>';
   }
   document.getElementById("stock-content").innerHTML=html;
+  var refreshStockBtn = document.getElementById("refresh-stock-btn");
+  if (refreshStockBtn) refreshStockBtn.style.display = html ? "flex" : "none";
 }
 
 // ══ COMPARACION ══
@@ -1377,6 +1450,137 @@ async function guardarTransaccion(){
     btn.disabled=false; btn.textContent="Guardar transaccion";
     document.getElementById("f-desc").value=""; document.getElementById("f-monto").value=""; document.getElementById("f-notas").value="";
   });
+}
+
+// ══ CACHE INCREMENTAL ══
+var DF_CACHE_KEY = "tussy_df_cache_v2";
+
+function getCache() {
+  try { var raw = localStorage.getItem(DF_CACHE_KEY); return raw ? JSON.parse(raw) : {}; }
+  catch(e) { return {}; }
+}
+
+function setCache(data) {
+  try { localStorage.setItem(DF_CACHE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function hoyStr() {
+  var ahora = new Date();
+  var arg = new Date(ahora.getTime() - 3*60*60*1000);
+  var pad = function(n){return String(n).padStart(2,"0");};
+  return arg.getUTCFullYear()+"-"+pad(arg.getUTCMonth()+1)+"-"+pad(arg.getUTCDate());
+}
+
+function esPasado(fecha) {
+  return fecha < hoyStr();
+}
+
+// Cachear los días del rango que son pasados (no van a cambiar nunca)
+// y separar el día de hoy que se consulta fresco siempre
+function cachearVentasDF(desde, hasta, data) {
+  var hoy = hoyStr();
+  var cache = getCache();
+  // Guardar con key específica
+  var key = desde + "_" + hasta;
+  var esRangoTotalmentePasado = hasta < hoy;
+  cache[key] = {
+    data: data,
+    ts: Date.now(),
+    eterno: esRangoTotalmentePasado // días pasados nunca cambian
+  };
+  setCache(cache);
+}
+
+function getCachedVentasDF(desde, hasta) {
+  var cache = getCache();
+  var key = desde + "_" + hasta;
+  var entry = cache[key];
+  if (!entry) return null;
+  // Si el rango es totalmente pasado → cache eterno (válido hasta fin de mes)
+  if (entry.eterno) return entry.data;
+  // Si incluye hoy → cache de 5 minutos
+  var maxAge = 5 * 60 * 1000;
+  if (Date.now() - entry.ts > maxAge) return null;
+  return entry.data;
+}
+
+// Para el mes: construir resultado combinando cache de días pasados + hoy fresco
+async function getVentasMesConCache(desde, hasta) {
+  var hoy = hoyStr();
+  var cache = getCache();
+
+  // Verificar si tenemos cache de días pasados (desde hasta ayer)
+  var ayer = hasta < hoy ? hasta : (() => {
+    var d = new Date(hoy + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - 1);
+    var pad = function(n){return String(n).padStart(2,"0");};
+    return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
+  })();
+
+  var keyPasado = desde + "_" + ayer;
+  var keyHoy = hoy + "_" + hoy;
+  var keyCompleto = desde + "_" + hasta;
+
+  // Si tenemos el rango completo en cache y es pasado, devolver directo
+  var cacheCompleto = getCachedVentasDF(desde, hasta);
+  if (cacheCompleto) return { data: cacheCompleto, desdeCache: true };
+
+  // Si hasta es hoy, intentar combinar: cache pasado + hoy fresco
+  if (hasta === hoy && esPasado(ayer)) {
+    var cachePasado = cache[keyPasado];
+    if (cachePasado && cachePasado.eterno) {
+      // Tenemos días pasados en cache, solo pedimos hoy
+      return { parcial: true, cachePasado: cachePasado.data, keyCompleto: keyCompleto, keyPasado: keyPasado, ayer: ayer };
+    }
+  }
+
+  return null; // No hay cache útil
+}
+
+function limpiarCacheViejo() {
+  try {
+    var cache = getCache();
+    var ahora = Date.now();
+    var hoy = hoyStr();
+    var mesActual = hoy.substring(0, 7); // "2026-03"
+    var nuevo = {};
+    Object.keys(cache).forEach(function(k) {
+      var entry = cache[k];
+      // Mantener si: es eterno Y del mes actual, o si es reciente (menos de 1 día)
+      var esMesActual = k.indexOf(mesActual) >= 0;
+      var esReciente = ahora - entry.ts < 24*60*60*1000;
+      if ((entry.eterno && esMesActual) || esReciente) nuevo[k] = entry;
+    });
+    setCache(nuevo);
+  } catch(e) {}
+}
+
+// ══ REFRESH ══
+function refreshSeccion(seccion) {
+  var icon = document.getElementById("ri-" + seccion);
+  if (icon) { icon.classList.add("spinning"); setTimeout(function(){ icon.classList.remove("spinning"); }, 500); }
+
+  if (seccion === "ventas") {
+    // Limpiar cache del período actual antes de recargar
+    var periodo = document.getElementById("v-periodo") ? document.getElementById("v-periodo").value : "hoy";
+    var ahora = new Date(), argTime = new Date(ahora.getTime()-3*60*60*1000);
+    var pad = function(n){return String(n).padStart(2,"0");};
+    var fd = function(d){return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());};
+    var desde, hasta = fd(argTime);
+    if (periodo === "hoy") { desde = fd(argTime); }
+    else if (periodo === "ayer") { var ay = new Date(argTime.getTime()-86400000); desde = fd(ay); hasta = fd(ay); }
+    else { desde = argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
+    var cache = getCache();
+    delete cache[getCacheKey(desde, hasta)];
+    setCache(cache);
+    cargarVentas();
+  } else if (seccion === "comparacion") {
+    cargarComparacion();
+  } else if (seccion === "stock") {
+    buscarStock();
+  } else if (seccion === "reportes") {
+    cargarReportes();
+  }
 }
 
 // ══ TOAST ══
