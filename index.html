@@ -667,69 +667,26 @@ async function cargarVentas(){
     var desdeCache = false;
 
     if (periodo === "mes") {
-      // Lógica especial para el mes: combinar cache pasado + hoy fresco
-      var cacheInfo = await getVentasMesConCache(desde, hasta);
-
-      if (cacheInfo && cacheInfo.desdeCache) {
-        // Cache completo disponible
-        dfData = cacheInfo.data;
+      var cacheMes = getCacheMes(desde);
+      if (cacheMes && cacheMes.hasta === ayerStr()) {
+        // Tenemos acumulado hasta ayer → solo pedimos hoy
+        var dataHoy = await fetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}).catch(function(){return {};});
+        dfData = combinarConCache(cacheMes, dataHoy);
         desdeCache = true;
-      } else if (cacheInfo && cacheInfo.parcial) {
-        // Tenemos días pasados en cache, solo pedimos hoy
-        var resHoy = await fetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}).catch(function(){return {};});
-        // Combinar totales
-        var pasado = cacheInfo.cachePasado;
-        dfData = {};
-        ["dot","abasto","cordoba"].forEach(function(k){
-          if (pasado[k] || resHoy[k]) {
-            dfData[k] = {
-              nombre: (pasado[k]||resHoy[k]).nombre,
-              total: ((pasado[k]||{}).total||0) + ((resHoy[k]||{}).total||0),
-              cantidad: ((pasado[k]||{}).cantidad||0) + ((resHoy[k]||{}).cantidad||0),
-              pedidos: (resHoy[k]||{}).pedidos||[]
-            };
-          }
-        });
-        dfData.total = ((pasado.total)||0) + ((resHoy.total)||0);
-        // Guardar cache de días pasados
-        var cache = getCache();
-        cache[cacheInfo.keyPasado] = cache[cacheInfo.keyPasado] || { data: pasado, ts: Date.now(), eterno: true };
-        // No cacheamos el completo (tiene hoy que cambia)
-        setCache(cache);
-        desdeCache = true; // parcialmente
       } else {
-        // Sin cache — cargar todo y cachear los días pasados
+        // Sin cache o desactualizado → pedir todo el mes
         dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
-        // Cachear días pasados (hasta ayer)
-        if (hasta === hoy) {
-          // Guardar solo hasta ayer como eterno
-          var ayerStr = (function(){
-            var d=new Date(hoy+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()-1);
-            var pad=function(n){return String(n).padStart(2,"0");};
-            return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
-          })();
-          // No tenemos datos separados por día, guardamos el total del mes
-          // Se renovará automáticamente mañana igual porque hay cache
-          cachearVentasDF(desde, hasta, dfData);
-        } else {
-          cachearVentasDF(desde, hasta, dfData);
-        }
+        // Guardar en cache los días pasados (hasta ayer)
+        guardarCachePasado(desde, dfData);
       }
     } else {
-      // Para hoy/ayer/custom — cache simple de 5 minutos
-      var cachedDf = getCachedVentasDF(desde, hasta);
-      if (cachedDf) {
-        dfData = cachedDf;
-        desdeCache = true;
-      } else {
-        dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
-        cachearVentasDF(desde, hasta, dfData);
-      }
+      // Hoy/Ayer/Custom → sin cache
+      dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
     }
 
     var resWoo = await fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
     mostrarVentas(resWoo, dfData, periodo);
-    if(desdeCache) showToast("⚡ Dragonfish desde caché","ok");
+    if(desdeCache) showToast("⚡ Dragonfish: datos desde caché","ok");
     limpiarCacheViejo();
   } catch(err){ document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar ventas</p></div>'; }
 }
@@ -1453,106 +1410,83 @@ async function guardarTransaccion(){
 }
 
 // ══ CACHE INCREMENTAL ══
-var DF_CACHE_KEY = "tussy_df_cache_v2";
+// Estructura: { "2026-03": { dot: {total, cantidad}, abasto: {...}, cordoba: {...}, total: X, hasta: "2026-03-24" } }
+var DF_CACHE_KEY = "tussy_df_mes_v3";
 
 function getCache() {
-  try { var raw = localStorage.getItem(DF_CACHE_KEY); return raw ? JSON.parse(raw) : {}; }
-  catch(e) { return {}; }
+  try { return JSON.parse(localStorage.getItem(DF_CACHE_KEY) || "{}"); } catch(e) { return {}; }
 }
-
-function setCache(data) {
-  try { localStorage.setItem(DF_CACHE_KEY, JSON.stringify(data)); } catch(e) {}
+function setCache(d) {
+  try { localStorage.setItem(DF_CACHE_KEY, JSON.stringify(d)); } catch(e) {}
 }
-
 function hoyStr() {
-  var ahora = new Date();
-  var arg = new Date(ahora.getTime() - 3*60*60*1000);
-  var pad = function(n){return String(n).padStart(2,"0");};
+  var a=new Date(), arg=new Date(a.getTime()-3*60*60*1000);
+  var pad=function(n){return String(n).padStart(2,"0");};
   return arg.getUTCFullYear()+"-"+pad(arg.getUTCMonth()+1)+"-"+pad(arg.getUTCDate());
 }
-
-function esPasado(fecha) {
-  return fecha < hoyStr();
+function ayerStr() {
+  var a=new Date(hoyStr()+"T12:00:00Z"); a.setUTCDate(a.getUTCDate()-1);
+  var pad=function(n){return String(n).padStart(2,"0");};
+  return a.getUTCFullYear()+"-"+pad(a.getUTCMonth()+1)+"-"+pad(a.getUTCDate());
 }
+function mesKey(desde) { return desde.substring(0,7); }
 
-// Cachear los días del rango que son pasados (no van a cambiar nunca)
-// y separar el día de hoy que se consulta fresco siempre
-function cachearVentasDF(desde, hasta, data) {
+// Guarda los acumulados hasta ayer (días que no van a cambiar)
+function guardarCachePasado(desde, dataDf) {
   var hoy = hoyStr();
+  var ayer = ayerStr();
+  if (desde > ayer) return; // Si desde es hoy o futuro, no cachear
   var cache = getCache();
-  // Guardar con key específica
-  var key = desde + "_" + hasta;
-  var esRangoTotalmentePasado = hasta < hoy;
-  cache[key] = {
-    data: data,
-    ts: Date.now(),
-    eterno: esRangoTotalmentePasado // días pasados nunca cambian
+  var mk = mesKey(desde);
+  // Guardar totales acumulados hasta ayer
+  cache[mk] = {
+    desde: desde,
+    hasta: ayer, // acumulado hasta ayer
+    dot:     { total: (dataDf.dot||{}).total||0,     cantidad: (dataDf.dot||{}).cantidad||0 },
+    abasto:  { total: (dataDf.abasto||{}).total||0,  cantidad: (dataDf.abasto||{}).cantidad||0 },
+    cordoba: { total: (dataDf.cordoba||{}).total||0, cantidad: (dataDf.cordoba||{}).cantidad||0 },
+    total:   dataDf.total||0,
+    ts: Date.now()
   };
   setCache(cache);
 }
 
-function getCachedVentasDF(desde, hasta) {
+// Obtiene cache del mes y devuelve cuánto falta pedir
+function getCacheMes(desde) {
   var cache = getCache();
-  var key = desde + "_" + hasta;
-  var entry = cache[key];
-  if (!entry) return null;
-  // Si el rango es totalmente pasado → cache eterno (válido hasta fin de mes)
-  if (entry.eterno) return entry.data;
-  // Si incluye hoy → cache de 5 minutos
-  var maxAge = 5 * 60 * 1000;
-  if (Date.now() - entry.ts > maxAge) return null;
-  return entry.data;
-}
-
-// Para el mes: construir resultado combinando cache de días pasados + hoy fresco
-async function getVentasMesConCache(desde, hasta) {
-  var hoy = hoyStr();
-  var cache = getCache();
-
-  // Verificar si tenemos cache de días pasados (desde hasta ayer)
-  var ayer = hasta < hoy ? hasta : (() => {
-    var d = new Date(hoy + "T12:00:00Z");
-    d.setUTCDate(d.getUTCDate() - 1);
-    var pad = function(n){return String(n).padStart(2,"0");};
-    return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());
-  })();
-
-  var keyPasado = desde + "_" + ayer;
-  var keyHoy = hoy + "_" + hoy;
-  var keyCompleto = desde + "_" + hasta;
-
-  // Si tenemos el rango completo en cache y es pasado, devolver directo
-  var cacheCompleto = getCachedVentasDF(desde, hasta);
-  if (cacheCompleto) return { data: cacheCompleto, desdeCache: true };
-
-  // Si hasta es hoy, intentar combinar: cache pasado + hoy fresco
-  if (hasta === hoy && esPasado(ayer)) {
-    var cachePasado = cache[keyPasado];
-    if (cachePasado && cachePasado.eterno) {
-      // Tenemos días pasados en cache, solo pedimos hoy
-      return { parcial: true, cachePasado: cachePasado.data, keyCompleto: keyCompleto, keyPasado: keyPasado, ayer: ayer };
-    }
-  }
-
-  return null; // No hay cache útil
+  var mk = mesKey(desde);
+  var entry = cache[mk];
+  if (!entry || entry.desde !== desde) return null;
+  return entry; // { hasta, dot, abasto, cordoba, total }
 }
 
 function limpiarCacheViejo() {
   try {
     var cache = getCache();
-    var ahora = Date.now();
-    var hoy = hoyStr();
-    var mesActual = hoy.substring(0, 7); // "2026-03"
+    var mesActual = hoyStr().substring(0,7);
     var nuevo = {};
-    Object.keys(cache).forEach(function(k) {
-      var entry = cache[k];
-      // Mantener si: es eterno Y del mes actual, o si es reciente (menos de 1 día)
-      var esMesActual = k.indexOf(mesActual) >= 0;
-      var esReciente = ahora - entry.ts < 24*60*60*1000;
-      if ((entry.eterno && esMesActual) || esReciente) nuevo[k] = entry;
+    Object.keys(cache).forEach(function(k){
+      if (k === mesActual) nuevo[k] = cache[k]; // solo mantener mes actual
     });
     setCache(nuevo);
   } catch(e) {}
+}
+
+// Combina cache pasado con datos de hoy
+function combinarConCache(cachePasado, dataHoy) {
+  var result = { total: 0 };
+  ["dot","abasto","cordoba"].forEach(function(k){
+    var p = cachePasado[k]||{total:0,cantidad:0};
+    var h = (dataHoy[k])||{total:0,cantidad:0,pedidos:[]};
+    result[k] = {
+      nombre: h.nombre || k,
+      total: (p.total||0) + (h.total||0),
+      cantidad: (p.cantidad||0) + (h.cantidad||0),
+      pedidos: h.pedidos||[]
+    };
+    result.total += result[k].total;
+  });
+  return result;
 }
 
 // ══ REFRESH ══
@@ -1561,18 +1495,7 @@ function refreshSeccion(seccion) {
   if (icon) { icon.classList.add("spinning"); setTimeout(function(){ icon.classList.remove("spinning"); }, 500); }
 
   if (seccion === "ventas") {
-    // Limpiar cache del período actual antes de recargar
-    var periodo = document.getElementById("v-periodo") ? document.getElementById("v-periodo").value : "hoy";
-    var ahora = new Date(), argTime = new Date(ahora.getTime()-3*60*60*1000);
-    var pad = function(n){return String(n).padStart(2,"0");};
-    var fd = function(d){return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());};
-    var desde, hasta = fd(argTime);
-    if (periodo === "hoy") { desde = fd(argTime); }
-    else if (periodo === "ayer") { var ay = new Date(argTime.getTime()-86400000); desde = fd(ay); hasta = fd(ay); }
-    else { desde = argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
-    var cache = getCache();
-    delete cache[getCacheKey(desde, hasta)];
-    setCache(cache);
+    // Solo actualiza HOY sin tocar el cache de días anteriores
     cargarVentas();
   } else if (seccion === "comparacion") {
     cargarComparacion();
