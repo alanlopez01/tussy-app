@@ -590,14 +590,11 @@ function setMarca(marca) {
   marcaActual = marca;
   document.getElementById("marca-tussy").classList.toggle("active", marca === "tussy");
   document.getElementById("marca-shato").classList.toggle("active", marca === "shato");
-  // Shato no puede cargar (solo admin de Tussy)
+  // Tab cargar: visible solo para admin en ambas marcas
   var tabCargar = document.getElementById("fin-tab-cargar");
-  if (marca === "shato") {
-    if (tabCargar) tabCargar.style.display = "none";
-    finTab("info");
-  } else {
-    if (tabCargar) tabCargar.style.display = rolActual === "socio" ? "none" : "";
-  }
+  if (tabCargar) tabCargar.style.display = rolActual === "admin" ? "" : "none";
+  // Volver a info al cambiar de marca
+  finTab("info");
   // Recargar dashboard con la marca seleccionada
   cargarDashboard();
 }
