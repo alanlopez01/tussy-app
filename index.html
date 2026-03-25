@@ -223,6 +223,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .toast.ok{background:var(--verde)}.toast.err{background:var(--rojo)}
 .tabs-row{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.marca-toggle{display:flex;gap:8px;margin-bottom:12px}
+.marca-btn{flex:1;padding:10px;border:2px solid var(--borde);border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;background:white;color:#aaa;transition:all 0.2s;text-align:center}
+.marca-btn.tussy.active{background:#1A1A2E;border-color:#1A1A2E;color:white}
+.marca-btn.shato.active{background:#E67E22;border-color:#E67E22;color:white}
 .refresh-btn{background:none;border:1.5px solid var(--borde);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;color:#666;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:12px;width:100%}
 .refresh-btn:active{background:#f0f0f0}
 .refresh-icon{display:inline-block;transition:transform 0.5s}
@@ -278,6 +282,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 
       <!-- FINANZAS -->
       <div class="section" id="sec-resumen">
+        <div class="marca-toggle">
+          <button class="marca-btn tussy active" id="marca-tussy" onclick="setMarca('tussy')">💙 Tussy</button>
+          <button class="marca-btn shato" id="marca-shato" onclick="setMarca('shato')">🟠 Shato</button>
+        </div>
         <div class="tabs-row">
           <button class="prod-tab active" id="fin-tab-info" onclick="finTab('info')">Informacion</button>
           <button class="prod-tab" id="fin-tab-cargar" onclick="finTab('cargar')">Cargar</button>
@@ -407,6 +415,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 var APPS_SCRIPT_URL = "/api/proxy";
 var PROD_SCRIPT_URL = "/api/produccion";
 var DF_URL = "/api/dragonfish";
+var SHATO_URL = "/api/proxy-shato";
+var marcaActual = "tussy";
 var rolActual = "";
 var nombreActual = "";
 var catsGasto = [], catsIngreso = [];
@@ -575,12 +585,31 @@ function finTab(tab){
   document.getElementById("fin-cargar").style.display=tab==="cargar"?"":"none";
 }
 
+// ══ MARCA TUSSY / SHATO ══
+function setMarca(marca) {
+  marcaActual = marca;
+  document.getElementById("marca-tussy").classList.toggle("active", marca === "tussy");
+  document.getElementById("marca-shato").classList.toggle("active", marca === "shato");
+  // Shato no puede cargar (solo admin de Tussy)
+  var tabCargar = document.getElementById("fin-tab-cargar");
+  if (marca === "shato") {
+    if (tabCargar) tabCargar.style.display = "none";
+    finTab("info");
+  } else {
+    if (tabCargar) tabCargar.style.display = rolActual === "socio" ? "none" : "";
+  }
+  // Recargar dashboard con la marca seleccionada
+  cargarDashboard();
+}
+
 // ══ APPS SCRIPT ══
 async function callScript(action,params,callback){
   try {
-    var url=APPS_SCRIPT_URL+"?action="+action+"&params="+encodeURIComponent(JSON.stringify(params));
-    var res=await fetch(url,{redirect:"follow"});
-    var text=await res.text();
+    // Usar URL según la marca activa
+    var baseUrl = marcaActual === "shato" ? SHATO_URL : APPS_SCRIPT_URL;
+    var url = baseUrl + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
+    var res = await fetch(url, {redirect:"follow"});
+    var text = await res.text();
     try{ callback(JSON.parse(text)); } catch(e){ console.error("Parse error",text); }
   } catch(err){ console.error("Script error:",err); }
 }
@@ -604,7 +633,7 @@ function cargarDashboard(){
   document.getElementById("dashboard-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
   if(chartGasto){chartGasto.destroy();chartGasto=null;}
   if(chartIngreso){chartIngreso.destroy();chartIngreso=null;}
-  callScript("getDashboard",{mes:mes,anio:anio},function(data){ mostrarDashboard(data); });
+  callScript("getDashboard",{mes:mes,anio:anio},function(data){ mostrarDashboard(data, marcaActual); });
 }
 
 function fmt(n){ return "$"+Math.round(n).toLocaleString("es-AR"); }
@@ -614,9 +643,11 @@ function deltaHtml(actual,ant){
   return '<div class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"% vs mes ant.</div>";
 }
 
-function mostrarDashboard(data){
+function mostrarDashboard(data, marca){
   var nc=data.neto>=0?"pos":"neg";
-  var html='<div class="saldo-card"><div class="saldo-label">Saldo acumulado en caja</div><div class="saldo-value '+(data.saldoActual<0?"saldo-neg":"")+'">'+fmt(data.saldoActual||0)+"</div></div>";
+  var marcaNombre = (marca === "shato") ? "🟠 SHATO" : "💙 TUSSY";
+  var marcaColor = (marca === "shato") ? "background:linear-gradient(135deg,#E67E22,#CA6F1E)" : "";
+  var html='<div class="saldo-card" style="'+marcaColor+'"><div class="saldo-label">'+marcaNombre+' — Saldo acumulado en caja</div><div class="saldo-value '+(data.saldoActual<0?"saldo-neg":"")+'">'+fmt(data.saldoActual||0)+"</div></div>";
   html+='<div class="stats"><div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">'+fmt(data.totalGasto)+"</div>"+deltaHtml(data.totalGasto,data.totalGastoAnt)+'</div><div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">'+fmt(data.totalIngreso)+"</div>"+deltaHtml(data.totalIngreso,data.totalIngresoAnt)+'</div><div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value '+nc+'">'+fmt(data.neto)+"</div>"+deltaHtml(data.neto,data.netoAnt)+"</div></div>";
   var gE=Object.entries(data.porCatGasto||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
   if(gE.length>0){
