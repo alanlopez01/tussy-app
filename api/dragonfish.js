@@ -182,16 +182,45 @@ module.exports = async function handler(req, res) {
 
   async function getStockLocal(local, query) {
     const sessionToken = await autenticar(local);
+    const isNumeric = /^\d+$/.test(query.trim());
 
-    // Search by name and by exact code (SKU) in parallel
-    const [dataName, dataCode] = await Promise.allSettled([
+    // Search by name always; if numeric, also search by barcode (Equivalencia)
+    const searches = [
       dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
         query, limit: 50, stockcero: false,
       }, sessionToken, local.idCliente),
-      dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
-        query, limit: 50, stockcero: false, exacto: true,
-      }, sessionToken, local.idCliente),
-    ]);
+    ];
+
+    if (isNumeric) {
+      // Search barcode/equivalencia by exact code
+      searches.push(
+        dfFetch(local.url, local.token, local.baseDatos, "/Equivalencia/", {
+          query, limit: 10,
+        }, sessionToken, local.idCliente).then(async (eqData) => {
+          const eqs = Array.isArray(eqData) ? eqData : (eqData.Resultados || []);
+          if (!eqs.length) return { Resultados: [] };
+          // Get unique article codes from equivalencias
+          const artCodes = [...new Set(eqs.map(e => e.Articulo).filter(Boolean))];
+          // Fetch stock for each article found
+          const stockResults = await Promise.allSettled(
+            artCodes.map(code =>
+              dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
+                query: code, limit: 50, stockcero: false, exacto: true,
+              }, sessionToken, local.idCliente)
+            )
+          );
+          const allRows = [];
+          for (const r of stockResults) {
+            if (r.status !== "fulfilled") continue;
+            const items = Array.isArray(r.value) ? r.value : (r.value.Resultados || []);
+            allRows.push(...items);
+          }
+          return { Resultados: allRows };
+        })
+      );
+    }
+
+    const results = await Promise.allSettled(searches);
 
     // Merge results, deduplicate
     const extract = (r) => {
@@ -201,11 +230,13 @@ module.exports = async function handler(req, res) {
     };
     const seen = new Set();
     const rows = [];
-    for (const row of [...extract(dataName), ...extract(dataCode)]) {
-      const key = `${row.Articulo}_${row.Color}_${row.Talle}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      rows.push(row);
+    for (const res of results) {
+      for (const row of extract(res)) {
+        const key = `${row.Articulo}_${row.Color}_${row.Talle}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push(row);
+      }
     }
     if (!rows.length) return [];
 
