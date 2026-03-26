@@ -752,30 +752,45 @@ async function cargarVentas(){
   else if(periodo==="ayer"){ var ay=new Date(argTime.getTime()-86400000); desde=fd(ay); hasta=fd(ay); }
   else if(periodo==="custom"){ desde=document.getElementById("v-desde").value; hasta=document.getElementById("v-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
   else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
+  var resWoo = null;
+  var dfData = null;
+  var desdeCache = false;
+
+  // Fetch WooCommerce (fast) - render immediately when it arrives
+  fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).then(function(data){
+    resWoo = data;
+    mostrarVentas(resWoo, dfData, periodo);
+  }).catch(function(){});
+
+  // Fetch Dragonfish (slow) - update when it arrives
   try{
     var hoy = hoyStr();
-    var dfData = null;
-    var desdeCache = false;
+    var dfPromise;
 
     if (periodo === "mes") {
       var cacheMes = getCacheMes(desde);
       if (cacheMes && cacheMes.hasta === ayerStr()) {
-        var dataHoy = await fetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}).catch(function(){return {};});
-        dfData = combinarConCache(cacheMes, dataHoy);
-        desdeCache = true;
+        dfPromise = fetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}).then(function(dataHoy){
+          desdeCache = true;
+          return combinarConCache(cacheMes, dataHoy);
+        });
       } else {
-        dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
-        guardarCachePasado(desde, dfData);
+        dfPromise = fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).then(function(data){
+          guardarCachePasado(desde, data);
+          return data;
+        });
       }
     } else {
-      dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
+      dfPromise = fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();});
     }
 
-    var resWoo = await fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
-    mostrarVentas(resWoo, dfData, periodo);
-    if(desdeCache) showToast("\u26a1 Dragonfish: datos desde cach\u00e9","ok");
-    limpiarCacheViejo();
-  } catch(err){ document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar ventas</p></div>'; }
+    dfPromise.then(function(data){
+      dfData = data;
+      if(resWoo) mostrarVentas(resWoo, dfData, periodo);
+      if(desdeCache) showToast("\u26a1 Dragonfish: datos desde cach\u00e9","ok");
+      limpiarCacheViejo();
+    }).catch(function(){});
+  } catch(err){ }
 }
 function mostrarVentas(data,dataDf,periodo){
   var tx={hoy:"hoy",ayer:"ayer",mes:"este mes",custom:"el periodo"};
@@ -923,18 +938,21 @@ async function cargarComparacion(){
     return;
   }
 
-  try{
-    var resultados=await Promise.allSettled([
-      fetch("/api/comparacion").then(function(r){return r.json();}),
-      fetch(DF_URL+"?action=comparacion").then(function(r){return r.json();})
-    ]);
-    var dataWoo=resultados[0].status==="fulfilled"?resultados[0].value:null;
-    var dataDf=resultados[1].status==="fulfilled"?resultados[1].value:null;
+  var dataWoo = null;
+  var dataDf = null;
 
+  // Fetch WooCommerce (fast) - render immediately when it arrives
+  fetch("/api/comparacion").then(function(r){return r.json();}).then(function(data){
+    dataWoo = data;
+    mostrarComparacion(dataWoo, dataDf);
+  }).catch(function(){});
+
+  // Fetch Dragonfish (slow) - update when it arrives
+  fetch(DF_URL+"?action=comparacion").then(function(r){return r.json();}).then(function(data){
+    dataDf = data;
+    if(dataWoo) mostrarComparacion(dataWoo, dataDf);
     setCacheComparacion(dataWoo, dataDf);
-
-    mostrarComparacion(dataWoo,dataDf);
-  } catch(err){ el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>'; }
+  }).catch(function(){});
 }
 
 function getCacheComparacion() {

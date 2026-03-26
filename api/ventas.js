@@ -1,3 +1,17 @@
+// Server-side cache (persists while serverless function is warm)
+const _cache = {};
+
+function getCache(key, ttl) {
+  const entry = _cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > ttl) { delete _cache[key]; return null; }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  _cache[key] = { data, ts: Date.now() };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
@@ -23,6 +37,16 @@ module.exports = async function handler(req, res) {
       return `${sig.getUTCFullYear()}-${pad(sig.getUTCMonth()+1)}-${pad(sig.getUTCDate())}T02:59:59+0000`;
     }
   }
+
+  // Determine TTL: 2 min for today, 10 min for historical
+  const argNow = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
+  const todayStr = `${argNow.getUTCFullYear()}-${pad(argNow.getUTCMonth()+1)}-${pad(argNow.getUTCDate())}`;
+  const isToday = (desde === todayStr || hasta === todayStr);
+  const cacheTTL = isToday ? 2 * 60 * 1000 : 10 * 60 * 1000;
+
+  const cacheKey = `ventas_${desde}_${hasta}`;
+  const cached = getCache(cacheKey, cacheTTL);
+  if (cached) return res.status(200).json(cached);
 
   const inicioUTC = toUTC(desde, true);
   const finUTC    = toUTC(hasta, false);
@@ -80,12 +104,14 @@ module.exports = async function handler(req, res) {
       getWooData(WOO_LP_URL, WOO_LP_KEY, WOO_LP_SEC),
       TN_TOKEN ? getTNData() : Promise.resolve({ total: 0, cantidad: 0, pedidos: [] })
     ]);
-    res.status(200).json({
+    const responseData = {
       palermo:    { nombre: "Local Palermo",  ...palermo },
       laplata:    { nombre: "Local La Plata", ...laplata },
       tiendanube: { nombre: "Tiendanube",     ...tn },
       total: palermo.total + laplata.total + tn.total
-    });
+    };
+    setCache(cacheKey, responseData);
+    res.status(200).json(responseData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -14,6 +14,21 @@
  *   DF_BASE_DATOS     → nombre de la base de datos (ej: "TUSSY")
  */
 
+// Server-side cache (persists while serverless function is warm)
+const _cache = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCache(key) {
+  const entry = _cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { delete _cache[key]; return null; }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  _cache[key] = { data, ts: Date.now() };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -222,6 +237,10 @@ module.exports = async function handler(req, res) {
       const { desde, hasta } = req.query;
       if (!desde) return res.status(400).json({ error: "Falta parámetro 'desde'" });
 
+      const cacheKey = `ventas_${desde}_${hasta}`;
+      const cached = getCache(cacheKey);
+      if (cached) return res.status(200).json(cached);
+
       const resultados = await Promise.allSettled(
         localesConfigurados.map(local => getVentasLocal(local, desde, hasta))
       );
@@ -250,7 +269,9 @@ module.exports = async function handler(req, res) {
         }
       });
 
-      return res.status(200).json({ ...respuesta, total: totalGeneral });
+      const responseData = { ...respuesta, total: totalGeneral };
+      setCache(cacheKey, responseData);
+      return res.status(200).json(responseData);
     }
 
     // ── GET /api/dragonfish?action=stock&q=REMERA ──
@@ -290,6 +311,10 @@ module.exports = async function handler(req, res) {
 
     // ── GET /api/dragonfish?action=comparacion ──
     if (action === "comparacion") {
+      const compCacheKey = "comparacion_" + new Date().toISOString().slice(0, 13); // cache per hour
+      const compCached = getCache(compCacheKey);
+      if (compCached) return res.status(200).json(compCached);
+
       // Comparación hoy + mes + mes anterior (igual que api/comparacion.js)
       const ahora = new Date();
       const arg = new Date(ahora.getTime() - 3 * 60 * 60 * 1000);
@@ -332,7 +357,7 @@ module.exports = async function handler(req, res) {
       const totalMes = localesData.reduce((s, l) => s + l.mes.total, 0);
       const totalAnt = localesData.reduce((s, l) => s + l.ant.total, 0);
 
-      return res.status(200).json({
+      const compResult = {
         locales: localesData,
         ranking: [...localesData].sort((a, b) => b.mes.total - a.mes.total),
         totalHoy,
@@ -341,7 +366,9 @@ module.exports = async function handler(req, res) {
         proyeccionTotal: proyectar(totalMes),
         diaDelMes,
         diasComparados: diaComp,
-      });
+      };
+      setCache(compCacheKey, compResult);
+      return res.status(200).json(compResult);
     }
 
     // ── GET /api/dragonfish?action=debug&local=dot ──

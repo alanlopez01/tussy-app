@@ -1,6 +1,25 @@
+// Server-side cache (persists while serverless function is warm)
+const _cache = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCache(key) {
+  const entry = _cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { delete _cache[key]; return null; }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  _cache[key] = { data, ts: Date.now() };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
+
+  const compCacheKey = "comparacion_" + new Date().toISOString().slice(0, 13); // cache per hour
+  const cached = getCache(compCacheKey);
+  if (cached) return res.status(200).json(cached);
 
   const WOO_P_URL  = process.env.WOO_PALERMO_URL;
   const WOO_P_KEY  = process.env.WOO_PALERMO_KEY;
@@ -98,7 +117,7 @@ module.exports = async function handler(req, res) {
     const totalMes = locales.reduce((s, l) => s + l.mes.total, 0);
     const totalAnt = locales.reduce((s, l) => s + l.ant.total, 0);
 
-    res.status(200).json({
+    const result = {
       locales,
       ranking: [...locales].sort((a, b) => b.mes.total - a.mes.total),
       totalHoy: locales.reduce((s, l) => s + l.hoy.total, 0),
@@ -107,7 +126,9 @@ module.exports = async function handler(req, res) {
       proyeccionTotal: proyectar(totalMes),
       diaDelMes,
       diasComparados: diaComparacion
-    });
+    };
+    setCache(compCacheKey, result);
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
