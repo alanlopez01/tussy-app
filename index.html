@@ -1761,8 +1761,8 @@ async function cargarNovedades() {
 
   // Filtro de estado
   html += '<div class="tabs-row" style="margin-bottom:12px">';
-  html += '<button class="prod-tab active" id="nov-tab-pendiente" onclick="filtrarNovedades('Pendiente',this)">Pendientes</button>';
-  html += '<button class="prod-tab" id="nov-tab-todas" onclick="filtrarNovedades('todas',this)">Todas</button>';
+  html += '<button class="prod-tab active" id="nov-tab-pendiente" onclick="filtrarNovedades(\'Pendiente\',this)">Pendientes</button>';
+  html += '<button class="prod-tab" id="nov-tab-todas" onclick="filtrarNovedades(\'todas\',this)">Todas</button>';
   html += '</div>';
 
   var res = await fetch(OPS_URL + "?action=getNovedades&params=" + encodeURIComponent(JSON.stringify(params))).then(function(r){return r.json();}).catch(function(){return {};});
@@ -1839,9 +1839,7 @@ function mostrarFormNovedad() {
   html += '<textarea id="nv-desc" class="form-control" rows="3" placeholder="Describí la novedad o tarea..."></textarea></div>';
   html += '<div class="form-group" id="nv-checklist-wrap">';
   html += '<label class="form-label">Ítems del checklist (uno por línea)</label>';
-  html += '<textarea id="nv-checklist" class="form-control" rows="5" placeholder="Limpiar vidrieras
-Ordenar probadores
-Controlar stock..."></textarea></div>';
+  html += '<textarea id="nv-checklist" class="form-control" rows="5" placeholder="Limpiar vidrieras&#10;Ordenar probadores&#10;Controlar stock..."></textarea></div>';
   html += '<button class="btn-submit" onclick="guardarNovedad()">Guardar novedad</button>';
   html += '<button class="refresh-btn" style="margin-top:8px" onclick="cargarNovedades()">Cancelar</button>';
   html += '</div>';
@@ -1854,8 +1852,7 @@ async function guardarNovedad() {
   var prioridad = document.getElementById("nv-prioridad").value;
   var desc      = document.getElementById("nv-desc").value.trim();
   var chkText   = document.getElementById("nv-checklist") ? document.getElementById("nv-checklist").value : "";
-  var checklist = chkText.split("
-").map(function(s){return s.trim();}).filter(Boolean);
+  var checklist = chkText.split("\n").map(function(s){return s.trim();}).filter(Boolean);
 
   if (!desc) { showToast("Completá la descripción","err"); return; }
 
@@ -1928,7 +1925,7 @@ function cargarResumenCaja() {
     html += '<div class="local-filter">';
     html += '<button class="local-btn ' + (!cajaLocalFiltro ? "active" : "") + '" onclick="filtrarCaja(null)">Todos</button>';
     locales.forEach(function(l) {
-      html += '<button class="local-btn ' + (cajaLocalFiltro===l ? "active" : "") + '" onclick="filtrarCaja('' + l + '')">' + l + '</button>';
+      html += '<button class="local-btn ' + (cajaLocalFiltro===l ? "active" : "") + '" onclick="filtrarCaja(\'" + l + "\')">' + l + '</button>';
     });
     html += '</div>';
     html += '<div id="lista-cierres"><div class="loading"><div class="spinner"></div></div></div>';
@@ -2083,8 +2080,8 @@ function cargarNovedades() {
         '</select></div>' +
         '<div class="form-group"><label class="form-label">Tipo</label>' +
         '<div style="display:flex;gap:8px">' +
-        '<button id="nov-tipo-nov" class="tipo-btn" onclick="setNovTipo('Novedad')" style="flex:1;padding:10px;border:2px solid #3498DB;border-radius:10px;background:#EBF5FB;color:#2980B9;font-weight:800;cursor:pointer">📌 Novedad</button>' +
-        '<button id="nov-tipo-chk" class="tipo-btn" onclick="setNovTipo('Checklist')" style="flex:1;padding:10px;border:2px solid var(--borde);border-radius:10px;background:white;color:#888;font-weight:800;cursor:pointer">✅ Checklist</button>' +
+        '<button id="nov-tipo-nov" class="tipo-btn" onclick="setNovTipo(\'Novedad\')" style="flex:1;padding:10px;border:2px solid #3498DB;border-radius:10px;background:#EBF5FB;color:#2980B9;font-weight:800;cursor:pointer">📌 Novedad</button>' +
+        '<button id="nov-tipo-chk" class="tipo-btn" onclick="setNovTipo(\'Checklist\')" style="flex:1;padding:10px;border:2px solid var(--borde);border-radius:10px;background:white;color:#888;font-weight:800;cursor:pointer">✅ Checklist</button>' +
         '</div></div>' +
         '<div class="form-group"><label class="form-label">Descripción</label>' +
         '<input type="text" id="nov-desc" class="form-control" placeholder="Ej: Revisar escaparate, Falta de stock en talle M..."></div>' +
@@ -2094,7 +2091,7 @@ function cargarNovedades() {
       html += '<div class="local-filter">';
       html += '<button class="local-btn ' + (!novedadesLocalFiltro ? "active" : "") + '" onclick="filtrarNovedades(null)">Todos</button>';
       locales.forEach(function(l) {
-        html += '<button class="local-btn ' + (novedadesLocalFiltro===l ? "active" : "") + '" onclick="filtrarNovedades('' + l + '')">' + l + '</button>';
+        html += '<button class="local-btn ' + (novedadesLocalFiltro===l ? "active" : "") + '" onclick="filtrarNovedades(\'" + l + "\')">' + l + '</button>';
       });
       html += '</div>';
     }
@@ -2119,7 +2116,7 @@ function cargarNovedades() {
           var btnCls = esPendiente ? "pendiente" : "completado";
           var btnTxt = esPendiente ? "⏳ Pendiente" : "✅ Completado";
           html += '<div class="novedad-estado">' +
-            '<button class="check-btn ' + btnCls + '" onclick="toggleEstadoNovedad(' + n.idx + ', '' + n.estado + '')">' + btnTxt + '</button>' +
+            '<button class="check-btn ' + btnCls + '" onclick="toggleEstadoNovedad(' + n.idx + ', \'' + n.estado + '\')">' + btnTxt + '</button>' +
             '</div>';
         }
         html += '</div>';
