@@ -278,6 +278,32 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(responseData);
     }
 
+    // ── GET /api/dragonfish?action=debugstock&q=REMERA&local=dot ──
+    if (action === "debugstock") {
+      const localKey = req.query.local || "dot";
+      const q = req.query.q || "remera";
+      const local = localesConfigurados.find(l => l.key === localKey);
+      if (!local) return res.status(404).json({ error: `Local '${localKey}' no configurado` });
+      try {
+        const sessionToken = await autenticar(local);
+        const data = await dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
+          query: q, limit: 5, stockcero: false,
+        }, sessionToken, local.idCliente);
+        const isArray = Array.isArray(data);
+        const items = isArray ? data : (data.Resultados || []);
+        return res.status(200).json({
+          local: local.nombre,
+          query: q,
+          responseIsArray: isArray,
+          responseKeys: isArray ? "array" : Object.keys(data),
+          totalItems: items.length,
+          rawFirst2: items.slice(0, 2),
+        });
+      } catch(e) {
+        return res.status(500).json({ error: e.message });
+      }
+    }
+
     // ── GET /api/dragonfish?action=stock&q=REMERA ──
     if (action === "stock") {
       const { q } = req.query;
