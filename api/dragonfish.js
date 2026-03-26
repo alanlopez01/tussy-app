@@ -374,9 +374,11 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(compResult);
     }
 
-    // ── GET /api/dragonfish?action=debug&local=dot ──
+    // ── GET /api/dragonfish?action=debug&local=dot&desde=YYYY-MM-DD&hasta=YYYY-MM-DD ──
     if (action === "debug") {
       const localKey = req.query.local || "dot";
+      const desde = req.query.desde || new Date().toISOString().slice(0, 10);
+      const hasta = req.query.hasta || desde;
       const local = localesConfigurados.find(l => l.key === localKey);
       if (!local) return res.status(404).json({ error: `Local '${localKey}' no configurado` });
       try {
@@ -384,38 +386,47 @@ module.exports = async function handler(req, res) {
         const data = await dfFetch(
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
-          { limit: 3, sort: "-Fecha" },
+          { limit: 5, sort: "-Fecha" },
           sessionToken,
           local.idCliente
         );
-        // Mostrar los primeros registros con sus fechas parseadas
-        const resultados = Array.isArray(data) ? data : (data.Resultados || []);
+        const tsI = diaARG(desde, true).getTime();
+        const tsF = diaARG(hasta, false).getTime();
+        const isArray = Array.isArray(data);
+        const resultados = isArray ? data : (data.Resultados || []);
+        // Also run getVentasLocal to see actual result
+        const ventasResult = await getVentasLocal(local, desde, hasta);
         return res.status(200).json({
           local: local.nombre,
           baseDatos: local.baseDatos,
+          responseIsArray: isArray,
+          responseKeys: isArray ? "array" : Object.keys(data),
           totalRegistros: data.TotalRegistros || resultados.length,
-          primerosRegistros: resultados.slice(0, 3).map(f => {
+          primerosRegistros: resultados.slice(0, 5).map(f => {
             const fechaP = parseDFDate(f.Fecha);
             const ts = fechaP ? fechaP.getTime() : null;
-            const tsI = diaARG("2026-03-01", true).getTime();
-            const tsF = diaARG("2026-03-23", false).getTime();
             return {
               Numero: f.Numero,
               Fecha_raw: f.Fecha,
-              Fecha_parsed: fechaP,
+              Fecha_parsed: fechaP ? fechaP.toISOString() : null,
               Fecha_ts: ts,
               Total: f.Total,
               Letra: f.Letra,
-              pasa_filtro_marzo: ts ? (ts >= tsI && ts <= tsF) : "no-ts",
+              pasa_filtro: ts ? (ts >= tsI && ts <= tsF) : "no-ts",
             };
           }),
+          ventasResult: ventasResult,
           debug_timestamps: {
-            desde_2026_03_01: diaARG("2026-03-01", true).getTime(),
-            hasta_2026_03_23: diaARG("2026-03-23", false).getTime(),
+            desde: desde,
+            hasta: hasta,
+            tsInicio: tsI,
+            tsFin: tsF,
+            tsInicio_date: new Date(tsI).toISOString(),
+            tsFin_date: new Date(tsF).toISOString(),
           }
         });
       } catch(e) {
-        return res.status(500).json({ error: e.message });
+        return res.status(500).json({ error: e.message, stack: e.stack });
       }
     }
 
