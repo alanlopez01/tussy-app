@@ -182,13 +182,31 @@ module.exports = async function handler(req, res) {
 
   async function getStockLocal(local, query) {
     const sessionToken = await autenticar(local);
-    const data = await dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
-      query,
-      limit: 50,
-      stockcero: false,
-    }, sessionToken, local.idCliente);
 
-    const rows = Array.isArray(data) ? data : (data.Resultados || []);
+    // Search by name and by exact code (SKU) in parallel
+    const [dataName, dataCode] = await Promise.allSettled([
+      dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
+        query, limit: 50, stockcero: false,
+      }, sessionToken, local.idCliente),
+      dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
+        query, limit: 50, stockcero: false, exacto: true,
+      }, sessionToken, local.idCliente),
+    ]);
+
+    // Merge results, deduplicate
+    const extract = (r) => {
+      if (r.status !== "fulfilled") return [];
+      const d = r.value;
+      return Array.isArray(d) ? d : (d.Resultados || []);
+    };
+    const seen = new Set();
+    const rows = [];
+    for (const row of [...extract(dataName), ...extract(dataCode)]) {
+      const key = `${row.Articulo}_${row.Color}_${row.Talle}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push(row);
+    }
     if (!rows.length) return [];
 
     // Dragonfish returns one row per Articulo+Color+Talle combination.
