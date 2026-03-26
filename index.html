@@ -1776,24 +1776,22 @@ function cargarListaCierres() {
 
 function cargarCierresEncargado() {
   var el = document.getElementById("locales-content");
-  callOps("getCierres", { local: localActual, limite: 10 }, function(data) {
-    var cierres = data.cierres || [];
-    var hoy = hoyStr();
-    var html = '<div class="card"><div class="card-title">\ud83d\udcb5 Nuevo cierre de caja \u2014 ' + localActual + '</div>' +
-      '<div class="form-group"><label class="form-label">Fecha</label>' +
-      '<input type="date" id="cj-fecha" class="form-control" value="' + hoy + '"></div>' +
-      '<div class="form-group"><label class="form-label">Monto en Efectivo ($)</label>' +
-      '<input type="number" id="cj-efectivo" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-      '<div class="form-group"><label class="form-label">Monto en Tarjeta ($)</label>' +
-      '<input type="number" id="cj-electronico" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-      '<div class="form-group"><label class="form-label">Gastos ($)</label>' +
-      '<input type="number" id="cj-gastos-monto" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-      '<div class="form-group"><label class="form-label">Observaciones / Detalle de gastos</label>' +
-      '<textarea id="cj-obs" class="form-control" rows="3" placeholder="Detall\u00e1 los gastos, novedades del d\u00eda..."></textarea></div>' +
-      '<button class="btn-submit" onclick="guardarCierre()">Guardar cierre</button></div>';
+  var html = '<div class="home-grid">';
+  html += '<button class="home-card" onclick="mostrarFormCierreEnc()">';
+  html += '<div class="home-icon">\ud83d\udcb5</div>';
+  html += '<div class="home-card-info"><div class="home-card-title">Cargar Cierre</div><div class="home-card-sub">Cierre de caja del d\u00eda</div></div>';
+  html += '</button>';
+  html += '<button class="home-card" onclick="mostrarFormRetiroEnc()">';
+  html += '<div class="home-icon">\ud83d\udcb8</div>';
+  html += '<div class="home-card-info"><div class="home-card-title">Cargar Retiro</div><div class="home-card-sub">Retiro de efectivo</div></div>';
+  html += '</button>';
+  html += '</div>';
 
+  // Últimos cierres
+  callOps("getCierres", { local: localActual, limite: 5 }, function(data) {
+    var cierres = data.cierres || [];
     if (cierres.length > 0) {
-      html += '<div class="card"><div class="card-title">\ud83d\udccb \u00daltimos cierres</div>';
+      html += '<div class="card" style="margin-top:12px"><div class="card-title">\ud83d\udccb \u00daltimos cierres</div>';
       cierres.forEach(function(c) {
         html += '<div class="cierre-card">' +
           '<div class="cierre-fecha">' + c.fecha + '</div>' +
@@ -1806,6 +1804,81 @@ function cargarCierresEncargado() {
       html += '</div>';
     }
     el.innerHTML = html;
+  });
+}
+
+function mostrarFormCierreEnc() {
+  var el = document.getElementById("locales-content");
+  var hoy = hoyStr();
+  var html = '<div class="card"><div class="card-title">\ud83d\udcb5 Nuevo cierre de caja</div>' +
+    '<div class="form-group"><label class="form-label">Sucursal</label>' +
+    '<input type="text" class="form-control" value="' + localActual + '" disabled></div>' +
+    '<div class="form-group"><label class="form-label">Fecha</label>' +
+    '<input type="date" id="cj-fecha" class="form-control" value="' + hoy + '"></div>' +
+    '<div class="form-group"><label class="form-label">Monto en Efectivo ($)</label>' +
+    '<input type="number" id="cj-efectivo" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+    '<div class="form-group"><label class="form-label">Monto en Tarjeta ($)</label>' +
+    '<input type="number" id="cj-electronico" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+    '<div class="form-group"><label class="form-label">Gastos ($)</label>' +
+    '<input type="number" id="cj-gastos-monto" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+    '<div class="form-group"><label class="form-label">Observaciones / Detalle de gastos</label>' +
+    '<textarea id="cj-obs" class="form-control" rows="3" placeholder="Detall\u00e1 a qu\u00e9 corresponden los gastos..."></textarea></div>' +
+    '<button class="btn-submit" onclick="guardarCierre()">Guardar cierre</button>' +
+    '<button class="refresh-btn" style="margin-top:8px" onclick="cargarCierresEncargado()">Volver</button>' +
+    '</div>';
+  el.innerHTML = html;
+}
+
+function mostrarFormRetiroEnc() {
+  var el = document.getElementById("locales-content");
+  var hoy = hoyStr();
+  var html = '<div class="card"><div class="card-title">\ud83d\udcb8 Registrar retiro de efectivo</div>' +
+    '<div class="form-group"><label class="form-label">Sucursal</label>' +
+    '<input type="text" class="form-control" value="' + localActual + '" disabled></div>' +
+    '<div class="form-group"><label class="form-label">Fecha del retiro</label>' +
+    '<input type="date" id="ret-fecha" class="form-control" value="' + hoy + '"></div>' +
+    '<div class="form-group"><label class="form-label">De qu\u00e9 d\u00eda se retira (desde)</label>' +
+    '<input type="date" id="ret-desde" class="form-control" value="' + hoy + '"></div>' +
+    '<div class="form-group"><label class="form-label">Hasta qu\u00e9 d\u00eda se retira (hasta)</label>' +
+    '<input type="date" id="ret-hasta" class="form-control" value="' + hoy + '"></div>' +
+    '<div class="form-group"><label class="form-label">Monto retirado ($)</label>' +
+    '<input type="number" id="ret-monto" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+    '<div class="form-group"><label class="form-label">Qui\u00e9n lo retira</label>' +
+    '<input type="text" id="ret-quien" class="form-control" placeholder="Nombre de quien retira"></div>' +
+    '<button class="btn-submit" style="background:#E67E22" onclick="guardarRetiroEncargado()">Registrar retiro</button>' +
+    '<button class="refresh-btn" style="margin-top:8px" onclick="cargarCierresEncargado()">Volver</button>' +
+    '</div>';
+  el.innerHTML = html;
+}
+
+function guardarRetiroEncargado() {
+  var desde = document.getElementById("ret-desde").value;
+  var hasta = document.getElementById("ret-hasta").value;
+  var monto = parseFloat(document.getElementById("ret-monto").value) || 0;
+  var quien = document.getElementById("ret-quien").value.trim();
+
+  if (!desde || !hasta) { showToast("Complet\u00e1 las fechas","err"); return; }
+  if (!monto) { showToast("Ingres\u00e1 el monto","err"); return; }
+  if (!quien) { showToast("Ingres\u00e1 qui\u00e9n retir\u00f3","err"); return; }
+
+  var btn = document.querySelector('#locales-content .btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = "Registrando..."; }
+
+  callOps("registrarRetiro", {
+    local: localActual,
+    fechaDesde: desde,
+    fechaHasta: hasta,
+    monto: monto,
+    retiradoPor: quien,
+    registradoPor: nombreActual
+  }, function(data) {
+    if (btn) { btn.disabled = false; btn.textContent = "Registrar retiro"; }
+    if (data.ok) {
+      showToast("\u2705 Retiro registrado","ok");
+      cargarCierresEncargado();
+    } else {
+      showToast("Error al registrar","err");
+    }
   });
 }
 
