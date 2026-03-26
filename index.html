@@ -752,20 +752,12 @@ async function cargarVentas(){
   else if(periodo==="ayer"){ var ay=new Date(argTime.getTime()-86400000); desde=fd(ay); hasta=fd(ay); }
   else if(periodo==="custom"){ desde=document.getElementById("v-desde").value; hasta=document.getElementById("v-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
   else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
-  var resWoo = null;
-  var dfData = null;
-  var desdeCache = false;
 
-  // Fetch WooCommerce (fast) - render immediately when it arrives
-  fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).then(function(data){
-    resWoo = data;
-    mostrarVentas(resWoo, dfData, periodo);
-  }).catch(function(){});
-
-  // Fetch Dragonfish (slow) - update when it arrives
   try{
-    var hoy = hoyStr();
+    // Fetch ambos en paralelo pero esperar a que terminen los dos
+    var desdeCache = false;
     var dfPromise;
+    var hoy = hoyStr();
 
     if (periodo === "mes") {
       var cacheMes = getCacheMes(desde);
@@ -784,13 +776,20 @@ async function cargarVentas(){
       dfPromise = fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();});
     }
 
-    dfPromise.then(function(data){
-      dfData = data;
-      if(resWoo) mostrarVentas(resWoo, dfData, periodo);
-      if(desdeCache) showToast("\u26a1 Dragonfish: datos desde cach\u00e9","ok");
-      limpiarCacheViejo();
-    }).catch(function(){});
-  } catch(err){ }
+    var results = await Promise.allSettled([
+      fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}),
+      dfPromise
+    ]);
+
+    var resWoo = results[0].status==="fulfilled" ? results[0].value : {total:0};
+    var dfData = results[1].status==="fulfilled" ? results[1].value : null;
+
+    mostrarVentas(resWoo, dfData, periodo);
+    if(desdeCache) showToast("\u26a1 Dragonfish: datos desde cach\u00e9","ok");
+    limpiarCacheViejo();
+  } catch(err){
+    document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar ventas</p></div>';
+  }
 }
 function mostrarVentas(data,dataDf,periodo){
   var tx={hoy:"hoy",ayer:"ayer",mes:"este mes",custom:"el periodo"};

@@ -257,6 +257,7 @@ module.exports = async function handler(req, res) {
             cantidad: r.value.cantidad,
             pedidos: r.value.pedidos,
           };
+          if (r.value.error) respuesta[local.key].error = r.value.error;
           totalGeneral += r.value.total;
         } else {
           respuesta[local.key] = {
