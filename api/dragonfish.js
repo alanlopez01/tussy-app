@@ -184,13 +184,14 @@ module.exports = async function handler(req, res) {
     const sessionToken = await autenticar(local);
     const data = await dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
       query,
-      limit: 200,
+      limit: 50,
       stockcero: false,
     }, sessionToken, local.idCliente);
 
-    if (!Array.isArray(data)) return [];
+    const items = Array.isArray(data) ? data : (data.Resultados || []);
+    if (!items.length) return [];
 
-    return data.map(item => ({
+    return items.map(item => ({
       nombre: item.Descripcion || item.descripcion || "",
       sku: item.Codigo || item.codigo || "",
       variantes: buildVariantesDF(item),
