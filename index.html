@@ -288,13 +288,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div class="app" id="app">
   <div class="header">
     <div class="header-left">
-      <button class="header-back" id="btn-back" onclick="goBack()">←</button>
+      <button class="header-back" id="btn-back" onclick="goBack()">&#8592;</button>
       <img src="logo.png" id="header-logo" style="height:40px;filter:invert(1)" alt="Tussy">
       <span class="header-title" id="header-title"></span>
     </div>
     <div class="header-right">
       <span class="rol-badge" id="rol-badge"></span>
-      <button class="logout-btn" onclick="logout()">↩</button>
+      <button class="logout-btn" onclick="logout()">&#8617;</button>
     </div>
   </div>
   <div class="scroll-area" id="scroll-area">
@@ -313,8 +313,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <!-- FINANZAS -->
       <div class="section" id="sec-resumen">
         <div class="marca-toggle">
-          <button class="marca-btn tussy active" id="marca-tussy" onclick="setMarca('tussy')">💙 Tussy</button>
-          <button class="marca-btn shato" id="marca-shato" onclick="setMarca('shato')">🟠 Shato</button>
+          <button class="marca-btn tussy active" id="marca-tussy" onclick="setMarca('tussy')">&#128153; Tussy</button>
+          <button class="marca-btn shato" id="marca-shato" onclick="setMarca('shato')">&#128992; Shato</button>
         </div>
         <div class="tabs-row">
           <button class="prod-tab active" id="fin-tab-info" onclick="finTab('info')">Informacion</button>
@@ -364,7 +364,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
           </select>
           <button class="mes-btn" onclick="cargarVentas()">Ver</button>
         </div>
-        <button class="refresh-btn" onclick="refreshSeccion('ventas')"><span class="refresh-icon" id="ri-ventas">🔄</span> Actualizar</button>
+        <button class="refresh-btn" onclick="refreshSeccion('ventas')"><span class="refresh-icon" id="ri-ventas">&#128260;</span> Actualizar</button>
         <div id="custom-fechas" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
           <input type="date" id="v-desde" class="form-control">
           <input type="date" id="v-hasta" class="form-control">
@@ -372,84 +372,75 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="ventas-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
-      <!-- CAJA -->
-      <div class="section" id="sec-caja">
-        <div id="caja-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
-      </div>
-
-      <!-- NOVEDADES -->
-      <div class="section" id="sec-novedades">
-        <div id="novedades-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
-      </div>
-
-      <!-- STOCK -->
-      <div class="section" id="sec-stock">
-        <div class="card">
-          <div class="card-title">Buscar producto</div>
-          <div style="display:flex;gap:8px">
-            <input type="text" id="stock-q" class="form-control" placeholder="Nombre o SKU..." style="flex:1">
-            <button class="mes-btn" onclick="buscarStock()">Buscar</button>
-          </div>
-        </div>
-        <button class="refresh-btn" id="refresh-stock-btn" onclick="refreshSeccion('stock')" style="display:none"><span class="refresh-icon" id="ri-stock">🔄</span> Actualizar búsqueda</button>
-        <div id="stock-content"></div>
-      </div>
-
       <!-- LOCALES -->
-      <div class="section" id="sec-comparacion">
-        <button class="refresh-btn" onclick="refreshSeccion('comparacion')"><span class="refresh-icon" id="ri-comparacion">🔄</span> Actualizar</button>
-        <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+      <div class="section" id="sec-locales">
+        <div class="home-grid" id="locales-home">
+          <button class="home-card" onclick="navigateLocales('novedades')">
+            <div class="home-icon">&#128203;</div>
+            <div class="home-card-info"><div class="home-card-title">Novedades</div><div class="home-card-sub">Tareas y auditorias</div></div>
+          </button>
+          <button class="home-card" onclick="navigateLocales('stock')">
+            <div class="home-icon">&#128230;</div>
+            <div class="home-card-info"><div class="home-card-title">Stock</div><div class="home-card-sub">Buscar productos</div></div>
+          </button>
+          <button class="home-card full" onclick="navigateLocales('cierres')">
+            <div class="home-icon">&#128181;</div>
+            <div class="home-card-info"><div class="home-card-title">Cierres de Caja</div><div class="home-card-sub">Cierres, retiros y control</div></div>
+            <div class="home-card-arrow">&#8594;</div>
+          </button>
+        </div>
+        <div id="locales-content" style="display:none"></div>
       </div>
 
       <!-- REPORTES -->
       <div class="section" id="sec-reportes">
-        <button class="refresh-btn" onclick="refreshSeccion('reportes')"><span class="refresh-icon" id="ri-reportes">🔄</span> Actualizar</button>
-        <div class="mes-row">
-          <select id="rep-canal" class="form-control" style="flex:1">
-            <option value="online">Online (Tiendanube)</option>
-            <option value="fisico">Fisico (Locales)</option>
-          </select>
+        <div class="tabs-row">
+          <button class="prod-tab active" id="rep-tab-ranking" onclick="repTab('ranking')">Ranking</button>
+          <button class="prod-tab" id="rep-tab-productos" onclick="repTab('productos')">Top Productos</button>
         </div>
-        <div class="mes-row">
-          <select id="rep-periodo" class="form-control" style="flex:1" onchange="toggleRepCustom()">
-            <option value="mes">Este mes</option><option value="custom">Personalizado</option>
-          </select>
-          <button class="mes-btn" onclick="cargarReportes()">Ver</button>
+        <div id="rep-ranking">
+          <button class="refresh-btn" onclick="refreshSeccion('comparacion')"><span class="refresh-icon" id="ri-comparacion">&#128260;</span> Actualizar</button>
+          <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
         </div>
-        <div id="rep-custom" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
-          <input type="date" id="rep-desde" class="form-control">
-          <input type="date" id="rep-hasta" class="form-control">
+        <div id="rep-productos" style="display:none">
+          <button class="refresh-btn" onclick="refreshSeccion('reportes')"><span class="refresh-icon" id="ri-reportes">&#128260;</span> Actualizar</button>
+          <div class="mes-row">
+            <select id="rep-canal" class="form-control" style="flex:1">
+              <option value="online">Online (Tiendanube)</option>
+              <option value="fisico">Fisico (Locales)</option>
+            </select>
+          </div>
+          <div class="mes-row">
+            <select id="rep-periodo" class="form-control" style="flex:1" onchange="toggleRepCustom()">
+              <option value="mes">Este mes</option><option value="custom">Personalizado</option>
+            </select>
+            <button class="mes-btn" onclick="cargarReportes()">Ver</button>
+          </div>
+          <div id="rep-custom" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
+            <input type="date" id="rep-desde" class="form-control">
+            <input type="date" id="rep-hasta" class="form-control">
+          </div>
+          <div id="reportes-content"><div class="empty"><div class="e-icon">&#128202;</div><p>Selecciona canal y periodo</p></div></div>
         </div>
-        <div id="reportes-content"><div class="empty"><div class="e-icon">📊</div><p>Selecciona canal y periodo</p></div></div>
-      </div>
-
-      <!-- CAJA -->
-      <div class="section" id="sec-caja">
-        <div id="caja-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
-      </div>
-
-      <!-- NOVEDADES -->
-      <div class="section" id="sec-novedades">
-        <div id="novedades-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
       <!-- PRODUCCION -->
       <div class="section" id="sec-produccion">
         <div class="home-grid" id="prod-home">
           <button class="home-card" onclick="navigate('telas')">
-            <div class="home-icon">🧵</div>
+            <div class="home-icon">&#129525;</div>
             <div class="home-card-info"><div class="home-card-title">Telas</div><div class="home-card-sub">Stock e ingresos</div></div>
           </button>
           <button class="home-card" onclick="navigate('cortes')">
-            <div class="home-icon">✂️</div>
+            <div class="home-icon">&#9986;&#65039;</div>
             <div class="home-card-info"><div class="home-card-title">Cortes</div><div class="home-card-sub">Registro y seguimiento</div></div>
           </button>
           <button class="home-card" onclick="navigate('talleres')">
-            <div class="home-icon">👥</div>
+            <div class="home-icon">&#128101;</div>
             <div class="home-card-info"><div class="home-card-title">Talleres</div><div class="home-card-sub">Gestion de talleres</div></div>
           </button>
           <button class="home-card" id="btn-prod-stats" onclick="navigate('estadisticas')">
-            <div class="home-icon">📊</div>
+            <div class="home-icon">&#128202;</div>
             <div class="home-card-info"><div class="home-card-title">Estadisticas</div><div class="home-card-sub">Prendas y kg cortados</div></div>
           </button>
         </div>
@@ -468,25 +459,21 @@ var DF_URL = "/api/dragonfish";
 var SHATO_URL = "/api/proxy-shato";
 var OPS_URL = "/api/proxy-operaciones";
 var marcaActual = "tussy";
-var localActual = null; // local del encargado logueado
+var localActual = null;
 var nombreActual = "";
 var rolActual = "";
-var nombreActual = "";
 var catsGasto = [], catsIngreso = [];
 var tipoActual = "Gasto";
 var chartGasto = null, chartIngreso = null;
-// Datos cacheados
 var telasList = [];
 var talleresList = [];
 var cortesNumeros = [];
 var cortesData = [];
-// Navegacion stack
 var navStack = [];
 
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("login-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") hacerLogin(); });
   document.getElementById("login-user").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("login-pass").focus(); });
-  document.getElementById("stock-q").addEventListener("keydown", function(e){ if(e.key==="Enter") buscarStock(); });
   var r = localStorage.getItem("tussy_remember");
   if(r==="1"){
     var u=localStorage.getItem("tussy_user"), p=localStorage.getItem("tussy_pass");
@@ -508,7 +495,7 @@ async function hacerLogin() {
     if(data.ok){
       if(recordar){ localStorage.setItem("tussy_user",user); localStorage.setItem("tussy_pass",pass); localStorage.setItem("tussy_remember","1"); }
       else{ localStorage.removeItem("tussy_user"); localStorage.removeItem("tussy_pass"); localStorage.removeItem("tussy_remember"); }
-      entrarApp(data.rol,data.nombre);
+      entrarApp(data.rol,data.nombre,data.local);
     } else {
       err.textContent=data.error||"Usuario o contrasena incorrectos";
       btn.disabled=false; btn.textContent="Ingresar";
@@ -519,43 +506,34 @@ async function hacerLogin() {
 // ══ SECCIONES CONFIG ══
 var SECCIONES = {
   admin:[
-    {id:"resumen",icon:"📊",title:"Finanzas",sub:"Info y cargar transacciones"},
-    {id:"ventas",icon:"🛍️",title:"Ventas",sub:"Hoy, ayer y este mes"},
-    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
-    {id:"comparacion",icon:"📈",title:"Locales",sub:"Ranking y proyeccion"},
-    {id:"reportes",icon:"🏆",title:"Reportes",sub:"Mejores productos"},
-    {id:"caja",icon:"💵",title:"Caja",sub:"Cierres y efectivo por local"},
-    {id:"novedades",icon:"📋",title:"Novedades",sub:"Auditorias y checklist"},
-    {id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres"}
+    {id:"resumen",icon:"\ud83d\udcca",title:"Finanzas",sub:"Info y cargar transacciones"},
+    {id:"ventas",icon:"\ud83d\udecd\ufe0f",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"locales",icon:"\ud83c\udfea",title:"Locales",sub:"Novedades, stock y cierres"},
+    {id:"reportes",icon:"\ud83d\udcc8",title:"Reportes",sub:"Ranking y top productos"},
+    {id:"produccion",icon:"\u2702\ufe0f",title:"Produccion",sub:"Cortes, telas y talleres"}
   ],
   socio:[
-    {id:"resumen",icon:"📊",title:"Finanzas",sub:"Info del mes"},
-    {id:"ventas",icon:"🛍️",title:"Ventas",sub:"Hoy, ayer y este mes"},
-    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
-    {id:"comparacion",icon:"📈",title:"Locales",sub:"Ranking y proyeccion"},
-    {id:"reportes",icon:"🏆",title:"Reportes",sub:"Mejores productos"},
-    {id:"caja",icon:"💵",title:"Caja",sub:"Cierres y efectivo por local"},
-    {id:"novedades",icon:"📋",title:"Novedades",sub:"Auditorias y checklist"},
-    {id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres"}
+    {id:"resumen",icon:"\ud83d\udcca",title:"Finanzas",sub:"Info del mes"},
+    {id:"ventas",icon:"\ud83d\udecd\ufe0f",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"locales",icon:"\ud83c\udfea",title:"Locales",sub:"Novedades, stock y cierres"},
+    {id:"reportes",icon:"\ud83d\udcc8",title:"Reportes",sub:"Ranking y top productos"},
+    {id:"produccion",icon:"\u2702\ufe0f",title:"Produccion",sub:"Cortes, telas y talleres"}
   ],
   supervisor:[
-    {id:"ventas",icon:"🛍️",title:"Ventas",sub:"Hoy, ayer y este mes"},
-    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
-    {id:"caja",icon:"💵",title:"Caja",sub:"Cierres y efectivo por local"},
-    {id:"novedades",icon:"📋",title:"Novedades",sub:"Auditorias y checklist"}
+    {id:"ventas",icon:"\ud83d\udecd\ufe0f",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"locales",icon:"\ud83c\udfea",title:"Locales",sub:"Novedades, stock y cierres"},
+    {id:"reportes",icon:"\ud83d\udcc8",title:"Reportes",sub:"Ranking y top productos"}
   ],
   encargado:[
-    {id:"caja",icon:"💵",title:"Cierre de Caja",sub:"Cargar cierre del dia"},
-    {id:"novedades",icon:"📋",title:"Novedades",sub:"Tareas y auditorias"},
-    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar productos"}
+    {id:"locales",icon:"\ud83c\udfea",title:"Locales",sub:"Novedades, stock y cierres"}
   ],
-  produccion:[{id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres",full:true}]
+  produccion:[{id:"produccion",icon:"\u2702\ufe0f",title:"Produccion",sub:"Cortes, telas y talleres",full:true}]
 };
 
 function entrarApp(rol,nombre,local){
   localActual = local || null;
-  nombreActual = nombre;
-  rolActual=rol; nombreActual=nombre||"";
+  nombreActual = nombre || "";
+  rolActual = rol;
   document.getElementById("login-screen").style.display="none";
   document.getElementById("app").style.display="flex";
   var badge=document.getElementById("rol-badge");
@@ -570,16 +548,11 @@ function entrarApp(rol,nombre,local){
   document.getElementById("f-fecha").value=hoy.toISOString().split("T")[0];
   construirHome(rol);
   if(rol==="socio"){ document.getElementById("fin-tab-cargar").style.display="none"; document.getElementById("btn-prod-stats").style.display=""; }
-  // Caja y Novedades: solo encargados, supervisor y admin
-  var showCaja = ["admin","supervisor","encargado"].indexOf(rol) >= 0;
-  var showNov  = ["admin","supervisor","encargado"].indexOf(rol) >= 0;
-  if(document.getElementById("nav-caja"))      document.getElementById("nav-caja").style.display = showCaja ? "" : "none";
-  if(document.getElementById("nav-novedades")) document.getElementById("nav-novedades").style.display = showNov ? "" : "none";
   if(rol==="produccion") document.getElementById("btn-prod-stats").style.display="none";
   if(rol!=="encargado"&&rol!=="produccion") callScript("getCategorias",{},function(d){ catsGasto=d.gasto; catsIngreso=d.ingreso; updateCatSelect(); });
   if(rol==="produccion") goTo("produccion","Produccion");
-  else if(rol==="encargado") goTo("caja","Cierre de Caja");
-  else if(rol==="supervisor") goTo("caja","Caja");
+  else if(rol==="encargado") goTo("locales","Locales");
+  else if(rol==="supervisor") goTo("locales","Locales");
 }
 
 function construirHome(rol){
@@ -589,7 +562,7 @@ function construirHome(rol){
     return '<button class="home-card'+(s.full?" full":"")+'" onclick="goTo(\''+s.id+'\',\''+s.title+'\')">'+
       '<div class="home-icon">'+s.icon+'</div>'+
       '<div class="home-card-info"><div class="home-card-title">'+s.title+'</div><div class="home-card-sub">'+s.sub+'</div></div>'+
-      (s.full?'<div class="home-card-arrow">→</div>':'')+
+      (s.full?'<div class="home-card-arrow">\u2192</div>':'')+
       '</button>';
   }).join("");
 }
@@ -601,6 +574,17 @@ function goTo(sectionId, title){
 }
 
 function goBack(){
+  // Check locales sub-navigation
+  var localesContent=document.getElementById("locales-content");
+  if(localesContent && localesContent.style.display!=="none"){
+    localesContent.style.display="none";
+    localesContent.innerHTML="";
+    document.getElementById("locales-home").style.display="grid";
+    document.getElementById("header-title").textContent="Locales";
+    if(navStack.length>0) navStack.pop();
+    return;
+  }
+  // Check produccion sub-navigation
   var prodContent=document.getElementById("prod-content");
   if(prodContent && prodContent.style.display!=="none"){
     prodContent.style.display="none";
@@ -632,10 +616,12 @@ function _mostrarSeccion(id, title){
   titleEl.textContent=title||"";
   if(id==="resumen") cargarDashboard();
   if(id==="ventas") cargarVentas();
-  if(id==="comparacion") cargarComparacion();
-  if(id==="caja") cargarCaja();
-  if(id==="novedades") cargarNovedades();
-  if(id==="stock") setTimeout(function(){ document.getElementById("stock-q").focus(); },100);
+  if(id==="reportes") cargarComparacion();
+  if(id==="locales"){
+    document.getElementById("locales-home").style.display="grid";
+    document.getElementById("locales-content").style.display="none";
+    document.getElementById("locales-content").innerHTML="";
+  }
   if(id==="produccion"){
     document.getElementById("prod-home").style.display="grid";
     document.getElementById("prod-content").style.display="none";
@@ -667,25 +653,20 @@ function setMarca(marca) {
   marcaActual = marca;
   document.getElementById("marca-tussy").classList.toggle("active", marca === "tussy");
   document.getElementById("marca-shato").classList.toggle("active", marca === "shato");
-  // Tab cargar: visible solo para admin en ambas marcas
   var tabCargar = document.getElementById("fin-tab-cargar");
   if (tabCargar) tabCargar.style.display = rolActual === "admin" ? "" : "none";
-  // Volver a info al cambiar de marca
   finTab("info");
-  // Recargar categorías según la marca
   callScript("getCategorias", {}, function(d) {
     catsGasto = d.gasto || [];
     catsIngreso = d.ingreso || [];
     updateCatSelect();
   });
-  // Recargar dashboard con la marca seleccionada
   cargarDashboard();
 }
 
 // ══ APPS SCRIPT ══
 async function callScript(action,params,callback){
   try {
-    // Usar URL según la marca activa
     var baseUrl = marcaActual === "shato" ? SHATO_URL : APPS_SCRIPT_URL;
     var url = baseUrl + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
     var res = await fetch(url, {redirect:"follow"});
@@ -720,14 +701,14 @@ function fmt(n){ return "$"+Math.round(n).toLocaleString("es-AR"); }
 function deltaHtml(actual,ant){
   if(!ant||ant===0) return "";
   var d=((actual-ant)/ant*100).toFixed(1);
-  return '<div class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"% vs mes ant.</div>";
+  return '<div class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"\u25b2":"\u25bc")+" "+Math.abs(d)+"% vs mes ant.</div>";
 }
 
 function mostrarDashboard(data, marca){
   var nc=data.neto>=0?"pos":"neg";
-  var marcaNombre = (marca === "shato") ? "🟠 SHATO" : "💙 TUSSY";
+  var marcaNombre = (marca === "shato") ? "\ud83d\udfe0 SHATO" : "\ud83d\udc99 TUSSY";
   var marcaColor = (marca === "shato") ? "background:linear-gradient(135deg,#E67E22,#CA6F1E)" : "";
-  var html='<div class="saldo-card" style="'+marcaColor+'"><div class="saldo-label">'+marcaNombre+' — Saldo acumulado en caja</div><div class="saldo-value '+(data.saldoActual<0?"saldo-neg":"")+'">'+fmt(data.saldoActual||0)+"</div></div>";
+  var html='<div class="saldo-card" style="'+marcaColor+'"><div class="saldo-label">'+marcaNombre+' \u2014 Saldo acumulado en caja</div><div class="saldo-value '+(data.saldoActual<0?"saldo-neg":"")+'">'+fmt(data.saldoActual||0)+"</div></div>";
   html+='<div class="stats"><div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">'+fmt(data.totalGasto)+"</div>"+deltaHtml(data.totalGasto,data.totalGastoAnt)+'</div><div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">'+fmt(data.totalIngreso)+"</div>"+deltaHtml(data.totalIngreso,data.totalIngresoAnt)+'</div><div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value '+nc+'">'+fmt(data.neto)+"</div>"+deltaHtml(data.neto,data.netoAnt)+"</div></div>";
   var gE=Object.entries(data.porCatGasto||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
   if(gE.length>0){
@@ -748,7 +729,7 @@ function mostrarDashboard(data, marca){
     data.txHoy.forEach(function(tx){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+tx.desc+'</div><div class="tx-cat">'+tx.cat+'</div></div><div class="tx-monto '+(tx.monto<0?"gasto":"ingreso")+'">'+fmt(Math.abs(tx.monto))+"</div></div>"; });
     html+="</div>";
   }
-  if(gE.length===0&&iE.length===0) html+='<div class="empty"><div class="e-icon">📭</div><p>Sin movimientos este mes</p></div>';
+  if(gE.length===0&&iE.length===0) html+='<div class="empty"><div class="e-icon">\ud83d\udced</div><p>Sin movimientos este mes</p></div>';
   document.getElementById("dashboard-content").innerHTML=html;
   setTimeout(function(){
     var CG=["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
@@ -772,7 +753,6 @@ async function cargarVentas(){
   else if(periodo==="custom"){ desde=document.getElementById("v-desde").value; hasta=document.getElementById("v-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
   else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
   try{
-    // Cache inteligente para Dragonfish
     var hoy = hoyStr();
     var dfData = null;
     var desdeCache = false;
@@ -780,63 +760,55 @@ async function cargarVentas(){
     if (periodo === "mes") {
       var cacheMes = getCacheMes(desde);
       if (cacheMes && cacheMes.hasta === ayerStr()) {
-        // Tenemos acumulado hasta ayer → solo pedimos hoy
         var dataHoy = await fetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}).catch(function(){return {};});
         dfData = combinarConCache(cacheMes, dataHoy);
         desdeCache = true;
       } else {
-        // Sin cache o desactualizado → pedir todo el mes
         dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
-        // Guardar en cache los días pasados (hasta ayer)
         guardarCachePasado(desde, dfData);
       }
     } else {
-      // Hoy/Ayer/Custom → sin cache
       dfData = await fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
     }
 
     var resWoo = await fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return {};});
     mostrarVentas(resWoo, dfData, periodo);
-    if(desdeCache) showToast("⚡ Dragonfish: datos desde caché","ok");
+    if(desdeCache) showToast("\u26a1 Dragonfish: datos desde cach\u00e9","ok");
     limpiarCacheViejo();
-  } catch(err){ document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar ventas</p></div>'; }
+  } catch(err){ document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar ventas</p></div>'; }
 }
 function mostrarVentas(data,dataDf,periodo){
   var tx={hoy:"hoy",ayer:"ayer",mes:"este mes",custom:"el periodo"};
   var pt=tx[periodo]||"el periodo";
-  // Calcular total global (WooCommerce + Dragonfish)
   var totalDf=((dataDf&&dataDf.dot?dataDf.dot.total:0)+(dataDf&&dataDf.abasto?dataDf.abasto.total:0)+(dataDf&&dataDf.cordoba?dataDf.cordoba.total:0));
   var totalGlobal=(data.total||0)+totalDf;
   var html='<div class="consolidado"><div class="consolidado-label">Total vendido '+pt+'</div><div class="consolidado-value">'+fmt(totalGlobal)+"</div></div>";
-  // Mini cards — todos los canales
   var canalesWoo=["tiendanube","palermo","laplata"], nombresWoo={tiendanube:"Tiendanube",palermo:"Palermo",laplata:"La Plata"};
-  var canalesDf=[{key:"dot",nombre:"Dot"},{key:"abasto",nombre:"Abasto"},{key:"cordoba",nombre:"Córdoba"}];
+  var canalesDf=[{key:"dot",nombre:"Dot"},{key:"abasto",nombre:"Abasto"},{key:"cordoba",nombre:"C\u00f3rdoba"}];
   html+='<div class="canales-grid">';
   canalesWoo.forEach(function(c){ if(data[c]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+nombresWoo[c]+'</div><div class="canal-mini-total">'+fmt(data[c].total||0)+'</div><div class="canal-mini-cant">'+(data[c].cantidad||0)+" pedidos</div></div>"; });
   if(dataDf&&!dataDf.error){
     canalesDf.forEach(function(c){ if(dataDf[c.key]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+c.nombre+'</div><div class="canal-mini-total">'+fmt(dataDf[c.key].total||0)+'</div><div class="canal-mini-cant">'+(dataDf[c.key].cantidad||0)+" facturas</div></div>"; });
   }
   html+="</div>";
-  // Cards detalle — WooCommerce
   canalesWoo.forEach(function(c){
     if(!data[c]) return;
     var canal=data[c];
     html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+canal.nombre+'</span><span class="canal-badge">'+canal.cantidad+' pedidos</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
     if(canal.pedidos&&canal.pedidos.length>0){
       html+='<div class="canal-divider"></div>';
-      canal.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Cliente")+'</div><div class="pedido-estado">#'+p.numero+" · "+p.estado+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
+      canal.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Cliente")+'</div><div class="pedido-estado">#'+p.numero+" \u00b7 "+p.estado+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
     } else html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas '+pt+"</div>";
     html+="</div>";
   });
-  // Cards detalle — Dragonfish
   if(dataDf&&!dataDf.error){
     canalesDf.forEach(function(c){
       var canal=dataDf[c.key]; if(!canal) return;
       if(canal.error){
-        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+c.nombre+'</span><span class="canal-badge" style="background:#FADBD8;color:#C0392B">Sin conexión</span></div>';
+        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+c.nombre+'</span><span class="canal-badge" style="background:#FADBD8;color:#C0392B">Sin conexi\u00f3n</span></div>';
         html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">'+(canal.error||"API no disponible")+"</div></div>";
       } else {
-        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">🐟 '+c.nombre+'</span><span class="canal-badge">'+canal.cantidad+' facturas</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
+        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">\ud83d\udc1f '+c.nombre+'</span><span class="canal-badge">'+canal.cantidad+' facturas</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
         if(canal.pedidos&&canal.pedidos.length>0){
           html+='<div class="canal-divider"></div>';
           canal.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Consumidor Final")+'</div><div class="pedido-estado">Fac #'+p.numero+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
@@ -845,7 +817,7 @@ function mostrarVentas(data,dataDf,periodo){
       }
     });
   } else if(dataDf&&dataDf.error){
-    html+='<div class="canal-card" style="border:1.5px dashed #E5E7EB"><div style="text-align:center;padding:20px"><div style="font-size:24px;margin-bottom:8px">🔌</div><div style="font-size:13px;font-weight:700;color:#aaa">Dragonfish sin conexión</div><div style="font-size:12px;color:#bbb;margin-top:4px">Configurá la IP pública o DDNS en Vercel</div></div></div>';
+    html+='<div class="canal-card" style="border:1.5px dashed #E5E7EB"><div style="text-align:center;padding:20px"><div style="font-size:24px;margin-bottom:8px">\ud83d\udd0c</div><div style="font-size:13px;font-weight:700;color:#aaa">Dragonfish sin conexi\u00f3n</div><div style="font-size:12px;color:#bbb;margin-top:4px">Configur\u00e1 la IP p\u00fablica o DDNS en Vercel</div></div></div>';
   }
   document.getElementById("ventas-content").innerHTML=html;
 }
@@ -863,13 +835,13 @@ async function buscarStock(){
     var dataWoo=resultados[0].status==="fulfilled"?resultados[0].value:{resultados:[]};
     var dataDf=resultados[1].status==="fulfilled"?resultados[1].value:{resultados:[]};
     mostrarStock(dataWoo,dataDf,q);
-  } catch(err){ document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al buscar</p></div>'; }
+  } catch(err){ document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al buscar</p></div>'; }
 }
 function mostrarStock(dataWoo,dataDf,queryStr){
   var tieneWoo=dataWoo&&dataWoo.resultados&&dataWoo.resultados.length>0;
   var tieneDf=dataDf&&dataDf.resultados&&dataDf.resultados.length>0;
   if(!tieneWoo&&!tieneDf){
-    document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">🔍</div><p>Sin resultados para "'+queryStr+'"</p></div>'; return;
+    document.getElementById("stock-content").innerHTML='<div class="empty"><div class="e-icon">\ud83d\udd0d</div><p>Sin resultados para "'+queryStr+'"</p></div>'; return;
   }
   var html="";
   if(tieneWoo){
@@ -879,35 +851,78 @@ function mostrarStock(dataWoo,dataDf,queryStr){
       [{key:"palermo",label:"Palermo",clase:"local-palermo"},{key:"laplata",label:"La Plata",clase:"local-laplata"}].forEach(function(loc){
         if(!p.locales[loc.key]) return;
         html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
-        p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"✓ Stock":"Sin stock")+"</span></div></div>"; });
+        p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"\u2713 Stock":"Sin stock")+"</span></div></div>"; });
         html+='<div style="margin-bottom:8px"></div>';
       });
       html+="</div>";
     });
   }
   if(tieneDf){
-    html+='<div class="card-title" style="margin:16px 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;color:#aaa">🐟 Dragonfish — Dot · Abasto · Córdoba</div>';
+    html+='<div class="card-title" style="margin:16px 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;color:#aaa">\ud83d\udc1f Dragonfish \u2014 Dot \u00b7 Abasto \u00b7 C\u00f3rdoba</div>';
     dataDf.resultados.forEach(function(p){
       html+='<div class="producto-card"><div class="producto-nombre">'+p.nombre+'</div><div class="producto-sku">'+(p.sku?"SKU: "+p.sku:"")+"</div>";
-      [{key:"dot",label:"Dot",clase:"local-dot"},{key:"abasto",label:"Abasto",clase:"local-abasto"},{key:"cordoba",label:"Córdoba",clase:"local-cordoba"}].forEach(function(loc){
+      [{key:"dot",label:"Dot",clase:"local-dot"},{key:"abasto",label:"Abasto",clase:"local-abasto"},{key:"cordoba",label:"C\u00f3rdoba",clase:"local-cordoba"}].forEach(function(loc){
         if(!p.locales[loc.key]||!p.locales[loc.key].length) return;
         html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
-        p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"✓ Stock":"Sin stock")+"</span></div></div>"; });
+        p.locales[loc.key].forEach(function(v){ html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(v.tiene_stock?"badge-si":"badge-no")+'">'+(v.tiene_stock?"\u2713 Stock":"Sin stock")+"</span></div></div>"; });
         html+='<div style="margin-bottom:8px"></div>';
       });
       html+="</div>";
     });
   } else if(dataDf&&dataDf.error){
-    html+='<div style="background:#F8F9FA;border-radius:12px;padding:14px;text-align:center;margin-top:12px"><div style="font-size:20px;margin-bottom:6px">🔌</div><div style="font-size:12px;font-weight:700;color:#aaa">Dragonfish no disponible</div><div style="font-size:11px;color:#bbb;margin-top:2px">Configurá IP pública o DDNS en Vercel</div></div>';
+    html+='<div style="background:#F8F9FA;border-radius:12px;padding:14px;text-align:center;margin-top:12px"><div style="font-size:20px;margin-bottom:6px">\ud83d\udd0c</div><div style="font-size:12px;font-weight:700;color:#aaa">Dragonfish no disponible</div><div style="font-size:11px;color:#bbb;margin-top:2px">Configur\u00e1 IP p\u00fablica o DDNS en Vercel</div></div>';
   }
   document.getElementById("stock-content").innerHTML=html;
-  var refreshStockBtn = document.getElementById("refresh-stock-btn");
-  if (refreshStockBtn) refreshStockBtn.style.display = html ? "flex" : "none";
+}
+
+// ══ LOCALES NAVIGATION ══
+function navigateLocales(sub){
+  var titles={novedades:"Novedades",stock:"Stock",cierres:"Cierres de Caja"};
+  var title=titles[sub]||sub;
+  document.getElementById("locales-home").style.display="none";
+  document.getElementById("locales-content").style.display="block";
+  document.getElementById("locales-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  document.getElementById("header-title").textContent="Locales - "+title;
+  document.getElementById("btn-back").style.display="block";
+  document.getElementById("header-logo").style.display="none";
+  navStack.push({ sectionId:"locales-"+sub, title:"Locales - "+title });
+  if(sub==="novedades") cargarNovedades();
+  else if(sub==="stock") cargarStockPanel();
+  else if(sub==="cierres") cargarCaja();
+}
+
+function cargarStockPanel(){
+  var el=document.getElementById("locales-content");
+  el.innerHTML='<div class="card"><div class="card-title">Buscar producto</div>'+
+    '<div style="display:flex;gap:8px">'+
+    '<input type="text" id="stock-q" class="form-control" placeholder="Nombre o SKU..." style="flex:1">'+
+    '<button class="mes-btn" onclick="buscarStock()">Buscar</button>'+
+    '</div></div>'+
+    '<div id="stock-content"></div>';
+  setTimeout(function(){
+    var sq = document.getElementById("stock-q");
+    if(sq){
+      sq.focus();
+      sq.addEventListener("keydown", function(e){ if(e.key==="Enter") buscarStock(); });
+    }
+  },100);
 }
 
 // ══ COMPARACION ══
+var COMP_CACHE_KEY = "tussy_comp_cache";
+var COMP_CACHE_TTL = 5 * 60 * 1000;
+
 async function cargarComparacion(){
-  document.getElementById("comparacion-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  var el = document.getElementById("comparacion-content");
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+
+  var cached = getCacheComparacion();
+  if (cached) {
+    mostrarComparacion(cached.woo, cached.df);
+    showToast("\u26a1 Datos desde cach\u00e9","ok");
+    return;
+  }
+
   try{
     var resultados=await Promise.allSettled([
       fetch("/api/comparacion").then(function(r){return r.json();}),
@@ -915,16 +930,35 @@ async function cargarComparacion(){
     ]);
     var dataWoo=resultados[0].status==="fulfilled"?resultados[0].value:null;
     var dataDf=resultados[1].status==="fulfilled"?resultados[1].value:null;
+
+    setCacheComparacion(dataWoo, dataDf);
+
     mostrarComparacion(dataWoo,dataDf);
-  } catch(err){ document.getElementById("comparacion-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
+  } catch(err){ el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>'; }
 }
+
+function getCacheComparacion() {
+  try {
+    var raw = localStorage.getItem(COMP_CACHE_KEY);
+    if (!raw) return null;
+    var data = JSON.parse(raw);
+    if (Date.now() - data.ts > COMP_CACHE_TTL) return null;
+    return data;
+  } catch(e) { return null; }
+}
+
+function setCacheComparacion(woo, df) {
+  try {
+    localStorage.setItem(COMP_CACHE_KEY, JSON.stringify({ woo: woo, df: df, ts: Date.now() }));
+  } catch(e) {}
+}
+
 function mostrarComparacion(data,dataDf){
   var delta=function(actual,ant){
     if(!ant||ant===0) return "";
     var d=((actual-ant)/ant*100).toFixed(1);
-    return '<span class="stat-delta '+(d>=0?"up":"down")+'" style="font-size:12px">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"% vs mes ant.</span>";
+    return '<span class="stat-delta '+(d>=0?"up":"down")+'" style="font-size:12px">'+(d>=0?"\u25b2":"\u25bc")+" "+Math.abs(d)+"% vs mes ant.</span>";
   };
-  // ── WooCommerce ──
   var html="";
   if(data){
     html+='<div class="saldo-card"><div class="saldo-label">Total vendido hoy (online + Woo)</div><div class="saldo-value">'+fmt(data.totalHoy)+"</div></div>";
@@ -932,49 +966,56 @@ function mostrarComparacion(data,dataDf){
     data.locales.forEach(function(l){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">'+l.hoy.cantidad+' pedidos</div></div><div class="tx-monto ingreso">'+fmt(l.hoy.total)+"</div></div>"; });
     html+="</div>";
     html+='<div class="card"><div class="card-title">Ranking del mes (WooCommerce)</div>';
-    var med=["🥇","🥈","🥉"], mM=data.ranking[0]?data.ranking[0].mes.total:1;
+    var med=["\ud83e\udd47","\ud83e\udd48","\ud83e\udd49"], mM=data.ranking[0]?data.ranking[0].mes.total:1;
     data.ranking.forEach(function(l,i){
       var pct=Math.round(l.mes.total/data.totalMes*100), w=Math.round(l.mes.total/mM*100);
       html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(med[i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#27AE60"></div></div></div>';
     });
     html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">';
     html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700">Total del mes</span><div style="text-align:right"><div style="font-size:18px;font-weight:900">'+fmt(data.totalMes)+"</div>"+delta(data.totalMes,data.totalAnt)+"</div></div>";
-    html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#1E8449">Proyección del mes</span><span style="font-size:16px;font-weight:900;color:#1E8449">'+fmt(data.proyeccionTotal)+"</span></div>";
-    html+='<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">'+data.diaDelMes+" días – Comparado con primeros "+data.diasComparados+" días del mes ant.</div></div></div>";
-    html+='<div class="card"><div class="card-title">Este mes vs mes anterior (mismos días)</div>';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#1E8449">Proyecci\u00f3n del mes</span><span style="font-size:16px;font-weight:900;color:#1E8449">'+fmt(data.proyeccionTotal)+"</span></div>";
+    html+='<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">'+data.diaDelMes+" d\u00edas \u2013 Comparado con primeros "+data.diasComparados+" d\u00edas del mes ant.</div></div></div>";
+    html+='<div class="card"><div class="card-title">Este mes vs mes anterior (mismos d\u00edas)</div>';
     data.locales.forEach(function(l){
       var d=l.ant.total>0?((l.mes.total-l.ant.total)/l.ant.total*100).toFixed(1):null;
-      html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">Ant: '+fmt(l.ant.total)+" – Proy: "+fmt(l.proyeccion)+(d!==null?' <span class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"▲":"▼")+" "+Math.abs(d)+"%</span>":"")+'</div></div><div class="tx-monto ingreso">'+fmt(l.mes.total)+"</div></div>";
+      html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">Ant: '+fmt(l.ant.total)+" \u2013 Proy: "+fmt(l.proyeccion)+(d!==null?' <span class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"\u25b2":"\u25bc")+" "+Math.abs(d)+"%</span>":"")+'</div></div><div class="tx-monto ingreso">'+fmt(l.mes.total)+"</div></div>";
     });
     html+="</div>";
   }
-  // ── Dragonfish (Dot, Abasto, Córdoba) ──
   if(dataDf&&!dataDf.error&&dataDf.locales){
-    html+='<div class="card"><div class="card-title">🐟 Dragonfish — Hoy</div>';
+    html+='<div class="card"><div class="card-title">\ud83d\udc1f Dragonfish \u2014 Hoy</div>';
     dataDf.locales.forEach(function(l){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">'+l.hoy.cantidad+' facturas</div></div><div class="tx-monto ingreso">'+fmt(l.hoy.total)+"</div></div>"; });
     html+="</div>";
     if(dataDf.locales.length>0){
-      html+='<div class="card"><div class="card-title">🐟 Dragonfish — Ranking del mes</div>';
+      html+='<div class="card"><div class="card-title">\ud83d\udc1f Dragonfish \u2014 Ranking del mes</div>';
       var mDf=dataDf.ranking[0]?dataDf.ranking[0].mes.total:1;
       dataDf.ranking.forEach(function(l,i){
         var pct=dataDf.totalMes>0?Math.round(l.mes.total/dataDf.totalMes*100):0;
         var w=Math.round(l.mes.total/mDf*100);
-        html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(["🥇","🥈","🥉"][i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#8E44AD"></div></div></div>';
+        html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(med[i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#8E44AD"></div></div></div>';
       });
       html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">';
       html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700">Total Dragonfish del mes</span><div style="text-align:right"><div style="font-size:18px;font-weight:900">'+fmt(dataDf.totalMes)+"</div>"+delta(dataDf.totalMes,dataDf.totalAnt)+"</div></div>";
-      html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F9F0FF;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#8E44AD">Proyección del mes</span><span style="font-size:16px;font-weight:900;color:#8E44AD">'+fmt(dataDf.proyeccionTotal)+"</span></div>";
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F9F0FF;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#8E44AD">Proyecci\u00f3n del mes</span><span style="font-size:16px;font-weight:900;color:#8E44AD">'+fmt(dataDf.proyeccionTotal)+"</span></div>";
       html+="</div></div>";
     }
   } else if(!data&&(!dataDf||dataDf.error)){
-    html='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar datos</p></div>';
+    html='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar datos</p></div>';
   } else if(!dataDf||dataDf.error){
-    html+='<div style="background:#F8F9FA;border-radius:12px;padding:14px;text-align:center;margin-top:4px"><div style="font-size:20px;margin-bottom:6px">🔌</div><div style="font-size:12px;font-weight:700;color:#aaa">Dragonfish sin conexión</div><div style="font-size:11px;color:#bbb;margin-top:2px">Dot · Abasto · Córdoba no disponibles</div></div>';
+    html+='<div style="background:#F8F9FA;border-radius:12px;padding:14px;text-align:center;margin-top:4px"><div style="font-size:20px;margin-bottom:6px">\ud83d\udd0c</div><div style="font-size:12px;font-weight:700;color:#aaa">Dragonfish sin conexi\u00f3n</div><div style="font-size:11px;color:#bbb;margin-top:2px">Dot \u00b7 Abasto \u00b7 C\u00f3rdoba no disponibles</div></div>';
   }
   document.getElementById("comparacion-content").innerHTML=html;
 }
 
 // ══ REPORTES ══
+function repTab(tab){
+  document.getElementById("rep-tab-ranking").classList.toggle("active",tab==="ranking");
+  document.getElementById("rep-tab-productos").classList.toggle("active",tab==="productos");
+  document.getElementById("rep-ranking").style.display=tab==="ranking"?"":"none";
+  document.getElementById("rep-productos").style.display=tab==="productos"?"":"none";
+  if(tab==="ranking") cargarComparacion();
+}
+
 function toggleRepCustom(){ document.getElementById("rep-custom").style.display=document.getElementById("rep-periodo").value==="custom"?"flex":"none"; }
 async function cargarReportes(){
   var canal=document.getElementById("rep-canal").value, periodo=document.getElementById("rep-periodo").value;
@@ -988,12 +1029,12 @@ async function cargarReportes(){
   try{
     var res=await fetch("/api/reportes?desde="+desde+"&hasta="+hasta+"&canal="+canal);
     var data=await res.json(); mostrarReportes(data,canal);
-  } catch(err){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
+  } catch(err){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>'; }
 }
 function mostrarReportes(data,canal){
-  if(!data.productos||data.productos.length===0){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">📦</div><p>Sin datos para el periodo</p></div>'; return; }
+  if(!data.productos||data.productos.length===0){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">\ud83d\udce6</div><p>Sin datos para el periodo</p></div>'; return; }
   var titulo=canal==="online"?"Mas vendidos Online (Tiendanube)":"Mas vendidos Fisico (Locales)";
-  var med=["🥇","🥈","🥉"];
+  var med=["\ud83e\udd47","\ud83e\udd48","\ud83e\udd49"];
   var html='<div class="card"><div class="card-title">'+titulo+"</div>";
   data.productos.forEach(function(p,i){ html+='<div class="ranking-item"><div class="ranking-pos">'+(med[i]||(i+1))+'</div><div class="ranking-info"><div class="ranking-nombre">'+p.nombre+'</div><div class="ranking-detalle">'+p.fuentes+'</div></div><div class="ranking-cant">'+p.cantidad+'<span>unidades</span></div></div>'; });
   html+="</div>";
@@ -1001,9 +1042,6 @@ function mostrarReportes(data,canal){
 }
 
 // ══ PRODUCCION ══
-
-
-
 
 function navigate(sub){
   var titles={telas:"Telas",cortes:"Cortes",talleres:"Talleres",estadisticas:"Estadisticas"};
@@ -1045,14 +1083,13 @@ async function mostrarTelas(){
     el.innerHTML=html;
     telasFull=telasList;
     filtrarTelas();
-  } catch(e){ el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
+  } catch(e){ el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>'; }
 }
 
 function telasTab(tab){
   document.getElementById("tt-stock").classList.toggle("active",tab==="stock");
   document.getElementById("tt-ingreso").classList.toggle("active",tab==="ingreso");
   if(tab==="stock"){ document.getElementById("telas-panel").style.display=""; mostrarFormIngreso(); return; }
-  // Si es stock, volver a filtrar
   document.getElementById("telas-panel").style.display="";
   filtrarTelas();
 }
@@ -1068,7 +1105,7 @@ function filtrarTelas(){
   else if(orden==="menos") lista.sort(function(a,b){return a.stock-b.stock;});
   else lista.sort(function(a,b){return a.nombre.localeCompare(b.nombre);});
   var html="";
-  if(lista.length===0) html='<div class="empty"><div class="e-icon">🧵</div><p>Sin resultados</p></div>';
+  if(lista.length===0) html='<div class="empty"><div class="e-icon">\ud83e\uddf5</div><p>Sin resultados</p></div>';
   lista.forEach(function(t){
     var s=parseFloat(t.stock||0), cls=s<50?"bajo":"ok";
     html+='<div class="tela-card" onclick="verDetalleTela(\''+t.id+'\')"><div class="tela-card-left"><div class="tela-card-nombre">'+t.nombre+'</div><div class="tela-card-tipo">'+t.tipo+'</div></div><div class="tela-card-stock '+cls+'">'+s.toFixed(1)+' kg</div></div>';
@@ -1090,14 +1127,14 @@ async function verDetalleTela(telaId){
     html+='<div style="text-align:right"><div style="font-size:24px;font-weight:900;color:'+(parseFloat(stockTela.stock||0)<50?"var(--rojo)":"var(--verde)")+'">'+parseFloat(stockTela.stock||0).toFixed(1)+' kg</div><div style="font-size:11px;color:#aaa">Stock actual</div></div>';
     html+='</div></div>';
     html+='<div class="card"><div class="card-title">Movimientos ('+movs.length+')</div>';
-    if(movs.length===0) html+='<div class="empty" style="padding:20px"><div class="e-icon" style="font-size:32px">📋</div><p>Sin movimientos</p></div>';
+    if(movs.length===0) html+='<div class="empty" style="padding:20px"><div class="e-icon" style="font-size:32px">\ud83d\udccb</div><p>Sin movimientos</p></div>';
     movs.forEach(function(m){
       var esEnt=m.tipo==="Entrada";
-      html+='<div class="mov-item"><div class="mov-left"><div class="mov-tipo">'+(esEnt?"📦 Ingreso":"✂️ Corte #"+(m.numero||""))+' '+(m.descripcion||"")+'</div><div class="mov-fecha">'+m.fecha+' · '+m.estado+'</div></div><div class="mov-kg" style="color:'+(esEnt?"var(--verde)":"var(--rojo)")+'">'+(esEnt?"+":"-")+parseFloat(m.kg||0).toFixed(1)+" kg</div></div>";
+      html+='<div class="mov-item"><div class="mov-left"><div class="mov-tipo">'+(esEnt?"\ud83d\udce6 Ingreso":"\u2702\ufe0f Corte #"+(m.numero||""))+' '+(m.descripcion||"")+'</div><div class="mov-fecha">'+m.fecha+' \u00b7 '+m.estado+'</div></div><div class="mov-kg" style="color:'+(esEnt?"var(--verde)":"var(--rojo)")+'">'+(esEnt?"+":"-")+parseFloat(m.kg||0).toFixed(1)+" kg</div></div>";
     });
     html+="</div>";
     el.innerHTML=html;
-  } catch(e){ el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
+  } catch(e){ el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>'; }
 }
 
 async function mostrarFormIngreso(){
@@ -1129,7 +1166,6 @@ async function guardarIngreso(){
 async function mostrarCortes(){
   var el=document.getElementById("prod-content");
   el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
-  // Pre-cargar telas, talleres y numeros en paralelo
   try{
     var res=await Promise.all([callProd("stock-tela"),callProd("talleres"),callProd("numeros")]);
     telasList=res[0].telas||[];
@@ -1177,30 +1213,30 @@ async function cargarListaCortes(estado,marca,taller){
     cortesData=data.cortes||[];
     var html=filtrosHTML;
     if(estado) document.getElementById&&setTimeout(function(){var el2=document.getElementById("fil-estado");if(el2)el2.value=estado;},10);
-    if(cortesData.length===0){ html+='<div class="empty"><div class="e-icon">✂️</div><p>Sin cortes con ese filtro</p></div>'; el.innerHTML=html; return; }
+    if(cortesData.length===0){ html+='<div class="empty"><div class="e-icon">\u2702\ufe0f</div><p>Sin cortes con ese filtro</p></div>'; el.innerHTML=html; return; }
     cortesData.forEach(function(c,idx){
       var ec={"En Taller":"estado-taller","Esperando Taller":"estado-espera","Terminado":"estado-listo","Entregado":"estado-listo","Pendiente":"estado-pendiente"}[c.estado]||"estado-espera";
       html+='<div class="corte-card" onclick="verDetalleCorte('+idx+')">';
-      html+='<div class="corte-header"><div class="corte-num">Corte #'+(c.numero||"—")+' <span style="font-size:11px;color:#aaa">'+c.marca+'</span></div><span class="corte-estado '+ec+'">'+(c.estado||"—")+"</span></div>";
-      html+='<div class="corte-tela">'+c.telaNombre+' · '+c.fecha+' · 👤 '+(c.taller||"Sin asignar")+"</div>";
-      html+='<div class="corte-grid"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">'+(c.rinde||"—")+'</div></div></div>';
+      html+='<div class="corte-header"><div class="corte-num">Corte #'+(c.numero||"\u2014")+' <span style="font-size:11px;color:#aaa">'+c.marca+'</span></div><span class="corte-estado '+ec+'">'+(c.estado||"\u2014")+"</span></div>";
+      html+='<div class="corte-tela">'+c.telaNombre+' \u00b7 '+c.fecha+' \u00b7 \ud83d\udc64 '+(c.taller||"Sin asignar")+"</div>";
+      html+='<div class="corte-grid"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"\u2014")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"\u2014")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">'+(c.rinde||"\u2014")+'</div></div></div>';
       if(c.descripcion) html+='<div style="font-size:12px;color:#888;margin-top:6px">'+c.descripcion+"</div>";
       html+="</div>";
     });
     el.innerHTML=html;
     if(estado) setTimeout(function(){var fe=document.getElementById("fil-estado");if(fe)fe.value=estado;if(marca){var fm=document.getElementById("fil-marca");if(fm)fm.value=marca;}if(taller){var ft=document.getElementById("fil-taller");if(ft)ft.value=taller;}},50);
-  }catch(e){ el.innerHTML=filtrosHTML+'<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>'; }
+  }catch(e){ el.innerHTML=filtrosHTML+'<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>'; }
 }
 
 function verDetalleCorte(idx){
   var c=cortesData[idx]; if(!c) return;
   var ec={"En Taller":"estado-taller","Esperando Taller":"estado-espera","Terminado":"estado-listo","Entregado":"estado-listo"}[c.estado]||"estado-espera";
   var estadoOpts=["En Taller","Esperando Taller","Terminado","Entregado"].map(function(e){return '<option'+(c.estado===e?" selected":"")+">"+e+"</option>";}).join("");
-  var html='<button onclick="cargarListaCortes()" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">← Volver a lista</button>';
-  html+='<div class="card"><div class="corte-header" style="margin-bottom:12px"><div class="corte-num">Corte #'+(c.numero||"")+'</div><span class="corte-estado '+ec+'">'+(c.estado||"—")+"</span></div>";
-  html+='<div style="font-size:13px;color:#666;margin-bottom:10px">'+c.telaNombre+' · '+c.marca+' · 👤 '+(c.taller||"—")+' · '+c.fecha+"</div>";
+  var html='<button onclick="cargarListaCortes()" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">\u2190 Volver a lista</button>';
+  html+='<div class="card"><div class="corte-header" style="margin-bottom:12px"><div class="corte-num">Corte #'+(c.numero||"")+'</div><span class="corte-estado '+ec+'">'+(c.estado||"\u2014")+"</span></div>";
+  html+='<div style="font-size:13px;color:#666;margin-bottom:10px">'+c.telaNombre+' \u00b7 '+c.marca+' \u00b7 \ud83d\udc64 '+(c.taller||"\u2014")+' \u00b7 '+c.fecha+"</div>";
   if(c.descripcion) html+='<div style="font-size:13px;color:#666;margin-bottom:10px">'+c.descripcion+"</div>";
-  html+='<div class="corte-grid" style="margin-bottom:12px"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">'+(c.rinde||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">TU</div><div class="corte-dato-val">'+(c.tu||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">S</div><div class="corte-dato-val">'+(c.s||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">M</div><div class="corte-dato-val">'+(c.m||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">L</div><div class="corte-dato-val">'+(c.l||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">XL</div><div class="corte-dato-val">'+(c.xl||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">'+(c.faltantes||0)+"</div></div></div>";
+  html+='<div class="corte-grid" style="margin-bottom:12px"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"\u2014")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"\u2014")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Rinde</div><div class="corte-dato-val">'+(c.rinde||"\u2014")+'</div></div><div class="corte-dato"><div class="corte-dato-label">TU</div><div class="corte-dato-val">'+(c.tu||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">S</div><div class="corte-dato-val">'+(c.s||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">M</div><div class="corte-dato-val">'+(c.m||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">L</div><div class="corte-dato-val">'+(c.l||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">XL</div><div class="corte-dato-val">'+(c.xl||0)+'</div></div><div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">'+(c.faltantes||0)+"</div></div></div>";
   if(c.notas) html+='<div style="font-size:13px;color:#888;margin-bottom:12px">'+c.notas+"</div>";
   html+='<div class="form-group"><label class="form-label">Actualizar estado</label><select id="det-estado" class="form-control">'+estadoOpts+"</select></div>";
   html+='<div class="form-group"><label class="form-label">Precio costura ($)</label><input type="number" id="det-precio" class="form-control" value="'+(c.precioCostura||0)+'" placeholder="0"></div>';
@@ -1219,7 +1255,6 @@ async function actualizarCorte(id){
 
 async function renderFormCorte(){
   var el=document.getElementById("corte-content");
-  // Buscador de telas en select
   var telaOpts=telasList.map(function(t){return '<option value="'+t.id+'">'+t.nombre+' ('+parseFloat(t.stock||0).toFixed(1)+' kg)</option>';}).join("");
   var tallOpts=talleresList.map(function(t){return '<option>'+t.nombre+'</option>';}).join("");
   var html='<div class="card"><div class="card-title">Nuevo corte</div>';
@@ -1280,7 +1315,6 @@ async function guardarCorte(){
 
 async function renderFormPeticion(){
   var el=document.getElementById("corte-content");
-  // Cargar peticiones existentes
   var petsData={peticiones:[]};
   try{ petsData=await callProd("peticiones"); }catch(e){}
   var html='<div class="card"><div class="card-title">Nueva peticion de corte</div>';
@@ -1295,7 +1329,7 @@ async function renderFormPeticion(){
     html+='<div class="card"><div class="card-title">Peticiones recientes</div>';
     petsData.peticiones.slice(0,10).forEach(function(p){
       html+='<div class="pet-card"><div class="pet-prod">'+p.producto+'</div>';
-      html+='<div class="pet-talles">TU:'+p.tu+' S:'+p.s+' M:'+p.m+' L:'+p.l+' XL:'+p.xl+' · '+p.marca+'</div>';
+      html+='<div class="pet-talles">TU:'+p.tu+' S:'+p.s+' M:'+p.m+' L:'+p.l+' XL:'+p.xl+' \u00b7 '+p.marca+'</div>';
       html+='<span class="pet-estado '+(p.estado==="Pendiente"?"estado-espera":"estado-listo")+'">'+p.estado+"</span></div>";
     });
     html+="</div>";
@@ -1338,17 +1372,17 @@ async function tallerTab(tab){
     try{
       var data=await callProd("talleres");
       talleresList=data.talleres||[];
-      if(talleresList.length===0){el.innerHTML='<div class="empty"><div class="e-icon">👥</div><p>Sin talleres</p></div>';return;}
+      if(talleresList.length===0){el.innerHTML='<div class="empty"><div class="e-icon">\ud83d\udc65</div><p>Sin talleres</p></div>';return;}
       var html="";
       talleresList.forEach(function(t,idx){
         html+='<div class="taller-card" onclick="verDetalleTaller('+idx+')">';
         html+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
-        html+='<div><div class="taller-nombre">👤 '+t.nombre+'</div>';
-        html+='<div class="taller-info">'+(t.telefono||"Sin telefono")+(t.direccion?" · "+t.direccion:"")+'</div></div>';
-        html+='<div style="font-size:12px;color:#aaa">Ver →</div></div></div>';
+        html+='<div><div class="taller-nombre">\ud83d\udc64 '+t.nombre+'</div>';
+        html+='<div class="taller-info">'+(t.telefono||"Sin telefono")+(t.direccion?" \u00b7 "+t.direccion:"")+'</div></div>';
+        html+='<div style="font-size:12px;color:#aaa">Ver \u2192</div></div></div>';
       });
       el.innerHTML=html;
-    }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';}
+    }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>';}
   } else {
     el.innerHTML='<div class="card"><div class="card-title">Nuevo taller</div>'+
       '<div class="form-group"><label class="form-label">Nombre</label><input type="text" id="nt-nombre" class="form-control" placeholder="Nombre del taller"></div>'+
@@ -1363,14 +1397,13 @@ async function tallerTab(tab){
 function verDetalleTaller(idx){
   var t=talleresList[idx]; if(!t) return;
   var el=document.getElementById("taller-content");
-  var html='<button onclick="tallerTab(\'lista\')" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">← Volver</button>';
-  html+='<div class="card"><div style="font-size:18px;font-weight:900;margin-bottom:12px">👤 '+t.nombre+'</div>';
+  var html='<button onclick="tallerTab(\'lista\')" style="background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;margin-bottom:12px;display:block">\u2190 Volver</button>';
+  html+='<div class="card"><div style="font-size:18px;font-weight:900;margin-bottom:12px">\ud83d\udc64 '+t.nombre+'</div>';
   if(t.telefono) html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">Telefono</div></div><div style="font-size:14px;font-weight:600">'+t.telefono+'</div></div>';
   if(t.direccion) html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">Direccion</div></div><div style="font-size:14px;font-weight:600">'+t.direccion+'</div></div>';
   if(t.dni) html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">DNI</div></div><div style="font-size:14px;font-weight:600">'+t.dni+'</div></div>';
   if(t.notas) html+='<div style="margin-top:8px;font-size:13px;color:#888">'+t.notas+'</div>';
   html+='</div>';
-  // Filtro de etapa para cortes del taller
   html+='<div class="card-title" style="margin-bottom:8px">Cortes de '+t.nombre+'</div>';
   html+='<div class="filtros-row"><select class="filtro-sel" id="tall-fil-estado" onchange="cargarCortesTaller(\''+t.nombre.replace(/'/g,"")+'\',this.value)"><option value="">Todos estados</option><option value="En Taller">En Taller</option><option value="Esperando Taller">Esperando Taller</option><option value="Terminado">Terminado</option></select></div>';
   html+='<div id="tall-cortes-list"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>';
@@ -1385,18 +1418,18 @@ async function cargarCortesTaller(taller,estado){
     var params={taller:taller}; if(estado) params.estado=estado;
     var data=await callProd("cortes",params);
     var cortes=data.cortes||[];
-    if(cortes.length===0){el.innerHTML='<div class="empty" style="padding:20px"><div class="e-icon" style="font-size:32px">✂️</div><p>Sin cortes'+(estado?" con este estado":"")+'</p></div>';return;}
+    if(cortes.length===0){el.innerHTML='<div class="empty" style="padding:20px"><div class="e-icon" style="font-size:32px">\u2702\ufe0f</div><p>Sin cortes'+(estado?" con este estado":"")+'</p></div>';return;}
     var html="";
     cortes.forEach(function(c,idx){
       cortesData[idx]=c;
       var ec={"En Taller":"estado-taller","Esperando Taller":"estado-espera","Terminado":"estado-listo"}[c.estado]||"estado-espera";
       html+='<div class="corte-card" onclick="verDetalleCorteEnTaller('+idx+')">';
-      html+='<div class="corte-header"><div class="corte-num">Corte #'+(c.numero||"—")+'</div><span class="corte-estado '+ec+'">'+(c.estado||"—")+"</span></div>";
-      html+='<div class="corte-tela">'+c.telaNombre+' · '+c.fecha+"</div>";
-      html+='<div class="corte-grid"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"—")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">'+(c.faltantes||0)+"</div></div></div></div>";
+      html+='<div class="corte-header"><div class="corte-num">Corte #'+(c.numero||"\u2014")+'</div><span class="corte-estado '+ec+'">'+(c.estado||"\u2014")+"</span></div>";
+      html+='<div class="corte-tela">'+c.telaNombre+' \u00b7 '+c.fecha+"</div>";
+      html+='<div class="corte-grid"><div class="corte-dato"><div class="corte-dato-label">Kg</div><div class="corte-dato-val">'+(c.kg||"\u2014")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Prendas</div><div class="corte-dato-val">'+(c.totalPrendas||"\u2014")+'</div></div><div class="corte-dato"><div class="corte-dato-label">Faltantes</div><div class="corte-dato-val">'+(c.faltantes||0)+"</div></div></div></div>";
     });
     el.innerHTML=html;
-  }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error</p></div>';}
+  }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error</p></div>';}
 }
 
 function verDetalleCorteEnTaller(idx){ verDetalleCorte(idx); }
@@ -1421,8 +1454,8 @@ async function mostrarEstadisticas(){
   var el=document.getElementById("prod-content");
   var hoy=new Date(), pad=function(n){return String(n).padStart(2,"0");};
   var priMes=hoy.getFullYear()+"-"+pad(hoy.getMonth()+1)+"-01";
-  var hoyStr=hoy.getFullYear()+"-"+pad(hoy.getMonth()+1)+"-"+pad(hoy.getDate());
-  el.innerHTML='<div class="mes-row"><input type="date" id="stat-desde" class="form-control" value="'+priMes+'"><input type="date" id="stat-hasta" class="form-control" value="'+hoyStr+'"><button class="mes-btn" onclick="fetchEstadisticas()">Ver</button></div><div id="stat-content"><div class="loading"><div class="spinner"></div><p>Calculando...</p></div></div>';
+  var hoyStr2=hoy.getFullYear()+"-"+pad(hoy.getMonth()+1)+"-"+pad(hoy.getDate());
+  el.innerHTML='<div class="mes-row"><input type="date" id="stat-desde" class="form-control" value="'+priMes+'"><input type="date" id="stat-hasta" class="form-control" value="'+hoyStr2+'"><button class="mes-btn" onclick="fetchEstadisticas()">Ver</button></div><div id="stat-content"><div class="loading"><div class="spinner"></div><p>Calculando...</p></div></div>';
   fetchEstadisticas();
 }
 
@@ -1433,7 +1466,7 @@ async function fetchEstadisticas(){
   try{
     var data=await callProd("estadisticas",{desde:desde,hasta:hasta});
     mostrarEstadisticasHTML(data);
-  }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">❌</div><p>Error al cargar</p></div>';}
+  }catch(e){el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>';}
 }
 
 function mostrarEstadisticasHTML(data){
@@ -1453,7 +1486,6 @@ function mostrarEstadisticasHTML(data){
     return h+"</div>";
   };
 
-  // TOP5 para tipo de producto con "Otros"
   var renderTop5=function(obj,titulo){
     if(!obj||Object.keys(obj).length===0) return "";
     var entries=Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
@@ -1469,14 +1501,13 @@ function mostrarEstadisticasHTML(data){
       var wR=Math.round(totalResto/max*100);
       var detalle=resto.map(function(e){return e[0]+": "+e[1];}).join(", ");
       h+='<div class="cat-item" onclick="this.querySelector(\'.otros-det\').style.display=this.querySelector(\'.otros-det\').style.display===\'none\'?\'block\':\'none\'">';
-      h+='<div class="cat-row" style="cursor:pointer"><span class="cat-name">Otros ('+resto.length+')</span><span class="cat-monto">'+totalResto+' ▾</span></div>';
+      h+='<div class="cat-row" style="cursor:pointer"><span class="cat-name">Otros ('+resto.length+')</span><span class="cat-monto">'+totalResto+' \u25be</span></div>';
       h+='<div class="bar-wrap"><div class="bar" style="width:'+wR+'%;background:#aaa"></div></div>';
       h+='<div class="otros-det" style="display:none;font-size:11px;color:#aaa;margin-top:6px;line-height:1.6">'+detalle+'</div></div>';
     }
     return h+"</div>";
   };
 
-  // KG por tela: ordenado de menor a mayor (mas interesante ver cuales se usan menos)
   var renderKg=function(obj,titulo){
     if(!obj||Object.keys(obj).length===0) return "";
     var entries=Object.entries(obj).sort(function(a,b){return b[1]-a[1];});
@@ -1493,7 +1524,7 @@ function mostrarEstadisticasHTML(data){
   html+=renderTop5(data.porProducto,"Prendas por tipo de producto");
   html+=renderKg(data.porKgTela,"Kg cortados por tela (mayor a menor)");
   html+=renderBar(data.porTaller,"Prendas por taller");
-  el.innerHTML=html||'<div class="empty"><div class="e-icon">📊</div><p>Sin datos</p></div>';
+  el.innerHTML=html||'<div class="empty"><div class="e-icon">\ud83d\udcca</div><p>Sin datos</p></div>';
 }
 
 // ══ FORM FINANZAS ══
@@ -1521,7 +1552,6 @@ async function guardarTransaccion(){
 }
 
 // ══ CACHE INCREMENTAL ══
-// Estructura: { "2026-03": { dot: {total, cantidad}, abasto: {...}, cordoba: {...}, total: X, hasta: "2026-03-24" } }
 var DF_CACHE_KEY = "tussy_df_mes_v3";
 
 function getCache() {
@@ -1542,17 +1572,15 @@ function ayerStr() {
 }
 function mesKey(desde) { return desde.substring(0,7); }
 
-// Guarda los acumulados hasta ayer (días que no van a cambiar)
 function guardarCachePasado(desde, dataDf) {
   var hoy = hoyStr();
   var ayer = ayerStr();
-  if (desde > ayer) return; // Si desde es hoy o futuro, no cachear
+  if (desde > ayer) return;
   var cache = getCache();
   var mk = mesKey(desde);
-  // Guardar totales acumulados hasta ayer
   cache[mk] = {
     desde: desde,
-    hasta: ayer, // acumulado hasta ayer
+    hasta: ayer,
     dot:     { total: (dataDf.dot||{}).total||0,     cantidad: (dataDf.dot||{}).cantidad||0 },
     abasto:  { total: (dataDf.abasto||{}).total||0,  cantidad: (dataDf.abasto||{}).cantidad||0 },
     cordoba: { total: (dataDf.cordoba||{}).total||0, cantidad: (dataDf.cordoba||{}).cantidad||0 },
@@ -1562,13 +1590,12 @@ function guardarCachePasado(desde, dataDf) {
   setCache(cache);
 }
 
-// Obtiene cache del mes y devuelve cuánto falta pedir
 function getCacheMes(desde) {
   var cache = getCache();
   var mk = mesKey(desde);
   var entry = cache[mk];
   if (!entry || entry.desde !== desde) return null;
-  return entry; // { hasta, dot, abasto, cordoba, total }
+  return entry;
 }
 
 function limpiarCacheViejo() {
@@ -1577,13 +1604,12 @@ function limpiarCacheViejo() {
     var mesActual = hoyStr().substring(0,7);
     var nuevo = {};
     Object.keys(cache).forEach(function(k){
-      if (k === mesActual) nuevo[k] = cache[k]; // solo mantener mes actual
+      if (k === mesActual) nuevo[k] = cache[k];
     });
     setCache(nuevo);
   } catch(e) {}
 }
 
-// Combina cache pasado con datos de hoy
 function combinarConCache(cachePasado, dataHoy) {
   var result = { total: 0 };
   ["dot","abasto","cordoba"].forEach(function(k){
@@ -1606,9 +1632,10 @@ function refreshSeccion(seccion) {
   if (icon) { icon.classList.add("spinning"); setTimeout(function(){ icon.classList.remove("spinning"); }, 500); }
 
   if (seccion === "ventas") {
-    // Solo actualiza HOY sin tocar el cache de días anteriores
     cargarVentas();
   } else if (seccion === "comparacion") {
+    // Clear comparacion cache to force refresh
+    try { localStorage.removeItem(COMP_CACHE_KEY); } catch(e) {}
     cargarComparacion();
   } else if (seccion === "stock") {
     buscarStock();
@@ -1619,296 +1646,100 @@ function refreshSeccion(seccion) {
 
 // ══ CAJA ══════════════════════════════════════════════════════════════════════
 
-async function cargarCaja() {
-  var params = { local: localActual || "todos" };
-  if (rolActual === "admin" || rolActual === "supervisor") params.local = "todos";
-  
-  var html = '';
-  
-  // Botón nuevo cierre solo para encargados
-  if (rolActual === "encargado") {
-    html += '<button class="mes-btn" style="width:100%;margin-bottom:12px;padding:14px" onclick="mostrarFormCierre()">➕ Nuevo cierre de caja</button>';
-    html += '<button class="refresh-btn" onclick="cargarCaja()"><span>🔄</span> Actualizar</button>';
-  }
-
-  // Resumen efectivo por local (admin y supervisor)
-  if (rolActual === "admin" || rolActual === "supervisor") {
-    html += '<button class="refresh-btn" onclick="cargarCaja()"><span>🔄</span> Actualizar</button>';
-    html += '<div class="card"><div class="card-title">💵 Efectivo en locales</div>';
-    var res = await fetch(OPS_URL + "?action=getResumenCaja&params=" + encodeURIComponent(JSON.stringify({}))).then(function(r){return r.json();}).catch(function(){return {};});
-    if (res.efectivoPorLocal) {
-      Object.keys(res.efectivoPorLocal).forEach(function(local) {
-        var monto = res.efectivoPorLocal[local] || 0;
-        var uc = res.ultimoCierre && res.ultimoCierre[local];
-        html += '<div class="tx-item">';
-        html += '<div class="tx-left"><div class="tx-desc">📍 ' + local + '</div>';
-        if (uc) html += '<div class="tx-cat">Último cierre: ' + uc.fecha + ' — ' + (uc.encargado||"") + '</div>';
-        html += '</div>';
-        html += '<div class="tx-monto ' + (monto >= 0 ? "ingreso" : "gasto") + '">' + fmt(monto) + '</div>';
-        html += '</div>';
-      });
-    }
-    html += '</div>';
-  }
-
-  // Listado de cierres
-  var res2 = await fetch(OPS_URL + "?action=getCierres&params=" + encodeURIComponent(JSON.stringify(params))).then(function(r){return r.json();}).catch(function(){return {};});
-  var cierres = (res2.cierres || []);
-  
-  if (cierres.length === 0) {
-    html += '<div class="empty"><div class="e-icon">🏪</div><p>No hay cierres registrados</p></div>';
-  } else {
-    html += '<div class="card"><div class="card-title">📋 Últimos cierres</div>';
-    cierres.forEach(function(c) {
-      html += '<div class="tx-item" style="flex-direction:column;align-items:flex-start;padding:12px 0">';
-      html += '<div style="display:flex;justify-content:space-between;width:100%;margin-bottom:6px">';
-      html += '<div><strong>' + c.local + '</strong> — ' + c.encargado + '</div>';
-      html += '<div style="font-size:11px;color:#aaa">' + c.fecha + '</div>';
-      html += '</div>';
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;font-size:12px">';
-      html += '<div>💵 Efectivo: <strong class="ingreso">' + fmt(c.efectivo) + '</strong></div>';
-      html += '<div>💳 Electrónico: <strong class="ingreso">' + fmt(c.electronico) + '</strong></div>';
-      html += '<div>📤 Gastos: <strong class="gasto">' + fmt(c.gastos) + '</strong></div>';
-      html += '<div>🚚 Retiros: <strong class="gasto">' + fmt(c.retiros) + '</strong></div>';
-      html += '</div>';
-      if (c.observaciones) html += '<div style="font-size:11px;color:#888;margin-top:4px">📝 ' + c.observaciones + '</div>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  document.getElementById("caja-content").innerHTML = html;
-}
-
-function mostrarFormCierre() {
-  var hoy = hoyStr();
-  var html = '<div class="card"><div class="card-title">🏪 Nuevo cierre de caja — ' + localActual + '</div>';
-  html += '<div class="form-group"><label class="form-label">Fecha</label>';
-  html += '<input type="date" id="cj-fecha" class="form-control" value="' + hoy + '"></div>';
-  html += '<div class="form-group"><label class="form-label">Ventas en efectivo</label>';
-  html += '<input type="number" id="cj-efectivo" class="form-control" placeholder="0" inputmode="numeric"></div>';
-  html += '<div class="form-group"><label class="form-label">Ventas electrónicas (débito/crédito/QR)</label>';
-  html += '<input type="number" id="cj-electronico" class="form-control" placeholder="0" inputmode="numeric"></div>';
-  html += '<div class="form-group"><label class="form-label">Gastos del día</label>';
-  html += '<input type="number" id="cj-gastos" class="form-control" placeholder="0" inputmode="numeric"></div>';
-  html += '<div class="form-group"><label class="form-label">Retiro de efectivo (si hubo)</label>';
-  html += '<input type="number" id="cj-retiros" class="form-control" placeholder="0" inputmode="numeric"></div>';
-  html += '<div class="form-group" id="cj-retiro-quien-wrap" style="display:none">';
-  html += '<label class="form-label">Retirado por</label>';
-  html += '<input type="text" id="cj-retiro-quien" class="form-control" placeholder="Nombre de quien retira"></div>';
-  html += '<div class="form-group"><label class="form-label">Observaciones</label>';
-  html += '<input type="text" id="cj-obs" class="form-control" placeholder="Novedades del día..."></div>';
-  html += '<button class="btn-submit" onclick="guardarCierre()">Guardar cierre</button>';
-  html += '<button class="refresh-btn" style="margin-top:8px" onclick="cargarCaja()">Cancelar</button>';
-  html += '</div>';
-  document.getElementById("caja-content").innerHTML = html;
-  
-  document.getElementById("cj-retiros").addEventListener("input", function() {
-    document.getElementById("cj-retiro-quien-wrap").style.display = this.value > 0 ? "" : "none";
-  });
-}
-
-async function guardarCierre() {
-  var fecha      = document.getElementById("cj-fecha").value;
-  var efectivo   = parseFloat(document.getElementById("cj-efectivo").value) || 0;
-  var electronico= parseFloat(document.getElementById("cj-electronico").value) || 0;
-  var gastos     = parseFloat(document.getElementById("cj-gastos").value) || 0;
-  var retiros    = parseFloat(document.getElementById("cj-retiros").value) || 0;
-  var retiroQuien= (document.getElementById("cj-retiro-quien") || {}).value || "";
-  var obs        = document.getElementById("cj-obs").value;
-
-  if (!fecha) { showToast("Completá la fecha","err"); return; }
-
-  var data = { fecha, local: localActual, encargado: nombreActual,
-               efectivo, electronico, gastos, retiros, observaciones: obs };
-
-  var btn = document.querySelector("#caja-content .btn-submit");
-  if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
-
-  try {
-    var url = OPS_URL + "?action=agregarCierre&params=" + encodeURIComponent(JSON.stringify(data));
-    var res = await fetch(url).then(function(r){return r.json();});
-
-    // Si hubo retiro, guardarlo también
-    if (retiros > 0 && retiroQuien) {
-      var retiroData = { fecha, local: localActual, encargado: nombreActual,
-                         monto: retiros, retiradoPor: retiroQuien };
-      await fetch(OPS_URL + "?action=agregarRetiro&params=" + encodeURIComponent(JSON.stringify(retiroData)));
-    }
-
-    showToast("✅ Cierre guardado correctamente","ok");
-    cargarCaja();
-  } catch(e) {
-    showToast("Error al guardar","err");
-    if (btn) { btn.disabled = false; btn.textContent = "Guardar cierre"; }
-  }
-}
-
-// ══ NOVEDADES ══════════════════════════════════════════════════════════════
-
-async function cargarNovedades() {
-  var params = { local: localActual || "todos" };
-  if (rolActual === "admin" || rolActual === "supervisor") params.local = "todos";
-
-  var html = '';
-
-  // Supervisor y admin pueden crear novedades
-  if (rolActual === "supervisor" || rolActual === "admin") {
-    html += '<button class="mes-btn" style="width:100%;margin-bottom:12px;padding:14px" onclick="mostrarFormNovedad()">➕ Nueva novedad / auditoría</button>';
-  }
-  html += '<button class="refresh-btn" onclick="cargarNovedades()"><span>🔄</span> Actualizar</button>';
-
-  // Filtro de estado
-  html += '<div class="tabs-row" style="margin-bottom:12px">';
-  html += '<button class="prod-tab active" id="nov-tab-pendiente" onclick="filtrarNovedades(\'Pendiente\',this)">Pendientes</button>';
-  html += '<button class="prod-tab" id="nov-tab-todas" onclick="filtrarNovedades(\'todas\',this)">Todas</button>';
-  html += '</div>';
-
-  var res = await fetch(OPS_URL + "?action=getNovedades&params=" + encodeURIComponent(JSON.stringify(params))).then(function(r){return r.json();}).catch(function(){return {};});
-  var novedades = (res.novedades || []).filter(function(n){ return n.estado === "Pendiente"; });
-
-  html += '<div id="nov-lista">';
-  if (novedades.length === 0) {
-    html += '<div class="empty"><div class="e-icon">✅</div><p>No hay novedades pendientes</p></div>';
-  } else {
-    novedades.forEach(function(n) {
-      var colorPrio = n.prioridad === "Alta" ? "#E74C3C" : n.prioridad === "Baja" ? "#27AE60" : "#F39C12";
-      html += '<div class="card" style="border-left:4px solid ' + colorPrio + '">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
-      html += '<div><strong>' + n.tipo + '</strong> — <span style="color:#888;font-size:12px">' + n.local + '</span></div>';
-      html += '<span style="font-size:10px;padding:3px 8px;border-radius:10px;background:' + colorPrio + ';color:white">' + (n.prioridad||"Normal") + '</span>';
-      html += '</div>';
-      html += '<div style="font-size:13px;margin-bottom:6px">' + n.descripcion + '</div>';
-      html += '<div style="font-size:11px;color:#aaa">' + n.fecha + ' — ' + n.supervisor + '</div>';
-      if (rolActual === "supervisor" || rolActual === "admin") {
-        html += '<button onclick="marcarNovedad(' + n.id + ')" style="margin-top:8px;padding:6px 12px;background:#27AE60;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer">✅ Marcar como resuelto</button>';
-      }
-      html += '</div>';
-    });
-  }
-  html += '</div>';
-
-  document.getElementById("novedades-content").innerHTML = html;
-}
-
-async function filtrarNovedades(estado, btn) {
-  document.querySelectorAll("#novedades-content .prod-tab").forEach(function(b){ b.classList.remove("active"); });
-  btn.classList.add("active");
-
-  var params = { local: localActual || "todos" };
-  if (rolActual === "admin" || rolActual === "supervisor") params.local = "todos";
-  if (estado !== "todas") params.estado = estado;
-
-  var res = await fetch(OPS_URL + "?action=getNovedades&params=" + encodeURIComponent(JSON.stringify(params))).then(function(r){return r.json();}).catch(function(){return {};});
-  var novedades = res.novedades || [];
-
-  var html = '';
-  if (novedades.length === 0) {
-    html = '<div class="empty"><div class="e-icon">📋</div><p>No hay novedades</p></div>';
-  } else {
-    novedades.forEach(function(n) {
-      var colorPrio = n.prioridad === "Alta" ? "#E74C3C" : n.prioridad === "Baja" ? "#27AE60" : "#F39C12";
-      var colorEst = n.estado === "Resuelto" ? "#27AE60" : "#F39C12";
-      html += '<div class="card" style="border-left:4px solid ' + colorPrio + '">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
-      html += '<div><strong>' + n.tipo + '</strong> — <span style="color:#888;font-size:12px">' + n.local + '</span></div>';
-      html += '<span style="font-size:10px;padding:3px 8px;border-radius:10px;background:' + colorEst + ';color:white">' + n.estado + '</span>';
-      html += '</div>';
-      html += '<div style="font-size:13px;margin-bottom:6px">' + n.descripcion + '</div>';
-      html += '<div style="font-size:11px;color:#aaa">' + n.fecha + ' — ' + n.supervisor + '</div>';
-      html += '</div>';
-    });
-  }
-  document.getElementById("nov-lista").innerHTML = html;
-}
-
-function mostrarFormNovedad() {
-  var html = '<div class="card"><div class="card-title">📋 Nueva novedad</div>';
-  html += '<div class="form-group"><label class="form-label">Local</label>';
-  html += '<select id="nv-local" class="form-control">';
-  ["Dot","Abasto","Córdoba","Palermo","La Plata"].forEach(function(l){
-    html += '<option>' + l + '</option>';
-  });
-  html += '</select></div>';
-  html += '<div class="form-group"><label class="form-label">Tipo</label>';
-  html += '<select id="nv-tipo" class="form-control"><option>Observacion</option><option>Mejora</option><option>Checklist</option><option>Urgente</option></select></div>';
-  html += '<div class="form-group"><label class="form-label">Prioridad</label>';
-  html += '<select id="nv-prioridad" class="form-control"><option>Normal</option><option>Alta</option><option>Baja</option></select></div>';
-  html += '<div class="form-group"><label class="form-label">Descripcion</label>';
-  html += '<textarea id="nv-desc" class="form-control" rows="3" placeholder="Describí la novedad o tarea..."></textarea></div>';
-  html += '<div class="form-group" id="nv-checklist-wrap">';
-  html += '<label class="form-label">Ítems del checklist (uno por línea)</label>';
-  html += '<textarea id="nv-checklist" class="form-control" rows="5" placeholder="Limpiar vidrieras&#10;Ordenar probadores&#10;Controlar stock..."></textarea></div>';
-  html += '<button class="btn-submit" onclick="guardarNovedad()">Guardar novedad</button>';
-  html += '<button class="refresh-btn" style="margin-top:8px" onclick="cargarNovedades()">Cancelar</button>';
-  html += '</div>';
-  document.getElementById("novedades-content").innerHTML = html;
-}
-
-// ══ CAJA ═══════════════════════════════════════════════════════════════════
-
 var cajaLocalFiltro = null;
 
 function cargarCaja() {
-  var el = document.getElementById("caja-content");
+  var el = document.getElementById("locales-content");
   if (!el) return;
-  el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
 
   var esEncargado = rolActual === "encargado";
 
   if (esEncargado) {
-    // Encargado: ver sus cierres + formulario para cargar nuevo
+    el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
     cargarCierresEncargado();
   } else {
-    // Admin/Supervisor/Socio: ver resumen de todos los locales
+    // Admin/Supervisor/Socio: tabs view
+    var html = '<div class="tabs-row">';
+    html += '<button class="prod-tab active" id="caja-tab-resumen" onclick="cajaTab(\'resumen\')">Resumen</button>';
+    html += '<button class="prod-tab" id="caja-tab-cierres" onclick="cajaTab(\'cierres\')">Cierres</button>';
+    html += '<button class="prod-tab" id="caja-tab-retiros" onclick="cajaTab(\'retiros\')">Retiros</button>';
+    if (rolActual === "admin") {
+      html += '<button class="prod-tab" id="caja-tab-control" onclick="cajaTab(\'control\')">Control</button>';
+    }
+    html += '</div>';
+    html += '<div id="caja-panel"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>';
+    el.innerHTML = html;
     cargarResumenCaja();
   }
 }
 
+var _cajaTabActual = "resumen";
+function cajaTab(tab) {
+  _cajaTabActual = tab;
+  ["resumen","cierres","retiros","control"].forEach(function(t) {
+    var el = document.getElementById("caja-tab-" + t);
+    if (el) el.classList.toggle("active", t === tab);
+  });
+  if (tab === "resumen") cargarResumenCaja();
+  else if (tab === "cierres") cargarListaCierresAdmin();
+  else if (tab === "retiros") cargarListaRetiros();
+  else if (tab === "control") cargarControlRetiros();
+}
+
 function cargarResumenCaja() {
-  var el = document.getElementById("caja-content");
+  var el = document.getElementById("caja-panel");
+  if (!el) return;
+  el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
   callOps("getResumenCaja", {}, function(data) {
     if (data.error) { el.innerHTML = '<div class="empty"><p>Error: ' + data.error + '</p></div>'; return; }
     var r = data.resumen || {};
-    var locales = ["Dot","Abasto","Córdoba","Palermo","La Plata"];
-    var html = '<div class="card"><div class="card-title">💵 Efectivo en locales</div>';
+    var locales = ["Dot","Abasto","C\u00f3rdoba","Palermo","La Plata"];
+    var html = '<div class="card"><div class="card-title">\ud83d\udcb5 Efectivo disponible en locales</div>';
     html += '<div class="resumen-caja">';
+    var totalEfectivo = 0;
     locales.forEach(function(l) {
       var d = r[l] || {};
       var saldo = d.saldoFinal || 0;
+      totalEfectivo += saldo;
       var cls = saldo >= 0 ? "pos" : "neg";
       html += '<div class="caja-local">' +
         '<div class="caja-local-nombre">' + l + '</div>' +
         '<div class="caja-local-saldo ' + cls + '">' + fmt(saldo) + '</div>' +
-        '<div class="caja-local-detalle">' + (d.ultimaCierre ? 'Último cierre: ' + d.ultimaCierre : 'Sin cierres') + '</div>' +
+        '<div class="caja-local-detalle">' + (d.ultimaCierre ? '\u00daltimo cierre: ' + d.ultimaCierre : 'Sin cierres') + '</div>' +
         '</div>';
     });
+    html += '</div>';
+    html += '<div style="background:linear-gradient(135deg,#1A1A2E,#2C3E6E);color:white;border-radius:12px;padding:16px;text-align:center;margin-top:8px">';
+    html += '<div style="font-size:11px;opacity:0.6;text-transform:uppercase">Total efectivo en locales</div>';
+    html += '<div style="font-size:28px;font-weight:900;margin-top:4px">' + fmt(totalEfectivo) + '</div>';
     html += '</div></div>';
 
-    // Tabla de últimos cierres con filtro por local
-    html += '<div class="card"><div class="card-title">📋 Últimos cierres</div>';
-    html += '<div class="local-filter">';
-    html += '<button class="local-btn ' + (!cajaLocalFiltro ? "active" : "") + '" onclick="filtrarCaja(null)">Todos</button>';
-    locales.forEach(function(l) {
-      html += '<button class="local-btn ' + (cajaLocalFiltro===l ? "active" : "") + '" onclick="filtrarCaja(\'" + l + "\')">' + l + '</button>';
-    });
-    html += '</div>';
-    html += '<div id="lista-cierres"><div class="loading"><div class="spinner"></div></div></div>';
-    html += '</div>';
-
-    // Botón agregar retiro (solo admin)
     if (rolActual === "admin") {
-      html += '<button class="refresh-btn" onclick="mostrarFormRetiro()"><span>💸</span> Registrar retiro de efectivo</button>';
+      html += '<button class="mes-btn" style="width:100%;margin-top:12px;padding:14px" onclick="mostrarFormRetiro()">\ud83d\udcb8 Registrar retiro de efectivo</button>';
     }
 
     el.innerHTML = html;
-    cargarListaCierres();
   });
+}
+
+function cargarListaCierresAdmin() {
+  var el = document.getElementById("caja-panel");
+  if (!el) return;
+
+  var locales = ["Dot","Abasto","C\u00f3rdoba","Palermo","La Plata"];
+  var html = '<div class="local-filter">';
+  html += '<button class="local-btn ' + (!cajaLocalFiltro ? "active" : "") + '" onclick="filtrarCaja(null)">Todos</button>';
+  locales.forEach(function(l) {
+    html += '<button class="local-btn ' + (cajaLocalFiltro===l ? "active" : "") + '" onclick="filtrarCaja(\'' + l + '\')">' + l + '</button>';
+  });
+  html += '</div>';
+  html += '<div id="lista-cierres"><div class="loading"><div class="spinner"></div></div></div>';
+  el.innerHTML = html;
+  cargarListaCierres();
 }
 
 function filtrarCaja(local) {
   cajaLocalFiltro = local;
-  // Update button states
   document.querySelectorAll('.local-btn').forEach(function(b) {
     b.classList.toggle('active', b.textContent === (local || 'Todos'));
   });
@@ -1929,14 +1760,14 @@ function cargarListaCierres() {
       html += '<div class="cierre-card">' +
         '<div style="display:flex;justify-content:space-between">' +
           '<div class="cierre-local">' + c.local + '</div>' +
-          '<div class="cierre-fecha">' + c.fecha + ' · ' + c.encargado + '</div>' +
+          '<div class="cierre-fecha">' + c.fecha + ' \u00b7 ' + c.encargado + '</div>' +
         '</div>' +
         '<div class="cierre-row"><span class="cierre-label">Venta efectivo</span><span class="cierre-val neu">' + fmt(c.ventaEfectivo) + '</span></div>' +
-        '<div class="cierre-row"><span class="cierre-label">Venta electrónico</span><span class="cierre-val neu">' + fmt(c.ventaElectronico) + '</span></div>' +
+        '<div class="cierre-row"><span class="cierre-label">Venta electr\u00f3nico</span><span class="cierre-val neu">' + fmt(c.ventaElectronico) + '</span></div>' +
         (c.gastosMonto ? '<div class="cierre-row"><span class="cierre-label">Gastos (' + c.gastosDesc + ')</span><span class="cierre-val neg">' + fmt(c.gastosMonto) + '</span></div>' : '') +
         (c.retiroEfectivo ? '<div class="cierre-row"><span class="cierre-label">Retiro efectivo</span><span class="cierre-val neg">' + fmt(c.retiroEfectivo) + '</span></div>' : '') +
         '<div class="cierre-row" style="margin-top:4px"><span class="cierre-label" style="font-weight:700">Saldo en caja</span><span class="cierre-val ' + saldoCls + '" style="font-size:15px">' + fmt(c.saldoFinal) + '</span></div>' +
-        (c.observaciones ? '<div style="font-size:11px;color:#888;margin-top:6px;padding-top:6px;border-top:1px solid #f5f5f5">📝 ' + c.observaciones + '</div>' : '') +
+        (c.observaciones ? '<div style="font-size:11px;color:#888;margin-top:6px;padding-top:6px;border-top:1px solid #f5f5f5">\ud83d\udcdd ' + c.observaciones + '</div>' : '') +
         '</div>';
     });
     el.innerHTML = html;
@@ -1944,36 +1775,32 @@ function cargarListaCierres() {
 }
 
 function cargarCierresEncargado() {
-  var el = document.getElementById("caja-content");
+  var el = document.getElementById("locales-content");
   callOps("getCierres", { local: localActual, limite: 10 }, function(data) {
     var cierres = data.cierres || [];
-    var html = '<div class="card"><div class="card-title">💵 Nuevo cierre de caja</div>' +
-      '<div class="form-group"><label class="form-label">Venta en Efectivo ($)</label>' +
+    var hoy = hoyStr();
+    var html = '<div class="card"><div class="card-title">\ud83d\udcb5 Nuevo cierre de caja \u2014 ' + localActual + '</div>' +
+      '<div class="form-group"><label class="form-label">Fecha</label>' +
+      '<input type="date" id="cj-fecha" class="form-control" value="' + hoy + '"></div>' +
+      '<div class="form-group"><label class="form-label">Monto en Efectivo ($)</label>' +
       '<input type="number" id="cj-efectivo" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-      '<div class="form-group"><label class="form-label">Venta Electrónica ($)</label>' +
+      '<div class="form-group"><label class="form-label">Monto en Tarjeta ($)</label>' +
       '<input type="number" id="cj-electronico" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-      '<div class="form-group"><label class="form-label">Gastos del día (descripción)</label>' +
-      '<input type="text" id="cj-gastos-desc" class="form-control" placeholder="Ej: Limpieza, delivery..."></div>' +
-      '<div class="form-group"><label class="form-label">Total gastos ($)</label>' +
+      '<div class="form-group"><label class="form-label">Gastos ($)</label>' +
       '<input type="number" id="cj-gastos-monto" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-      '<div class="form-group"><label class="form-label">Retiro de efectivo ($)</label>' +
-      '<input type="number" id="cj-retiro" class="form-control" placeholder="0" inputmode="numeric"></div>' +
-      '<div class="form-group"><label class="form-label">Observaciones</label>' +
-      '<input type="text" id="cj-obs" class="form-control" placeholder="Novedades del dia..."></div>' +
+      '<div class="form-group"><label class="form-label">Observaciones / Detalle de gastos</label>' +
+      '<textarea id="cj-obs" class="form-control" rows="3" placeholder="Detall\u00e1 los gastos, novedades del d\u00eda..."></textarea></div>' +
       '<button class="btn-submit" onclick="guardarCierre()">Guardar cierre</button></div>';
 
     if (cierres.length > 0) {
-      html += '<div class="card"><div class="card-title">📋 Últimos cierres</div>';
+      html += '<div class="card"><div class="card-title">\ud83d\udccb \u00daltimos cierres</div>';
       cierres.forEach(function(c) {
-        var saldoCls = c.saldoFinal >= 0 ? "pos" : "neg";
         html += '<div class="cierre-card">' +
           '<div class="cierre-fecha">' + c.fecha + '</div>' +
           '<div class="cierre-row"><span class="cierre-label">Efectivo</span><span class="cierre-val neu">' + fmt(c.ventaEfectivo) + '</span></div>' +
-          '<div class="cierre-row"><span class="cierre-label">Electrónico</span><span class="cierre-val neu">' + fmt(c.ventaElectronico) + '</span></div>' +
+          '<div class="cierre-row"><span class="cierre-label">Tarjeta</span><span class="cierre-val neu">' + fmt(c.ventaElectronico) + '</span></div>' +
           (c.gastosMonto ? '<div class="cierre-row"><span class="cierre-label">Gastos</span><span class="cierre-val neg">' + fmt(c.gastosMonto) + '</span></div>' : '') +
-          (c.retiroEfectivo ? '<div class="cierre-row"><span class="cierre-label">Retiro</span><span class="cierre-val neg">' + fmt(c.retiroEfectivo) + '</span></div>' : '') +
-          '<div class="cierre-row"><span class="cierre-label" style="font-weight:700">Saldo</span><span class="cierre-val ' + saldoCls + '">' + fmt(c.saldoFinal) + '</span></div>' +
-          (c.observaciones ? '<div style="font-size:11px;color:#888;margin-top:6px">📝 ' + c.observaciones + '</div>' : '') +
+          (c.observaciones ? '<div style="font-size:11px;color:#888;margin-top:6px">\ud83d\udcdd ' + c.observaciones + '</div>' : '') +
           '</div>';
       });
       html += '</div>';
@@ -1983,20 +1810,16 @@ function cargarCierresEncargado() {
 }
 
 function guardarCierre() {
+  var fechaEl = document.getElementById("cj-fecha");
+  var fecha = fechaEl ? fechaEl.value : hoyStr();
   var efectivo    = parseFloat(document.getElementById("cj-efectivo").value) || 0;
   var electronico = parseFloat(document.getElementById("cj-electronico").value) || 0;
-  var gastosDesc  = document.getElementById("cj-gastos-desc").value.trim();
   var gastosMonto = parseFloat(document.getElementById("cj-gastos-monto").value) || 0;
-  var retiro      = parseFloat(document.getElementById("cj-retiro").value) || 0;
   var obs         = document.getElementById("cj-obs").value.trim();
 
-  if (!efectivo && !electronico) { showToast("Ingresá al menos las ventas del día", "err"); return; }
+  if (!efectivo && !electronico) { showToast("Ingres\u00e1 al menos las ventas del d\u00eda", "err"); return; }
 
-  var hoy = new Date();
-  var pad = function(n){ return String(n).padStart(2,"0"); };
-  var fecha = hoy.getFullYear()+"-"+pad(hoy.getMonth()+1)+"-"+pad(hoy.getDate());
-
-  var btn = document.querySelector('#sec-caja .btn-submit');
+  var btn = document.querySelector('#locales-content .btn-submit');
   if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
 
   callOps("guardarCierre", {
@@ -2005,17 +1828,190 @@ function guardarCierre() {
     encargado: nombreActual,
     ventaEfectivo: efectivo,
     ventaElectronico: electronico,
-    gastosDesc: gastosDesc,
     gastosMonto: gastosMonto,
-    retiroEfectivo: retiro,
     observaciones: obs
   }, function(data) {
     if (btn) { btn.disabled = false; btn.textContent = "Guardar cierre"; }
     if (data.ok) {
-      showToast("✅ Cierre guardado — Saldo: " + fmt(data.saldoFinal), "ok");
+      showToast("\u2705 Cierre guardado", "ok");
       cargarCierresEncargado();
     } else {
       showToast("Error al guardar", "err");
+    }
+  });
+}
+
+// ══ RETIROS ═══════════════════════════════════════════════════════════════════
+
+function mostrarFormRetiro() {
+  var el = document.getElementById("locales-content");
+  if (!el) { el = document.getElementById("caja-panel"); }
+  if (!el) return;
+  var locales = ["Dot","Abasto","C\u00f3rdoba","Palermo","La Plata"];
+  var hoy = hoyStr();
+  var html = '<div class="card"><div class="card-title">\ud83d\udcb8 Registrar retiro de efectivo</div>';
+  html += '<div class="form-group"><label class="form-label">Local</label>';
+  html += '<select id="ret-local" class="form-control">';
+  locales.forEach(function(l){ html += '<option>' + l + '</option>'; });
+  html += '</select></div>';
+  html += '<div class="form-group"><label class="form-label">Fecha desde</label>';
+  html += '<input type="date" id="ret-desde" class="form-control" value="' + hoy + '"></div>';
+  html += '<div class="form-group"><label class="form-label">Fecha hasta</label>';
+  html += '<input type="date" id="ret-hasta" class="form-control" value="' + hoy + '"></div>';
+  html += '<div class="form-group"><label class="form-label">Monto retirado ($)</label>';
+  html += '<input type="number" id="ret-monto" class="form-control" placeholder="0" inputmode="numeric"></div>';
+  html += '<div class="form-group"><label class="form-label">Retirado por</label>';
+  html += '<input type="text" id="ret-quien" class="form-control" placeholder="Nombre de quien retira"></div>';
+  html += '<button class="btn-submit" onclick="guardarRetiro()">Registrar retiro</button>';
+  html += '<button class="refresh-btn" style="margin-top:8px" onclick="cargarCaja()">Cancelar</button>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+async function guardarRetiro() {
+  var local = document.getElementById("ret-local").value;
+  var desde = document.getElementById("ret-desde").value;
+  var hasta = document.getElementById("ret-hasta").value;
+  var monto = parseFloat(document.getElementById("ret-monto").value) || 0;
+  var quien = document.getElementById("ret-quien").value.trim();
+
+  if (!desde || !hasta) { showToast("Complet\u00e1 las fechas","err"); return; }
+  if (!monto) { showToast("Ingres\u00e1 el monto","err"); return; }
+  if (!quien) { showToast("Ingres\u00e1 qui\u00e9n retir\u00f3","err"); return; }
+
+  var btn = document.querySelector('.btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = "Registrando..."; }
+
+  callOps("registrarRetiro", {
+    local: local,
+    fechaDesde: desde,
+    fechaHasta: hasta,
+    monto: monto,
+    retiradoPor: quien,
+    registradoPor: nombreActual
+  }, function(data) {
+    if (btn) { btn.disabled = false; btn.textContent = "Registrar retiro"; }
+    if (data.ok) {
+      showToast("\u2705 Retiro registrado","ok");
+      cargarCaja();
+    } else {
+      showToast("Error al registrar","err");
+    }
+  });
+}
+
+function cargarListaRetiros() {
+  var el = document.getElementById("caja-panel");
+  if (!el) return;
+  el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+
+  callOps("getRetiros", {}, function(data) {
+    var retiros = data.retiros || [];
+    if (retiros.length === 0) {
+      el.innerHTML = '<div class="empty"><div class="e-icon">\ud83d\udcb8</div><p>No hay retiros registrados</p></div>';
+      return;
+    }
+    var html = '';
+    retiros.forEach(function(r) {
+      var colorBorder = r.verificado === "correcto" ? "#27AE60" : r.verificado === "falta" ? "#E74C3C" : "#3498DB";
+      html += '<div class="cierre-card" style="border-left-color:' + colorBorder + '">';
+      html += '<div style="display:flex;justify-content:space-between">';
+      html += '<div class="cierre-local">' + r.local + '</div>';
+      html += '<div class="cierre-fecha">' + r.fechaDesde + ' al ' + r.fechaHasta + '</div>';
+      html += '</div>';
+      html += '<div class="cierre-row"><span class="cierre-label">Monto</span><span class="cierre-val neu">' + fmt(r.monto) + '</span></div>';
+      html += '<div class="cierre-row"><span class="cierre-label">Retirado por</span><span class="cierre-val">' + r.retiradoPor + '</span></div>';
+      if (r.verificado) {
+        var statusText = r.verificado === "correcto" ? "\u2713 Verificado correcto" : "\u2717 Falta $" + (r.montoFaltante||0);
+        var statusColor = r.verificado === "correcto" ? "#27AE60" : "#E74C3C";
+        html += '<div style="margin-top:6px;font-size:12px;font-weight:700;color:' + statusColor + '">' + statusText + '</div>';
+      }
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  });
+}
+
+function cargarControlRetiros() {
+  var el = document.getElementById("caja-panel");
+  if (!el) return;
+  el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+
+  callOps("getRetirosPendientes", {}, function(data) {
+    var retiros = data.retiros || [];
+    var pendientes = retiros.filter(function(r){ return !r.verificado; });
+    var verificados = retiros.filter(function(r){ return r.verificado; });
+
+    var html = '';
+
+    if (pendientes.length === 0 && verificados.length === 0) {
+      html = '<div class="empty"><div class="e-icon">\u2705</div><p>No hay retiros para controlar</p></div>';
+      el.innerHTML = html;
+      return;
+    }
+
+    if (pendientes.length > 0) {
+      html += '<div class="card"><div class="card-title" style="color:#F39C12">\u23f3 Pendientes de verificaci\u00f3n (' + pendientes.length + ')</div>';
+      pendientes.forEach(function(r) {
+        html += '<div class="cierre-card" style="border-left-color:#F39C12">';
+        html += '<div style="display:flex;justify-content:space-between">';
+        html += '<div class="cierre-local">' + r.local + '</div>';
+        html += '<div class="cierre-fecha">' + r.fechaDesde + ' al ' + r.fechaHasta + '</div>';
+        html += '</div>';
+        html += '<div class="cierre-row"><span class="cierre-label">Monto retirado</span><span class="cierre-val neu">' + fmt(r.monto) + '</span></div>';
+        html += '<div class="cierre-row"><span class="cierre-label">Retirado por</span><span class="cierre-val">' + r.retiradoPor + '</span></div>';
+        html += '<div style="display:flex;gap:8px;margin-top:10px">';
+        html += '<button onclick="verificarRetiro(' + r.idx + ',\'correcto\',0)" style="flex:1;padding:10px;background:#27AE60;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">\u2713 Correcto</button>';
+        html += '<button onclick="mostrarFaltante(' + r.idx + ',' + r.monto + ')" style="flex:1;padding:10px;background:#E74C3C;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">\u2717 Falta dinero</button>';
+        html += '</div>';
+        html += '<div id="faltante-form-' + r.idx + '" style="display:none;margin-top:8px">';
+        html += '<div style="display:flex;gap:8px;align-items:center">';
+        html += '<input type="number" id="faltante-monto-' + r.idx + '" class="form-control" placeholder="Monto faltante" style="flex:1" inputmode="numeric">';
+        html += '<button onclick="verificarRetiro(' + r.idx + ',\'falta\',document.getElementById(\'faltante-monto-' + r.idx + '\').value)" style="padding:10px 16px;background:#E74C3C;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Confirmar</button>';
+        html += '</div></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    if (verificados.length > 0) {
+      html += '<div class="card"><div class="card-title">Verificados</div>';
+      verificados.forEach(function(r) {
+        var color = r.verificado === "correcto" ? "#27AE60" : "#E74C3C";
+        html += '<div class="cierre-card" style="border-left-color:' + color + '">';
+        html += '<div style="display:flex;justify-content:space-between">';
+        html += '<div class="cierre-local">' + r.local + '</div>';
+        html += '<div class="cierre-fecha">' + r.fechaDesde + ' al ' + r.fechaHasta + '</div>';
+        html += '</div>';
+        html += '<div class="cierre-row"><span class="cierre-label">Monto</span><span class="cierre-val">' + fmt(r.monto) + '</span></div>';
+        var statusText = r.verificado === "correcto" ? "\u2713 Correcto" : "\u2717 Falta $" + (r.montoFaltante||0);
+        html += '<div style="margin-top:4px;font-size:12px;font-weight:700;color:' + color + '">' + statusText + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    el.innerHTML = html;
+  });
+}
+
+function mostrarFaltante(idx, monto) {
+  var formEl = document.getElementById("faltante-form-" + idx);
+  if (formEl) formEl.style.display = formEl.style.display === "none" ? "block" : "none";
+}
+
+function verificarRetiro(idx, estado, montoFaltante) {
+  callOps("verificarRetiro", {
+    idx: idx,
+    verificado: estado,
+    montoFaltante: parseFloat(montoFaltante) || 0,
+    verificadoPor: nombreActual
+  }, function(data) {
+    if (data.ok) {
+      showToast(estado === "correcto" ? "\u2713 Retiro verificado correcto" : "\u2717 Faltante registrado", estado === "correcto" ? "ok" : "err");
+      cargarControlRetiros();
+    } else {
+      showToast("Error al verificar","err");
     }
   });
 }
@@ -2025,7 +2021,7 @@ function guardarCierre() {
 var novedadesLocalFiltro = null;
 
 function cargarNovedades() {
-  var el = document.getElementById("novedades-content");
+  var el = document.getElementById("locales-content");
   if (!el) return;
   el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
 
@@ -2037,18 +2033,18 @@ function cargarNovedades() {
 
     // Formulario para supervisor y admin
     if (rolActual === "admin" || rolActual === "supervisor") {
-      var locales = ["Dot","Abasto","Córdoba","Palermo","La Plata"];
-      html += '<div class="card"><div class="card-title">➕ Nueva novedad / checklist</div>' +
+      var locales = ["Dot","Abasto","C\u00f3rdoba","Palermo","La Plata"];
+      html += '<div class="card"><div class="card-title">\u2795 Nueva novedad / checklist</div>' +
         '<div class="form-group"><label class="form-label">Local</label>' +
         '<select id="nov-local" class="form-control">' +
         locales.map(function(l){ return '<option value="'+l+'">'+l+'</option>'; }).join("") +
         '</select></div>' +
         '<div class="form-group"><label class="form-label">Tipo</label>' +
         '<div style="display:flex;gap:8px">' +
-        '<button id="nov-tipo-nov" class="tipo-btn" onclick="setNovTipo(\'Novedad\')" style="flex:1;padding:10px;border:2px solid #3498DB;border-radius:10px;background:#EBF5FB;color:#2980B9;font-weight:800;cursor:pointer">📌 Novedad</button>' +
-        '<button id="nov-tipo-chk" class="tipo-btn" onclick="setNovTipo(\'Checklist\')" style="flex:1;padding:10px;border:2px solid var(--borde);border-radius:10px;background:white;color:#888;font-weight:800;cursor:pointer">✅ Checklist</button>' +
+        '<button id="nov-tipo-nov" class="tipo-btn" onclick="setNovTipo(\'Novedad\')" style="flex:1;padding:10px;border:2px solid #3498DB;border-radius:10px;background:#EBF5FB;color:#2980B9;font-weight:800;cursor:pointer">\ud83d\udccc Novedad</button>' +
+        '<button id="nov-tipo-chk" class="tipo-btn" onclick="setNovTipo(\'Checklist\')" style="flex:1;padding:10px;border:2px solid var(--borde);border-radius:10px;background:white;color:#888;font-weight:800;cursor:pointer">\u2705 Checklist</button>' +
         '</div></div>' +
-        '<div class="form-group"><label class="form-label">Descripción</label>' +
+        '<div class="form-group"><label class="form-label">Descripci\u00f3n</label>' +
         '<input type="text" id="nov-desc" class="form-control" placeholder="Ej: Revisar escaparate, Falta de stock en talle M..."></div>' +
         '<button class="btn-submit" onclick="guardarNovedad()">Publicar</button></div>';
 
@@ -2056,13 +2052,13 @@ function cargarNovedades() {
       html += '<div class="local-filter">';
       html += '<button class="local-btn ' + (!novedadesLocalFiltro ? "active" : "") + '" onclick="filtrarNovedades(null)">Todos</button>';
       locales.forEach(function(l) {
-        html += '<button class="local-btn ' + (novedadesLocalFiltro===l ? "active" : "") + '" onclick="filtrarNovedades(\'" + l + "\')">' + l + '</button>';
+        html += '<button class="local-btn ' + (novedadesLocalFiltro===l ? "active" : "") + '" onclick="filtrarNovedades(\'' + l + '\')">' + l + '</button>';
       });
       html += '</div>';
     }
 
     if (novedades.length === 0) {
-      html += '<div class="empty"><div class="e-icon">📋</div><p>No hay novedades</p></div>';
+      html += '<div class="empty"><div class="e-icon">\ud83d\udccb</div><p>No hay novedades</p></div>';
     } else {
       novedades.forEach(function(n) {
         var esPendiente = n.estado === "Pendiente";
@@ -2071,15 +2067,15 @@ function cargarNovedades() {
         var puedeMarcar = rolActual === "admin" || rolActual === "supervisor" || rolActual === "encargado";
         html += '<div class="' + cardCls + '">' +
           '<div class="novedad-header">' +
-            '<span class="novedad-tipo-badge ' + tipoCls + '">' + (n.tipo === "Checklist" ? "✅ CHECKLIST" : "📌 NOVEDAD") + '</span>' +
-            '<span style="font-size:11px;color:#aaa">' + n.local + ' · ' + n.fecha + '</span>' +
+            '<span class="novedad-tipo-badge ' + tipoCls + '">' + (n.tipo === "Checklist" ? "\u2705 CHECKLIST" : "\ud83d\udccc NOVEDAD") + '</span>' +
+            '<span style="font-size:11px;color:#aaa">' + n.local + ' \u00b7 ' + n.fecha + '</span>' +
           '</div>' +
           '<div class="novedad-desc">' + n.descripcion + '</div>' +
-          '<div class="novedad-meta">Por ' + n.creadoPor + (n.completadoPor ? ' · Completado por ' + n.completadoPor : '') + '</div>';
+          '<div class="novedad-meta">Por ' + n.creadoPor + (n.completadoPor ? ' \u00b7 Completado por ' + n.completadoPor : '') + '</div>';
 
         if (puedeMarcar) {
           var btnCls = esPendiente ? "pendiente" : "completado";
-          var btnTxt = esPendiente ? "⏳ Pendiente" : "✅ Completado";
+          var btnTxt = esPendiente ? "\u23f3 Pendiente" : "\u2705 Completado";
           html += '<div class="novedad-estado">' +
             '<button class="check-btn ' + btnCls + '" onclick="toggleEstadoNovedad(' + n.idx + ', \'' + n.estado + '\')">' + btnTxt + '</button>' +
             '</div>';
@@ -2113,9 +2109,9 @@ function setNovTipo(tipo) {
 function guardarNovedad() {
   var desc  = document.getElementById("nov-desc");
   var local = document.getElementById("nov-local");
-  if (!desc || !desc.value.trim()) { showToast("Escribí una descripción", "err"); return; }
+  if (!desc || !desc.value.trim()) { showToast("Escrib\u00ed una descripci\u00f3n", "err"); return; }
 
-  var btn = document.querySelector('#sec-novedades .btn-submit');
+  var btn = document.querySelector('#locales-content .btn-submit');
   if (btn) { btn.disabled = true; btn.textContent = "Publicando..."; }
 
   callOps("guardarNovedad", {
@@ -2127,7 +2123,7 @@ function guardarNovedad() {
   }, function(data) {
     if (btn) { btn.disabled = false; btn.textContent = "Publicar"; }
     if (data.ok) {
-      showToast("✅ Publicado", "ok");
+      showToast("\u2705 Publicado", "ok");
       desc.value = "";
       cargarNovedades();
     } else {
@@ -2144,7 +2140,7 @@ function toggleEstadoNovedad(idx, estadoActual) {
     completadoPor: nombreActual
   }, function(data) {
     if (data.ok) {
-      showToast(nuevoEstado === "Completado" ? "✅ Marcado como completado" : "↩️ Marcado como pendiente", "ok");
+      showToast(nuevoEstado === "Completado" ? "\u2705 Marcado como completado" : "\u21a9\ufe0f Marcado como pendiente", "ok");
       cargarNovedades();
     }
   });
