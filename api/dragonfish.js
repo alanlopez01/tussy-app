@@ -326,9 +326,19 @@ module.exports = async function handler(req, res) {
         }
       });
 
+      // Debug: include per-local status
+      const _debug = {};
+      localesConfigurados.forEach((local, i) => {
+        const r = resultados[i];
+        _debug[local.key] = r.status === "fulfilled"
+          ? { ok: true, count: r.value.length }
+          : { ok: false, error: r.reason?.message || "rejected" };
+      });
+
       return res.status(200).json({
         query: q,
         resultados: Object.values(mapa),
+        _debug,
       });
     }
 
