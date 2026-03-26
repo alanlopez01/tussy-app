@@ -188,46 +188,39 @@ module.exports = async function handler(req, res) {
       stockcero: false,
     }, sessionToken, local.idCliente);
 
-    const items = Array.isArray(data) ? data : (data.Resultados || []);
-    if (!items.length) return [];
+    const rows = Array.isArray(data) ? data : (data.Resultados || []);
+    if (!rows.length) return [];
 
-    return items.map(item => ({
-      nombre: item.Descripcion || item.descripcion || "",
-      sku: item.Codigo || item.codigo || "",
-      variantes: buildVariantesDF(item),
-    }));
-  }
-
-  function buildVariantesDF(item) {
-    // Dragonfish devuelve una estructura con Color, Talle y Stock
-    const variantes = [];
-
-    // Intentar extraer variantes del campo "Detalle" o "Items"
-    const detalles = item.Detalle || item.Items || item.items || [];
-    if (Array.isArray(detalles) && detalles.length > 0) {
-      for (const d of detalles) {
-        const color = d.Color || d.color || "";
-        const talle = d.Talle || d.talle || "";
-        const stock = parseFloat(d.Stock || d.stock || 0);
-        const precio = parseFloat(d.Precio || d.precio || item.Precio || 0);
-        variantes.push({
-          atributos: [color, talle].filter(Boolean).join(" / ") || "Único",
-          precio,
-          stock,
-          tiene_stock: stock > 0,
-        });
+    // Dragonfish returns one row per Articulo+Color+Talle combination.
+    // Group by Articulo code to build product → variantes structure.
+    const grouped = {};
+    for (const row of rows) {
+      const code = row.Articulo || "";
+      if (!grouped[code]) {
+        grouped[code] = {
+          nombre: row.ArticuloDescripcion || row.Descripcion || "",
+          sku: code,
+          variantes: [],
+        };
       }
-    } else {
-      // Producto simple sin variantes
-      variantes.push({
-        atributos: "Único",
-        precio: parseFloat(item.Precio || item.precio || 0),
-        stock: parseFloat(item.Stock || item.stock || 0),
-        tiene_stock: (item.Stock || item.stock || 0) > 0,
+      const color = row.ColorDescripcion || row.Color || "";
+      const talle = row.TalleDescripcion || row.Talle || "";
+      const stock = parseFloat(row.Stock || 0);
+      // Get price from "PUBLICO" list, fallback to row.Precio
+      let precio = parseFloat(row.Precio || 0);
+      if (Array.isArray(row.Precios)) {
+        const pub = row.Precios.find(p => p.Lista === "PUBLICO" || p.Lista === "publico");
+        if (pub && pub.Precio > 0) precio = parseFloat(pub.Precio);
+      }
+      grouped[code].variantes.push({
+        atributos: [color, talle].filter(Boolean).join(" / ") || "Único",
+        precio,
+        stock,
+        tiene_stock: stock > 0,
       });
     }
 
-    return variantes;
+    return Object.values(grouped);
   }
 
   // ─── ROUTER ──────────────────────────────────────────────────────────────────
