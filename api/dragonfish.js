@@ -96,7 +96,7 @@ module.exports = async function handler(req, res) {
     const fullUrl = `${url}/api.Dragonfish${path}${qs ? "?" + qs : ""}`;
     const r = await fetch(fullUrl, {
       headers: buildHeaders(sessionToken || token, baseDatos, idCliente),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(45000),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status} en ${path}`);
     return r.json();
@@ -141,7 +141,7 @@ module.exports = async function handler(req, res) {
         const data = await dfFetch(
           local.url, local.token, local.baseDatos,
           "/Facturaagrupada/",
-          { limit: 200, page, sort: "-Fecha" },
+          { limit: 50, page, sort: "-Fecha" },
           sessionToken, local.idCliente
         );
 
@@ -169,7 +169,7 @@ module.exports = async function handler(req, res) {
           }
         }
 
-        if (resultados.length < 200 || hayMasViejas) sigue = false;
+        if (resultados.length < 50 || hayMasViejas) sigue = false;
         else page++;
 
       } catch (e) {
