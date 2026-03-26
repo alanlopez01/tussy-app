@@ -1846,40 +1846,6 @@ function mostrarFormNovedad() {
   document.getElementById("novedades-content").innerHTML = html;
 }
 
-async function guardarNovedad() {
-  var local     = document.getElementById("nv-local").value;
-  var tipo      = document.getElementById("nv-tipo").value;
-  var prioridad = document.getElementById("nv-prioridad").value;
-  var desc      = document.getElementById("nv-desc").value.trim();
-  var chkText   = document.getElementById("nv-checklist") ? document.getElementById("nv-checklist").value : "";
-  var checklist = chkText.split("\n").map(function(s){return s.trim();}).filter(Boolean);
-
-  if (!desc) { showToast("Completá la descripción","err"); return; }
-
-  var hoy = hoyStr();
-  var data = { fecha: hoy, local, supervisor: nombreActual, tipo, descripcion: desc, prioridad, checklist };
-
-  var btn = document.querySelector("#novedades-content .btn-submit");
-  if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
-
-  try {
-    var url = OPS_URL + "?action=agregarNovedad&params=" + encodeURIComponent(JSON.stringify(data));
-    await fetch(url).then(function(r){return r.json();});
-    showToast("✅ Novedad guardada","ok");
-    cargarNovedades();
-  } catch(e) {
-    showToast("Error al guardar","err");
-    if (btn) { btn.disabled = false; btn.textContent = "Guardar novedad"; }
-  }
-}
-
-async function marcarNovedad(id) {
-  var data = { id, estado: "Resuelto", usuario: nombreActual };
-  await fetch(OPS_URL + "?action=marcarChecklist&params=" + encodeURIComponent(JSON.stringify(data)));
-  showToast("✅ Marcado como resuelto","ok");
-  cargarNovedades();
-}
-
 // ══ CAJA ═══════════════════════════════════════════════════════════════════
 
 var cajaLocalFiltro = null;
