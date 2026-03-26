@@ -230,6 +230,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .refresh-btn{background:none;border:1.5px solid var(--borde);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;color:#666;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:12px;width:100%}
 .refresh-btn:active{background:#f0f0f0}
 .refresh-icon{display:inline-block;transition:transform 0.5s}
+.cierre-card{background:white;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border-left:4px solid #3498DB}
+.cierre-local{font-size:13px;font-weight:800;color:var(--negro)}
+.cierre-fecha{font-size:11px;color:#aaa;margin-bottom:10px}
+.cierre-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+.cierre-row:last-child{border-bottom:none}
+.cierre-label{color:#888}
+.cierre-val{font-weight:700}
+.cierre-val.pos{color:#27AE60}.cierre-val.neg{color:#E74C3C}.cierre-val.neu{color:#2980B9}
+.resumen-caja{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.caja-local{background:white;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border-top:3px solid #3498DB}
+.caja-local-nombre{font-size:11px;font-weight:800;text-transform:uppercase;color:#888;margin-bottom:8px}
+.caja-local-saldo{font-size:20px;font-weight:900;color:#1A1A2E}
+.caja-local-detalle{font-size:10px;color:#aaa;margin-top:4px}
+.novedad-card{background:white;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.novedad-card.checklist{border-left:4px solid #F39C12}
+.novedad-card.novedad-tipo{border-left:4px solid #3498DB}
+.novedad-card.completado{opacity:0.6}
+.novedad-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.novedad-tipo-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px}
+.novedad-tipo-badge.checklist{background:#FEF9E7;color:#F39C12}
+.novedad-tipo-badge.novedad-tipo{background:#EBF5FB;color:#2980B9}
+.novedad-desc{font-size:13px;color:var(--texto);margin-bottom:6px;line-height:1.4}
+.novedad-meta{font-size:11px;color:#aaa}
+.novedad-estado{display:flex;align-items:center;gap:8px;margin-top:8px}
+.check-btn{padding:6px 12px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer}
+.check-btn.pendiente{background:#FEF9E7;color:#F39C12;border:1.5px solid #F39C12}
+.check-btn.completado{background:#D5F5E3;color:#27AE60;border:1.5px solid #27AE60}
+.local-filter{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px}
+.local-btn{padding:7px 12px;border-radius:20px;border:1.5px solid var(--borde);background:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;color:#888}
+.local-btn.active{background:var(--negro);border-color:var(--negro);color:white}
 .refresh-icon.spinning{transform:rotate(360deg)}
 </style>
 </head>
@@ -342,6 +372,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="ventas-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
       </div>
 
+      <!-- CAJA -->
+      <div class="section" id="sec-caja">
+        <div id="caja-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+      </div>
+
+      <!-- NOVEDADES -->
+      <div class="section" id="sec-novedades">
+        <div id="novedades-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+      </div>
+
       <!-- STOCK -->
       <div class="section" id="sec-stock">
         <div class="card">
@@ -383,6 +423,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div id="reportes-content"><div class="empty"><div class="e-icon">📊</div><p>Selecciona canal y periodo</p></div></div>
       </div>
 
+      <!-- CAJA -->
+      <div class="section" id="sec-caja">
+        <div id="caja-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+      </div>
+
+      <!-- NOVEDADES -->
+      <div class="section" id="sec-novedades">
+        <div id="novedades-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+      </div>
+
       <!-- PRODUCCION -->
       <div class="section" id="sec-produccion">
         <div class="home-grid" id="prod-home">
@@ -416,7 +466,11 @@ var APPS_SCRIPT_URL = "/api/proxy";
 var PROD_SCRIPT_URL = "/api/produccion";
 var DF_URL = "/api/dragonfish";
 var SHATO_URL = "/api/proxy-shato";
+var OPS_URL = "/api/proxy-operaciones";
+var OPS_URL = "/api/proxy-ops";
 var marcaActual = "tussy";
+var localActual = null; // local del encargado logueado
+var nombreActual = "";
 var rolActual = "";
 var nombreActual = "";
 var catsGasto = [], catsIngreso = [];
@@ -471,6 +525,8 @@ var SECCIONES = {
     {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
     {id:"comparacion",icon:"📈",title:"Locales",sub:"Ranking y proyeccion"},
     {id:"reportes",icon:"🏆",title:"Reportes",sub:"Mejores productos"},
+    {id:"caja",icon:"💵",title:"Caja",sub:"Cierres y efectivo por local"},
+    {id:"novedades",icon:"📋",title:"Novedades",sub:"Auditorias y checklist"},
     {id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres"}
   ],
   socio:[
@@ -479,13 +535,27 @@ var SECCIONES = {
     {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
     {id:"comparacion",icon:"📈",title:"Locales",sub:"Ranking y proyeccion"},
     {id:"reportes",icon:"🏆",title:"Reportes",sub:"Mejores productos"},
+    {id:"caja",icon:"💵",title:"Caja",sub:"Cierres y efectivo por local"},
+    {id:"novedades",icon:"📋",title:"Novedades",sub:"Auditorias y checklist"},
     {id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres"}
   ],
-  encargado:[{id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle",full:true}],
+  supervisor:[
+    {id:"ventas",icon:"🛍️",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar por local y talle"},
+    {id:"caja",icon:"💵",title:"Caja",sub:"Cierres y efectivo por local"},
+    {id:"novedades",icon:"📋",title:"Novedades",sub:"Auditorias y checklist"}
+  ],
+  encargado:[
+    {id:"caja",icon:"💵",title:"Cierre de Caja",sub:"Cargar cierre del dia"},
+    {id:"novedades",icon:"📋",title:"Novedades",sub:"Tareas y auditorias"},
+    {id:"stock",icon:"📦",title:"Stock",sub:"Buscar productos"}
+  ],
   produccion:[{id:"produccion",icon:"✂️",title:"Produccion",sub:"Cortes, telas y talleres",full:true}]
 };
 
-function entrarApp(rol,nombre){
+function entrarApp(rol,nombre,local){
+  localActual = local || null;
+  nombreActual = nombre;
   rolActual=rol; nombreActual=nombre||"";
   document.getElementById("login-screen").style.display="none";
   document.getElementById("app").style.display="flex";
@@ -501,10 +571,16 @@ function entrarApp(rol,nombre){
   document.getElementById("f-fecha").value=hoy.toISOString().split("T")[0];
   construirHome(rol);
   if(rol==="socio"){ document.getElementById("fin-tab-cargar").style.display="none"; document.getElementById("btn-prod-stats").style.display=""; }
+  // Caja y Novedades: solo encargados, supervisor y admin
+  var showCaja = ["admin","supervisor","encargado"].indexOf(rol) >= 0;
+  var showNov  = ["admin","supervisor","encargado"].indexOf(rol) >= 0;
+  if(document.getElementById("nav-caja"))      document.getElementById("nav-caja").style.display = showCaja ? "" : "none";
+  if(document.getElementById("nav-novedades")) document.getElementById("nav-novedades").style.display = showNov ? "" : "none";
   if(rol==="produccion") document.getElementById("btn-prod-stats").style.display="none";
   if(rol!=="encargado"&&rol!=="produccion") callScript("getCategorias",{},function(d){ catsGasto=d.gasto; catsIngreso=d.ingreso; updateCatSelect(); });
   if(rol==="produccion") goTo("produccion","Produccion");
-  else if(rol==="encargado") goTo("stock","Stock");
+  else if(rol==="encargado") goTo("caja","Cierre de Caja");
+  else if(rol==="supervisor") goTo("caja","Caja");
 }
 
 function construirHome(rol){
@@ -558,6 +634,8 @@ function _mostrarSeccion(id, title){
   if(id==="resumen") cargarDashboard();
   if(id==="ventas") cargarVentas();
   if(id==="comparacion") cargarComparacion();
+  if(id==="caja") cargarCaja();
+  if(id==="novedades") cargarNovedades();
   if(id==="stock") setTimeout(function(){ document.getElementById("stock-q").focus(); },100);
   if(id==="produccion"){
     document.getElementById("prod-home").style.display="grid";
@@ -1537,6 +1615,593 @@ function refreshSeccion(seccion) {
     buscarStock();
   } else if (seccion === "reportes") {
     cargarReportes();
+  }
+}
+
+// ══ CAJA ══════════════════════════════════════════════════════════════════════
+
+async function cargarCaja() {
+  var params = { local: localActual || "todos" };
+  if (rolActual === "admin" || rolActual === "supervisor") params.local = "todos";
+  
+  var html = '';
+  
+  // Botón nuevo cierre solo para encargados
+  if (rolActual === "encargado") {
+    html += '<button class="mes-btn" style="width:100%;margin-bottom:12px;padding:14px" onclick="mostrarFormCierre()">➕ Nuevo cierre de caja</button>';
+    html += '<button class="refresh-btn" onclick="cargarCaja()"><span>🔄</span> Actualizar</button>';
+  }
+
+  // Resumen efectivo por local (admin y supervisor)
+  if (rolActual === "admin" || rolActual === "supervisor") {
+    html += '<button class="refresh-btn" onclick="cargarCaja()"><span>🔄</span> Actualizar</button>';
+    html += '<div class="card"><div class="card-title">💵 Efectivo en locales</div>';
+    var res = await fetch(OPS_URL + "?action=getResumenCaja&params=" + encodeURIComponent(JSON.stringify({}))).then(function(r){return r.json();}).catch(function(){return {};});
+    if (res.efectivoPorLocal) {
+      Object.keys(res.efectivoPorLocal).forEach(function(local) {
+        var monto = res.efectivoPorLocal[local] || 0;
+        var uc = res.ultimoCierre && res.ultimoCierre[local];
+        html += '<div class="tx-item">';
+        html += '<div class="tx-left"><div class="tx-desc">📍 ' + local + '</div>';
+        if (uc) html += '<div class="tx-cat">Último cierre: ' + uc.fecha + ' — ' + (uc.encargado||"") + '</div>';
+        html += '</div>';
+        html += '<div class="tx-monto ' + (monto >= 0 ? "ingreso" : "gasto") + '">' + fmt(monto) + '</div>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+  }
+
+  // Listado de cierres
+  var res2 = await fetch(OPS_URL + "?action=getCierres&params=" + encodeURIComponent(JSON.stringify(params))).then(function(r){return r.json();}).catch(function(){return {};});
+  var cierres = (res2.cierres || []);
+  
+  if (cierres.length === 0) {
+    html += '<div class="empty"><div class="e-icon">🏪</div><p>No hay cierres registrados</p></div>';
+  } else {
+    html += '<div class="card"><div class="card-title">📋 Últimos cierres</div>';
+    cierres.forEach(function(c) {
+      html += '<div class="tx-item" style="flex-direction:column;align-items:flex-start;padding:12px 0">';
+      html += '<div style="display:flex;justify-content:space-between;width:100%;margin-bottom:6px">';
+      html += '<div><strong>' + c.local + '</strong> — ' + c.encargado + '</div>';
+      html += '<div style="font-size:11px;color:#aaa">' + c.fecha + '</div>';
+      html += '</div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;font-size:12px">';
+      html += '<div>💵 Efectivo: <strong class="ingreso">' + fmt(c.efectivo) + '</strong></div>';
+      html += '<div>💳 Electrónico: <strong class="ingreso">' + fmt(c.electronico) + '</strong></div>';
+      html += '<div>📤 Gastos: <strong class="gasto">' + fmt(c.gastos) + '</strong></div>';
+      html += '<div>🚚 Retiros: <strong class="gasto">' + fmt(c.retiros) + '</strong></div>';
+      html += '</div>';
+      if (c.observaciones) html += '<div style="font-size:11px;color:#888;margin-top:4px">📝 ' + c.observaciones + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  document.getElementById("caja-content").innerHTML = html;
+}
+
+function mostrarFormCierre() {
+  var hoy = hoyStr();
+  var html = '<div class="card"><div class="card-title">🏪 Nuevo cierre de caja — ' + localActual + '</div>';
+  html += '<div class="form-group"><label class="form-label">Fecha</label>';
+  html += '<input type="date" id="cj-fecha" class="form-control" value="' + hoy + '"></div>';
+  html += '<div class="form-group"><label class="form-label">Ventas en efectivo</label>';
+  html += '<input type="number" id="cj-efectivo" class="form-control" placeholder="0" inputmode="numeric"></div>';
+  html += '<div class="form-group"><label class="form-label">Ventas electrónicas (débito/crédito/QR)</label>';
+  html += '<input type="number" id="cj-electronico" class="form-control" placeholder="0" inputmode="numeric"></div>';
+  html += '<div class="form-group"><label class="form-label">Gastos del día</label>';
+  html += '<input type="number" id="cj-gastos" class="form-control" placeholder="0" inputmode="numeric"></div>';
+  html += '<div class="form-group"><label class="form-label">Retiro de efectivo (si hubo)</label>';
+  html += '<input type="number" id="cj-retiros" class="form-control" placeholder="0" inputmode="numeric"></div>';
+  html += '<div class="form-group" id="cj-retiro-quien-wrap" style="display:none">';
+  html += '<label class="form-label">Retirado por</label>';
+  html += '<input type="text" id="cj-retiro-quien" class="form-control" placeholder="Nombre de quien retira"></div>';
+  html += '<div class="form-group"><label class="form-label">Observaciones</label>';
+  html += '<input type="text" id="cj-obs" class="form-control" placeholder="Novedades del día..."></div>';
+  html += '<button class="btn-submit" onclick="guardarCierre()">Guardar cierre</button>';
+  html += '<button class="refresh-btn" style="margin-top:8px" onclick="cargarCaja()">Cancelar</button>';
+  html += '</div>';
+  document.getElementById("caja-content").innerHTML = html;
+  
+  document.getElementById("cj-retiros").addEventListener("input", function() {
+    document.getElementById("cj-retiro-quien-wrap").style.display = this.value > 0 ? "" : "none";
+  });
+}
+
+async function guardarCierre() {
+  var fecha      = document.getElementById("cj-fecha").value;
+  var efectivo   = parseFloat(document.getElementById("cj-efectivo").value) || 0;
+  var electronico= parseFloat(document.getElementById("cj-electronico").value) || 0;
+  var gastos     = parseFloat(document.getElementById("cj-gastos").value) || 0;
+  var retiros    = parseFloat(document.getElementById("cj-retiros").value) || 0;
+  var retiroQuien= (document.getElementById("cj-retiro-quien") || {}).value || "";
+  var obs        = document.getElementById("cj-obs").value;
+
+  if (!fecha) { showToast("Completá la fecha","err"); return; }
+
+  var data = { fecha, local: localActual, encargado: nombreActual,
+               efectivo, electronico, gastos, retiros, observaciones: obs };
+
+  var btn = document.querySelector("#caja-content .btn-submit");
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
+
+  try {
+    var url = OPS_URL + "?action=agregarCierre&params=" + encodeURIComponent(JSON.stringify(data));
+    var res = await fetch(url).then(function(r){return r.json();});
+
+    // Si hubo retiro, guardarlo también
+    if (retiros > 0 && retiroQuien) {
+      var retiroData = { fecha, local: localActual, encargado: nombreActual,
+                         monto: retiros, retiradoPor: retiroQuien };
+      await fetch(OPS_URL + "?action=agregarRetiro&params=" + encodeURIComponent(JSON.stringify(retiroData)));
+    }
+
+    showToast("✅ Cierre guardado correctamente","ok");
+    cargarCaja();
+  } catch(e) {
+    showToast("Error al guardar","err");
+    if (btn) { btn.disabled = false; btn.textContent = "Guardar cierre"; }
+  }
+}
+
+// ══ NOVEDADES ══════════════════════════════════════════════════════════════
+
+async function cargarNovedades() {
+  var params = { local: localActual || "todos" };
+  if (rolActual === "admin" || rolActual === "supervisor") params.local = "todos";
+
+  var html = '';
+
+  // Supervisor y admin pueden crear novedades
+  if (rolActual === "supervisor" || rolActual === "admin") {
+    html += '<button class="mes-btn" style="width:100%;margin-bottom:12px;padding:14px" onclick="mostrarFormNovedad()">➕ Nueva novedad / auditoría</button>';
+  }
+  html += '<button class="refresh-btn" onclick="cargarNovedades()"><span>🔄</span> Actualizar</button>';
+
+  // Filtro de estado
+  html += '<div class="tabs-row" style="margin-bottom:12px">';
+  html += '<button class="prod-tab active" id="nov-tab-pendiente" onclick="filtrarNovedades('Pendiente',this)">Pendientes</button>';
+  html += '<button class="prod-tab" id="nov-tab-todas" onclick="filtrarNovedades('todas',this)">Todas</button>';
+  html += '</div>';
+
+  var res = await fetch(OPS_URL + "?action=getNovedades&params=" + encodeURIComponent(JSON.stringify(params))).then(function(r){return r.json();}).catch(function(){return {};});
+  var novedades = (res.novedades || []).filter(function(n){ return n.estado === "Pendiente"; });
+
+  html += '<div id="nov-lista">';
+  if (novedades.length === 0) {
+    html += '<div class="empty"><div class="e-icon">✅</div><p>No hay novedades pendientes</p></div>';
+  } else {
+    novedades.forEach(function(n) {
+      var colorPrio = n.prioridad === "Alta" ? "#E74C3C" : n.prioridad === "Baja" ? "#27AE60" : "#F39C12";
+      html += '<div class="card" style="border-left:4px solid ' + colorPrio + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
+      html += '<div><strong>' + n.tipo + '</strong> — <span style="color:#888;font-size:12px">' + n.local + '</span></div>';
+      html += '<span style="font-size:10px;padding:3px 8px;border-radius:10px;background:' + colorPrio + ';color:white">' + (n.prioridad||"Normal") + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:13px;margin-bottom:6px">' + n.descripcion + '</div>';
+      html += '<div style="font-size:11px;color:#aaa">' + n.fecha + ' — ' + n.supervisor + '</div>';
+      if (rolActual === "supervisor" || rolActual === "admin") {
+        html += '<button onclick="marcarNovedad(' + n.id + ')" style="margin-top:8px;padding:6px 12px;background:#27AE60;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer">✅ Marcar como resuelto</button>';
+      }
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+
+  document.getElementById("novedades-content").innerHTML = html;
+}
+
+async function filtrarNovedades(estado, btn) {
+  document.querySelectorAll("#novedades-content .prod-tab").forEach(function(b){ b.classList.remove("active"); });
+  btn.classList.add("active");
+
+  var params = { local: localActual || "todos" };
+  if (rolActual === "admin" || rolActual === "supervisor") params.local = "todos";
+  if (estado !== "todas") params.estado = estado;
+
+  var res = await fetch(OPS_URL + "?action=getNovedades&params=" + encodeURIComponent(JSON.stringify(params))).then(function(r){return r.json();}).catch(function(){return {};});
+  var novedades = res.novedades || [];
+
+  var html = '';
+  if (novedades.length === 0) {
+    html = '<div class="empty"><div class="e-icon">📋</div><p>No hay novedades</p></div>';
+  } else {
+    novedades.forEach(function(n) {
+      var colorPrio = n.prioridad === "Alta" ? "#E74C3C" : n.prioridad === "Baja" ? "#27AE60" : "#F39C12";
+      var colorEst = n.estado === "Resuelto" ? "#27AE60" : "#F39C12";
+      html += '<div class="card" style="border-left:4px solid ' + colorPrio + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
+      html += '<div><strong>' + n.tipo + '</strong> — <span style="color:#888;font-size:12px">' + n.local + '</span></div>';
+      html += '<span style="font-size:10px;padding:3px 8px;border-radius:10px;background:' + colorEst + ';color:white">' + n.estado + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:13px;margin-bottom:6px">' + n.descripcion + '</div>';
+      html += '<div style="font-size:11px;color:#aaa">' + n.fecha + ' — ' + n.supervisor + '</div>';
+      html += '</div>';
+    });
+  }
+  document.getElementById("nov-lista").innerHTML = html;
+}
+
+function mostrarFormNovedad() {
+  var html = '<div class="card"><div class="card-title">📋 Nueva novedad</div>';
+  html += '<div class="form-group"><label class="form-label">Local</label>';
+  html += '<select id="nv-local" class="form-control">';
+  ["Dot","Abasto","Córdoba","Palermo","La Plata"].forEach(function(l){
+    html += '<option>' + l + '</option>';
+  });
+  html += '</select></div>';
+  html += '<div class="form-group"><label class="form-label">Tipo</label>';
+  html += '<select id="nv-tipo" class="form-control"><option>Observacion</option><option>Mejora</option><option>Checklist</option><option>Urgente</option></select></div>';
+  html += '<div class="form-group"><label class="form-label">Prioridad</label>';
+  html += '<select id="nv-prioridad" class="form-control"><option>Normal</option><option>Alta</option><option>Baja</option></select></div>';
+  html += '<div class="form-group"><label class="form-label">Descripcion</label>';
+  html += '<textarea id="nv-desc" class="form-control" rows="3" placeholder="Describí la novedad o tarea..."></textarea></div>';
+  html += '<div class="form-group" id="nv-checklist-wrap">';
+  html += '<label class="form-label">Ítems del checklist (uno por línea)</label>';
+  html += '<textarea id="nv-checklist" class="form-control" rows="5" placeholder="Limpiar vidrieras
+Ordenar probadores
+Controlar stock..."></textarea></div>';
+  html += '<button class="btn-submit" onclick="guardarNovedad()">Guardar novedad</button>';
+  html += '<button class="refresh-btn" style="margin-top:8px" onclick="cargarNovedades()">Cancelar</button>';
+  html += '</div>';
+  document.getElementById("novedades-content").innerHTML = html;
+}
+
+async function guardarNovedad() {
+  var local     = document.getElementById("nv-local").value;
+  var tipo      = document.getElementById("nv-tipo").value;
+  var prioridad = document.getElementById("nv-prioridad").value;
+  var desc      = document.getElementById("nv-desc").value.trim();
+  var chkText   = document.getElementById("nv-checklist") ? document.getElementById("nv-checklist").value : "";
+  var checklist = chkText.split("
+").map(function(s){return s.trim();}).filter(Boolean);
+
+  if (!desc) { showToast("Completá la descripción","err"); return; }
+
+  var hoy = hoyStr();
+  var data = { fecha: hoy, local, supervisor: nombreActual, tipo, descripcion: desc, prioridad, checklist };
+
+  var btn = document.querySelector("#novedades-content .btn-submit");
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
+
+  try {
+    var url = OPS_URL + "?action=agregarNovedad&params=" + encodeURIComponent(JSON.stringify(data));
+    await fetch(url).then(function(r){return r.json();});
+    showToast("✅ Novedad guardada","ok");
+    cargarNovedades();
+  } catch(e) {
+    showToast("Error al guardar","err");
+    if (btn) { btn.disabled = false; btn.textContent = "Guardar novedad"; }
+  }
+}
+
+async function marcarNovedad(id) {
+  var data = { id, estado: "Resuelto", usuario: nombreActual };
+  await fetch(OPS_URL + "?action=marcarChecklist&params=" + encodeURIComponent(JSON.stringify(data)));
+  showToast("✅ Marcado como resuelto","ok");
+  cargarNovedades();
+}
+
+// ══ CAJA ═══════════════════════════════════════════════════════════════════
+
+var cajaLocalFiltro = null;
+
+function cargarCaja() {
+  var el = document.getElementById("caja-content");
+  if (!el) return;
+  el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+
+  var esEncargado = rolActual === "encargado";
+
+  if (esEncargado) {
+    // Encargado: ver sus cierres + formulario para cargar nuevo
+    cargarCierresEncargado();
+  } else {
+    // Admin/Supervisor/Socio: ver resumen de todos los locales
+    cargarResumenCaja();
+  }
+}
+
+function cargarResumenCaja() {
+  var el = document.getElementById("caja-content");
+  callOps("getResumenCaja", {}, function(data) {
+    if (data.error) { el.innerHTML = '<div class="empty"><p>Error: ' + data.error + '</p></div>'; return; }
+    var r = data.resumen || {};
+    var locales = ["Dot","Abasto","Córdoba","Palermo","La Plata"];
+    var html = '<div class="card"><div class="card-title">💵 Efectivo en locales</div>';
+    html += '<div class="resumen-caja">';
+    locales.forEach(function(l) {
+      var d = r[l] || {};
+      var saldo = d.saldoFinal || 0;
+      var cls = saldo >= 0 ? "pos" : "neg";
+      html += '<div class="caja-local">' +
+        '<div class="caja-local-nombre">' + l + '</div>' +
+        '<div class="caja-local-saldo ' + cls + '">' + fmt(saldo) + '</div>' +
+        '<div class="caja-local-detalle">' + (d.ultimaCierre ? 'Último cierre: ' + d.ultimaCierre : 'Sin cierres') + '</div>' +
+        '</div>';
+    });
+    html += '</div></div>';
+
+    // Tabla de últimos cierres con filtro por local
+    html += '<div class="card"><div class="card-title">📋 Últimos cierres</div>';
+    html += '<div class="local-filter">';
+    html += '<button class="local-btn ' + (!cajaLocalFiltro ? "active" : "") + '" onclick="filtrarCaja(null)">Todos</button>';
+    locales.forEach(function(l) {
+      html += '<button class="local-btn ' + (cajaLocalFiltro===l ? "active" : "") + '" onclick="filtrarCaja('' + l + '')">' + l + '</button>';
+    });
+    html += '</div>';
+    html += '<div id="lista-cierres"><div class="loading"><div class="spinner"></div></div></div>';
+    html += '</div>';
+
+    // Botón agregar retiro (solo admin)
+    if (rolActual === "admin") {
+      html += '<button class="refresh-btn" onclick="mostrarFormRetiro()"><span>💸</span> Registrar retiro de efectivo</button>';
+    }
+
+    el.innerHTML = html;
+    cargarListaCierres();
+  });
+}
+
+function filtrarCaja(local) {
+  cajaLocalFiltro = local;
+  // Update button states
+  document.querySelectorAll('.local-btn').forEach(function(b) {
+    b.classList.toggle('active', b.textContent === (local || 'Todos'));
+  });
+  cargarListaCierres();
+}
+
+function cargarListaCierres() {
+  var el = document.getElementById("lista-cierres");
+  if (!el) return;
+  callOps("getCierres", { local: cajaLocalFiltro, limite: 20 }, function(data) {
+    if (!data.cierres || data.cierres.length === 0) {
+      el.innerHTML = '<p style="text-align:center;color:#aaa;padding:16px;font-size:13px">Sin cierres registrados</p>';
+      return;
+    }
+    var html = "";
+    data.cierres.forEach(function(c) {
+      var saldoCls = c.saldoFinal >= 0 ? "pos" : "neg";
+      html += '<div class="cierre-card">' +
+        '<div style="display:flex;justify-content:space-between">' +
+          '<div class="cierre-local">' + c.local + '</div>' +
+          '<div class="cierre-fecha">' + c.fecha + ' · ' + c.encargado + '</div>' +
+        '</div>' +
+        '<div class="cierre-row"><span class="cierre-label">Venta efectivo</span><span class="cierre-val neu">' + fmt(c.ventaEfectivo) + '</span></div>' +
+        '<div class="cierre-row"><span class="cierre-label">Venta electrónico</span><span class="cierre-val neu">' + fmt(c.ventaElectronico) + '</span></div>' +
+        (c.gastosMonto ? '<div class="cierre-row"><span class="cierre-label">Gastos (' + c.gastosDesc + ')</span><span class="cierre-val neg">' + fmt(c.gastosMonto) + '</span></div>' : '') +
+        (c.retiroEfectivo ? '<div class="cierre-row"><span class="cierre-label">Retiro efectivo</span><span class="cierre-val neg">' + fmt(c.retiroEfectivo) + '</span></div>' : '') +
+        '<div class="cierre-row" style="margin-top:4px"><span class="cierre-label" style="font-weight:700">Saldo en caja</span><span class="cierre-val ' + saldoCls + '" style="font-size:15px">' + fmt(c.saldoFinal) + '</span></div>' +
+        (c.observaciones ? '<div style="font-size:11px;color:#888;margin-top:6px;padding-top:6px;border-top:1px solid #f5f5f5">📝 ' + c.observaciones + '</div>' : '') +
+        '</div>';
+    });
+    el.innerHTML = html;
+  });
+}
+
+function cargarCierresEncargado() {
+  var el = document.getElementById("caja-content");
+  callOps("getCierres", { local: localActual, limite: 10 }, function(data) {
+    var cierres = data.cierres || [];
+    var html = '<div class="card"><div class="card-title">💵 Nuevo cierre de caja</div>' +
+      '<div class="form-group"><label class="form-label">Venta en Efectivo ($)</label>' +
+      '<input type="number" id="cj-efectivo" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+      '<div class="form-group"><label class="form-label">Venta Electrónica ($)</label>' +
+      '<input type="number" id="cj-electronico" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+      '<div class="form-group"><label class="form-label">Gastos del día (descripción)</label>' +
+      '<input type="text" id="cj-gastos-desc" class="form-control" placeholder="Ej: Limpieza, delivery..."></div>' +
+      '<div class="form-group"><label class="form-label">Total gastos ($)</label>' +
+      '<input type="number" id="cj-gastos-monto" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+      '<div class="form-group"><label class="form-label">Retiro de efectivo ($)</label>' +
+      '<input type="number" id="cj-retiro" class="form-control" placeholder="0" inputmode="numeric"></div>' +
+      '<div class="form-group"><label class="form-label">Observaciones</label>' +
+      '<input type="text" id="cj-obs" class="form-control" placeholder="Novedades del dia..."></div>' +
+      '<button class="btn-submit" onclick="guardarCierre()">Guardar cierre</button></div>';
+
+    if (cierres.length > 0) {
+      html += '<div class="card"><div class="card-title">📋 Últimos cierres</div>';
+      cierres.forEach(function(c) {
+        var saldoCls = c.saldoFinal >= 0 ? "pos" : "neg";
+        html += '<div class="cierre-card">' +
+          '<div class="cierre-fecha">' + c.fecha + '</div>' +
+          '<div class="cierre-row"><span class="cierre-label">Efectivo</span><span class="cierre-val neu">' + fmt(c.ventaEfectivo) + '</span></div>' +
+          '<div class="cierre-row"><span class="cierre-label">Electrónico</span><span class="cierre-val neu">' + fmt(c.ventaElectronico) + '</span></div>' +
+          (c.gastosMonto ? '<div class="cierre-row"><span class="cierre-label">Gastos</span><span class="cierre-val neg">' + fmt(c.gastosMonto) + '</span></div>' : '') +
+          (c.retiroEfectivo ? '<div class="cierre-row"><span class="cierre-label">Retiro</span><span class="cierre-val neg">' + fmt(c.retiroEfectivo) + '</span></div>' : '') +
+          '<div class="cierre-row"><span class="cierre-label" style="font-weight:700">Saldo</span><span class="cierre-val ' + saldoCls + '">' + fmt(c.saldoFinal) + '</span></div>' +
+          (c.observaciones ? '<div style="font-size:11px;color:#888;margin-top:6px">📝 ' + c.observaciones + '</div>' : '') +
+          '</div>';
+      });
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  });
+}
+
+function guardarCierre() {
+  var efectivo    = parseFloat(document.getElementById("cj-efectivo").value) || 0;
+  var electronico = parseFloat(document.getElementById("cj-electronico").value) || 0;
+  var gastosDesc  = document.getElementById("cj-gastos-desc").value.trim();
+  var gastosMonto = parseFloat(document.getElementById("cj-gastos-monto").value) || 0;
+  var retiro      = parseFloat(document.getElementById("cj-retiro").value) || 0;
+  var obs         = document.getElementById("cj-obs").value.trim();
+
+  if (!efectivo && !electronico) { showToast("Ingresá al menos las ventas del día", "err"); return; }
+
+  var hoy = new Date();
+  var pad = function(n){ return String(n).padStart(2,"0"); };
+  var fecha = hoy.getFullYear()+"-"+pad(hoy.getMonth()+1)+"-"+pad(hoy.getDate());
+
+  var btn = document.querySelector('#sec-caja .btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
+
+  callOps("guardarCierre", {
+    fecha: fecha,
+    local: localActual,
+    encargado: nombreActual,
+    ventaEfectivo: efectivo,
+    ventaElectronico: electronico,
+    gastosDesc: gastosDesc,
+    gastosMonto: gastosMonto,
+    retiroEfectivo: retiro,
+    observaciones: obs
+  }, function(data) {
+    if (btn) { btn.disabled = false; btn.textContent = "Guardar cierre"; }
+    if (data.ok) {
+      showToast("✅ Cierre guardado — Saldo: " + fmt(data.saldoFinal), "ok");
+      cargarCierresEncargado();
+    } else {
+      showToast("Error al guardar", "err");
+    }
+  });
+}
+
+// ══ NOVEDADES ════════════════════════════════════════════════════════════════
+
+var novedadesLocalFiltro = null;
+
+function cargarNovedades() {
+  var el = document.getElementById("novedades-content");
+  if (!el) return;
+  el.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+
+  var localParam = rolActual === "encargado" ? localActual : novedadesLocalFiltro;
+
+  callOps("getNovedades", { local: localParam }, function(data) {
+    var novedades = data.novedades || [];
+    var html = "";
+
+    // Formulario para supervisor y admin
+    if (rolActual === "admin" || rolActual === "supervisor") {
+      var locales = ["Dot","Abasto","Córdoba","Palermo","La Plata"];
+      html += '<div class="card"><div class="card-title">➕ Nueva novedad / checklist</div>' +
+        '<div class="form-group"><label class="form-label">Local</label>' +
+        '<select id="nov-local" class="form-control">' +
+        locales.map(function(l){ return '<option value="'+l+'">'+l+'</option>'; }).join("") +
+        '</select></div>' +
+        '<div class="form-group"><label class="form-label">Tipo</label>' +
+        '<div style="display:flex;gap:8px">' +
+        '<button id="nov-tipo-nov" class="tipo-btn" onclick="setNovTipo('Novedad')" style="flex:1;padding:10px;border:2px solid #3498DB;border-radius:10px;background:#EBF5FB;color:#2980B9;font-weight:800;cursor:pointer">📌 Novedad</button>' +
+        '<button id="nov-tipo-chk" class="tipo-btn" onclick="setNovTipo('Checklist')" style="flex:1;padding:10px;border:2px solid var(--borde);border-radius:10px;background:white;color:#888;font-weight:800;cursor:pointer">✅ Checklist</button>' +
+        '</div></div>' +
+        '<div class="form-group"><label class="form-label">Descripción</label>' +
+        '<input type="text" id="nov-desc" class="form-control" placeholder="Ej: Revisar escaparate, Falta de stock en talle M..."></div>' +
+        '<button class="btn-submit" onclick="guardarNovedad()">Publicar</button></div>';
+
+      // Filtro por local para admin/supervisor
+      html += '<div class="local-filter">';
+      html += '<button class="local-btn ' + (!novedadesLocalFiltro ? "active" : "") + '" onclick="filtrarNovedades(null)">Todos</button>';
+      locales.forEach(function(l) {
+        html += '<button class="local-btn ' + (novedadesLocalFiltro===l ? "active" : "") + '" onclick="filtrarNovedades('' + l + '')">' + l + '</button>';
+      });
+      html += '</div>';
+    }
+
+    if (novedades.length === 0) {
+      html += '<div class="empty"><div class="e-icon">📋</div><p>No hay novedades</p></div>';
+    } else {
+      novedades.forEach(function(n) {
+        var esPendiente = n.estado === "Pendiente";
+        var tipoCls = n.tipo === "Checklist" ? "checklist" : "novedad-tipo";
+        var cardCls = "novedad-card " + tipoCls + (esPendiente ? "" : " completado");
+        var puedeMarcar = rolActual === "admin" || rolActual === "supervisor" || rolActual === "encargado";
+        html += '<div class="' + cardCls + '">' +
+          '<div class="novedad-header">' +
+            '<span class="novedad-tipo-badge ' + tipoCls + '">' + (n.tipo === "Checklist" ? "✅ CHECKLIST" : "📌 NOVEDAD") + '</span>' +
+            '<span style="font-size:11px;color:#aaa">' + n.local + ' · ' + n.fecha + '</span>' +
+          '</div>' +
+          '<div class="novedad-desc">' + n.descripcion + '</div>' +
+          '<div class="novedad-meta">Por ' + n.creadoPor + (n.completadoPor ? ' · Completado por ' + n.completadoPor : '') + '</div>';
+
+        if (puedeMarcar) {
+          var btnCls = esPendiente ? "pendiente" : "completado";
+          var btnTxt = esPendiente ? "⏳ Pendiente" : "✅ Completado";
+          html += '<div class="novedad-estado">' +
+            '<button class="check-btn ' + btnCls + '" onclick="toggleEstadoNovedad(' + n.idx + ', '' + n.estado + '')">' + btnTxt + '</button>' +
+            '</div>';
+        }
+        html += '</div>';
+      });
+    }
+
+    el.innerHTML = html;
+    window._novTipo = "Novedad";
+  });
+}
+
+var _novTipo = "Novedad";
+function setNovTipo(tipo) {
+  _novTipo = tipo;
+  var btnNov = document.getElementById("nov-tipo-nov");
+  var btnChk = document.getElementById("nov-tipo-chk");
+  if (btnNov) {
+    btnNov.style.background = tipo === "Novedad" ? "#EBF5FB" : "white";
+    btnNov.style.borderColor = tipo === "Novedad" ? "#3498DB" : "var(--borde)";
+    btnNov.style.color = tipo === "Novedad" ? "#2980B9" : "#888";
+  }
+  if (btnChk) {
+    btnChk.style.background = tipo === "Checklist" ? "#FEF9E7" : "white";
+    btnChk.style.borderColor = tipo === "Checklist" ? "#F39C12" : "var(--borde)";
+    btnChk.style.color = tipo === "Checklist" ? "#F39C12" : "#888";
+  }
+}
+
+function guardarNovedad() {
+  var desc  = document.getElementById("nov-desc");
+  var local = document.getElementById("nov-local");
+  if (!desc || !desc.value.trim()) { showToast("Escribí una descripción", "err"); return; }
+
+  var btn = document.querySelector('#sec-novedades .btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = "Publicando..."; }
+
+  callOps("guardarNovedad", {
+    local: local ? local.value : localActual,
+    creadoPor: nombreActual,
+    rol: rolActual,
+    tipo: _novTipo || "Novedad",
+    descripcion: desc.value.trim()
+  }, function(data) {
+    if (btn) { btn.disabled = false; btn.textContent = "Publicar"; }
+    if (data.ok) {
+      showToast("✅ Publicado", "ok");
+      desc.value = "";
+      cargarNovedades();
+    } else {
+      showToast("Error al publicar", "err");
+    }
+  });
+}
+
+function toggleEstadoNovedad(idx, estadoActual) {
+  var nuevoEstado = estadoActual === "Pendiente" ? "Completado" : "Pendiente";
+  callOps("actualizarEstado", {
+    idx: idx,
+    estado: nuevoEstado,
+    completadoPor: nombreActual
+  }, function(data) {
+    if (data.ok) {
+      showToast(nuevoEstado === "Completado" ? "✅ Marcado como completado" : "↩️ Marcado como pendiente", "ok");
+      cargarNovedades();
+    }
+  });
+}
+
+function filtrarNovedades(local) {
+  novedadesLocalFiltro = local;
+  cargarNovedades();
+}
+
+// ══ HELPER OPERACIONES ═══════════════════════════════════════════════════════
+async function callOps(action, params, callback) {
+  try {
+    var url = OPS_URL + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
+    var res = await fetch(url);
+    var data = await res.json();
+    callback(data);
+  } catch(err) {
+    callback({ error: err.message });
   }
 }
 
