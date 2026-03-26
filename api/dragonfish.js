@@ -169,7 +169,7 @@ module.exports = async function handler(req, res) {
           }
         }
 
-        if (resultados.length < 20 || hayMasViejas) sigue = false;
+        if (resultados.length < 200 || hayMasViejas) sigue = false;
         else page++;
 
       } catch (e) {
@@ -270,7 +270,9 @@ module.exports = async function handler(req, res) {
       });
 
       const responseData = { ...respuesta, total: totalGeneral };
-      setCache(cacheKey, responseData);
+      // Solo cachear si hay datos reales (evitar cachear errores o $0)
+      const tieneError = Object.values(respuesta).some(v => v.error);
+      if (totalGeneral > 0 && !tieneError) setCache(cacheKey, responseData);
       return res.status(200).json(responseData);
     }
 
