@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tussy-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/alanlopez/Desktop/Claudito/tussy-app && python3 -m http.server 3002"],
+      "port": 3002
+    }
+  ]
+}

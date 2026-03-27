@@ -647,7 +647,7 @@ function registrarPush(nombre){
       return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});
     });
   }).then(function(sub){
-    fetch('/api/push-subscribe',{
+    fetch('/api/resumen-diario?action=subscribe',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({subscription:sub.toJSON(),usuario:nombre})
