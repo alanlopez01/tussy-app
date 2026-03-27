@@ -1,12 +1,4 @@
-let webpush;
-try {
-  webpush = require('web-push');
-} catch (e) {
-  webpush = null;
-}
-
-// In-memory push subscriptions
-const subs = global.__pushSubs || (global.__pushSubs = []);
+const webpush = require('web-push');
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -15,22 +7,22 @@ module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const { action, secret } = req.query;
+  const OPS_URL = process.env.APPS_SCRIPT_URL_OPERACIONES;
 
-  // === TEST ===
-  if (action === "test") {
-    return res.status(200).json({ webpush: !!webpush, subs: subs.length });
-  }
-
-  // === SUBSCRIBE ===
+  // === SUBSCRIBE (save to Google Sheets) ===
   if (action === "subscribe" && req.method === "POST") {
     const { subscription, usuario } = req.body;
     if (!subscription || !subscription.endpoint) {
       return res.status(400).json({ error: "subscription required" });
     }
-    const idx = subs.findIndex(s => s.subscription.endpoint === subscription.endpoint);
-    if (idx !== -1) subs.splice(idx, 1);
-    subs.push({ subscription, usuario: usuario || "unknown", ts: Date.now() });
-    return res.status(200).json({ ok: true, total: subs.length });
+    try {
+      const params = JSON.stringify({ endpoint: subscription.endpoint, keys: subscription.keys, usuario });
+      const url = `${OPS_URL}?action=guardarPushSub&params=${encodeURIComponent(params)}`;
+      await fetch(url, { redirect: "follow" });
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
   }
 
   // === SEND RESUMEN ===
@@ -39,13 +31,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    if (webpush) {
-      webpush.setVapidDetails(
-        'mailto:alan@tussy.com.ar',
-        process.env.VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY
-      );
-    }
+    webpush.setVapidDetails(
+      'mailto:alan@tussy.com.ar',
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+
     const now = new Date(Date.now() - 3 * 3600000);
     const pad = n => String(n).padStart(2, '0');
     const hoy = `${now.getUTCFullYear()}-${pad(now.getUTCMonth()+1)}-${pad(now.getUTCDate())}`;
@@ -54,12 +45,16 @@ module.exports = async function handler(req, res) {
 
     const base = 'https://app.gestiontussy.com.ar';
 
-    const [ventasHoy, ventasAyer, dfHoy, dfAyer] = await Promise.all([
+    // Fetch sales + subscriptions in parallel
+    const [ventasHoy, ventasAyer, dfHoy, dfAyer, subsData] = await Promise.all([
       fetch(`${base}/api/ventas?desde=${hoy}&hasta=${hoy}`).then(r => r.json()).catch(() => null),
       fetch(`${base}/api/ventas?desde=${ayer}&hasta=${ayer}`).then(r => r.json()).catch(() => null),
       fetch(`${base}/api/dragonfish?action=ventas&desde=${hoy}&hasta=${hoy}`).then(r => r.json()).catch(() => null),
       fetch(`${base}/api/dragonfish?action=ventas&desde=${ayer}&hasta=${ayer}`).then(r => r.json()).catch(() => null),
+      fetch(`${OPS_URL}?action=getPushSubs&params=${encodeURIComponent('{}')}`).then(r => r.json()).catch(() => ({ subs: [] })),
     ]);
+
+    const subs = subsData.subs || [];
 
     const locales = {};
     function addStore(src, period, stores) {
@@ -98,40 +93,41 @@ module.exports = async function handler(req, res) {
     function fmt(n) { return n.toLocaleString('es-AR'); }
     var pushBody = `$${fmt(totalHoy)} (${opsHoy} ventas) | ${signo}${diff}% vs ayer | Mejor: ${mejor}`;
 
-    // Send push to all subscribers
-    let sent = 0, failed = 0;
-    const pushResults = [];
     const payload = JSON.stringify({
       title: 'Resumen Tussy ' + fechaFmt,
       body: pushBody,
       url: '/'
     });
 
-    if (webpush && subs.length > 0) {
-      const toRemove = [];
-      for (const sub of subs) {
-        try {
-          await webpush.sendNotification(sub.subscription, payload);
-          sent++;
-          pushResults.push({ user: sub.usuario, ok: true });
-        } catch (err) {
-          failed++;
-          pushResults.push({ user: sub.usuario, error: err.message, status: err.statusCode });
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            toRemove.push(sub.subscription.endpoint);
-          }
+    let sent = 0, failed = 0;
+    const pushResults = [];
+    const toRemove = [];
+
+    for (const sub of subs) {
+      try {
+        await webpush.sendNotification(sub.subscription, payload);
+        sent++;
+        pushResults.push({ user: sub.usuario, ok: true });
+      } catch (err) {
+        failed++;
+        pushResults.push({ user: sub.usuario, error: err.message, status: err.statusCode });
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          toRemove.push(sub.subscription.endpoint);
         }
-      }
-      for (const ep of toRemove) {
-        const idx = subs.findIndex(s => s.subscription.endpoint === ep);
-        if (idx !== -1) subs.splice(idx, 1);
       }
     }
 
+    // Clean expired subs from Google Sheets
+    for (const ep of toRemove) {
+      try {
+        const params = JSON.stringify({ endpoint: ep });
+        await fetch(`${OPS_URL}?action=eliminarPushSub&params=${encodeURIComponent(params)}`);
+      } catch(e) {}
+    }
+
     res.status(200).json({
-      ok: true, sent, failed, totalSubs: subs.length, webpushLoaded: !!webpush, pushResults,
-      fecha: hoy, fechaFmt, totalHoy, totalAyer, opsHoy, opsAyer,
-      diff: `${signo}${diff}%`, mejor, mejorTotal, locales
+      ok: true, sent, failed, totalSubs: subs.length, pushResults,
+      fecha: hoy, fechaFmt, totalHoy, totalAyer, diff: `${signo}${diff}%`, mejor
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

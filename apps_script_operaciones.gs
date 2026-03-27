@@ -54,6 +54,17 @@ function doGet(e) {
         result = verificarRetiro(params);
         break;
 
+      // ── PUSH SUBSCRIPTIONS ──
+      case "getPushSubs":
+        result = getPushSubs();
+        break;
+      case "guardarPushSub":
+        result = guardarPushSub(params);
+        break;
+      case "eliminarPushSub":
+        result = eliminarPushSub(params);
+        break;
+
       default:
         result = { error: "Accion no encontrada: " + action };
     }
@@ -339,4 +350,69 @@ function formatDate(val) {
     return y + "-" + m + "-" + d;
   }
   return String(val);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PUSH SUBSCRIPTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+// Hoja "PushSubs" → Columnas: Usuario | Endpoint | Keys | FechaRegistro
+
+function getPushSubs() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("PushSubs");
+  if (!sheet) return { subs: [] };
+
+  var data = sheet.getDataRange().getValues();
+  var subs = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (!row[1]) continue;
+    try {
+      var keys = JSON.parse(row[2]);
+      subs.push({
+        usuario: row[0],
+        subscription: { endpoint: row[1], keys: keys }
+      });
+    } catch(e) {}
+  }
+  return { subs: subs };
+}
+
+function guardarPushSub(params) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("PushSubs");
+  if (!sheet) {
+    sheet = ss.insertSheet("PushSubs");
+    sheet.appendRow(["Usuario", "Endpoint", "Keys", "FechaRegistro"]);
+  }
+
+  var endpoint = params.endpoint;
+  var keys = params.keys;
+  var usuario = params.usuario || "unknown";
+
+  // Remove existing for same endpoint
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === endpoint) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+
+  sheet.appendRow([usuario, endpoint, JSON.stringify(keys), new Date()]);
+  return { ok: true };
+}
+
+function eliminarPushSub(params) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("PushSubs");
+  if (!sheet) return { ok: true };
+
+  var endpoint = params.endpoint;
+  var data = sheet.getDataRange().getValues();
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === endpoint) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+  return { ok: true };
 }
