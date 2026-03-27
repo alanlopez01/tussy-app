@@ -1,4 +1,5 @@
-const webpush = require('web-push');
+let webpush;
+try { webpush = require('web-push'); } catch(e) { webpush = null; }
 
 // In-memory push subscriptions (resets on cold start)
 const subs = global.__pushSubs || (global.__pushSubs = []);
@@ -35,7 +36,7 @@ module.exports = async function handler(req, res) {
 
   const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
   const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
-  webpush.setVapidDetails('mailto:alan@tussy.com.ar', VAPID_PUBLIC, VAPID_PRIVATE);
+  if (webpush) webpush.setVapidDetails('mailto:alan@tussy.com.ar', VAPID_PUBLIC, VAPID_PRIVATE);
 
   try {
     const now = new Date(Date.now() - 3 * 3600000);
@@ -130,14 +131,16 @@ module.exports = async function handler(req, res) {
       url: '/?resumen=1'
     });
 
-    for (const sub of subs) {
-      try {
-        await webpush.sendNotification(sub.subscription, payload);
-        sent++;
-      } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          const idx = subs.findIndex(s => s.subscription.endpoint === sub.subscription.endpoint);
-          if (idx !== -1) subs.splice(idx, 1);
+    if (webpush) {
+      for (const sub of subs) {
+        try {
+          await webpush.sendNotification(sub.subscription, payload);
+          sent++;
+        } catch (err) {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            const idx = subs.findIndex(s => s.subscription.endpoint === sub.subscription.endpoint);
+            if (idx !== -1) subs.splice(idx, 1);
+          }
         }
       }
     }
