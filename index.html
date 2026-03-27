@@ -606,7 +606,42 @@ function entrarApp(rol,nombre,local){
   else if(rol==="encargado") goTo("locales","Locales");
   else if(rol==="supervisor") goTo("locales","Locales");
   if(rol==="admin"||rol==="socio") cargarKPI();
-  if(rol==="admin"||rol==="socio") registrarPush(nombre);
+  if(rol==="admin"||rol==="socio") mostrarBotonPush();
+}
+
+function mostrarBotonPush(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  // Check if already subscribed
+  navigator.serviceWorker.register('/sw.js').then(function(reg){
+    return reg.pushManager.getSubscription();
+  }).then(function(sub){
+    if(sub) return; // Already subscribed, no need for button
+    // Check permission state
+    if(Notification.permission==='granted') return registrarPush(nombreActual);
+    if(Notification.permission==='denied') return;
+    // Show activation button
+    var kpiEl=document.getElementById("home-kpi");
+    if(!kpiEl) return;
+    var btn=document.createElement('div');
+    btn.id='push-banner';
+    btn.innerHTML='<div class="card" style="background:linear-gradient(135deg,#1A5276,#1E8449);cursor:pointer;margin-bottom:12px" onclick="activarNotificaciones()">'+
+      '<div style="display:flex;align-items:center;gap:12px;padding:4px">'+
+      '<span style="font-size:28px">🔔</span>'+
+      '<div><div style="color:white;font-weight:700;font-size:14px">Activar notificaciones</div>'+
+      '<div style="color:rgba(255,255,255,0.7);font-size:12px">Recibí el resumen diario de ventas a las 23:59</div></div>'+
+      '</div></div>';
+    kpiEl.parentNode.insertBefore(btn, kpiEl);
+  });
+}
+
+function activarNotificaciones(){
+  Notification.requestPermission().then(function(permission){
+    if(permission==='granted'){
+      registrarPush(nombreActual);
+      var banner=document.getElementById('push-banner');
+      if(banner) banner.remove();
+    }
+  });
 }
 
 function registrarPush(nombre){
