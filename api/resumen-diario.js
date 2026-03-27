@@ -27,10 +27,10 @@ module.exports = async function handler(req, res) {
   const secret = req.query.secret || req.body?.secret;
   const pushSecret = process.env.PUSH_SECRET;
   if (!pushSecret) {
-    return res.status(500).json({ error: "PUSH_SECRET not configured", envKeys: Object.keys(process.env).filter(k => k.includes('PUSH') || k.includes('VAPID')) });
+    return res.status(500).json({ error: "PUSH_SECRET not configured" });
   }
-  if (secret !== pushSecret && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: "unauthorized", hint: "secret mismatch" });
+  if (secret !== pushSecret) {
+    return res.status(401).json({ error: "unauthorized" });
   }
 
   const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
@@ -144,6 +144,6 @@ module.exports = async function handler(req, res) {
 
     res.status(200).json({ ok: true, sent, resumen: resumenData });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, stack: err.stack ? err.stack.split('\n').slice(0,3) : null });
   }
 };
