@@ -1,7 +1,4 @@
-let webpush;
-try { webpush = require('web-push'); } catch(e) { webpush = null; }
-
-// In-memory push subscriptions (resets on cold start)
+// In-memory push subscriptions
 const subs = global.__pushSubs || (global.__pushSubs = []);
 
 module.exports = async function handler(req, res) {
@@ -10,7 +7,7 @@ module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const { action } = req.query;
+  const { action, secret } = req.query;
 
   // === SUBSCRIBE ===
   if (action === "subscribe" && req.method === "POST") {
@@ -24,19 +21,10 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, total: subs.length });
   }
 
-  // === SEND RESUMEN ===
-  const secret = req.query.secret || req.body?.secret;
-  const pushSecret = process.env.PUSH_SECRET;
-  if (!pushSecret) {
-    return res.status(500).json({ error: "PUSH_SECRET not configured" });
-  }
-  if (secret !== pushSecret) {
+  // === GET RESUMEN ===
+  if (secret !== process.env.PUSH_SECRET) {
     return res.status(401).json({ error: "unauthorized" });
   }
-
-  const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
-  const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
-  if (webpush) webpush.setVapidDetails('mailto:alan@tussy.com.ar', VAPID_PUBLIC, VAPID_PRIVATE);
 
   try {
     const now = new Date(Date.now() - 3 * 3600000);
@@ -55,46 +43,23 @@ module.exports = async function handler(req, res) {
     ]);
 
     const locales = {};
-    if (ventasHoy) {
-      ['palermo', 'laplata', 'tiendanube'].forEach(k => {
-        if (ventasHoy[k]) {
-          var nombre = k === 'laplata' ? 'La Plata' : k === 'tiendanube' ? 'Online' : 'Palermo';
+    function addStore(src, period, stores) {
+      if (!src) return;
+      stores.forEach(([k, nombre]) => {
+        if (src[k]) {
           if (!locales[nombre]) locales[nombre] = { hoy: 0, ayer: 0, opsHoy: 0, opsAyer: 0 };
-          locales[nombre].hoy = ventasHoy[k].total || 0;
-          locales[nombre].opsHoy = ventasHoy[k].cantidad || 0;
+          locales[nombre][period === 'hoy' ? 'hoy' : 'ayer'] = src[k].total || 0;
+          locales[nombre][period === 'hoy' ? 'opsHoy' : 'opsAyer'] = src[k].cantidad || 0;
         }
       });
     }
-    if (ventasAyer) {
-      ['palermo', 'laplata', 'tiendanube'].forEach(k => {
-        if (ventasAyer[k]) {
-          var nombre = k === 'laplata' ? 'La Plata' : k === 'tiendanube' ? 'Online' : 'Palermo';
-          if (!locales[nombre]) locales[nombre] = { hoy: 0, ayer: 0, opsHoy: 0, opsAyer: 0 };
-          locales[nombre].ayer = ventasAyer[k].total || 0;
-          locales[nombre].opsAyer = ventasAyer[k].cantidad || 0;
-        }
-      });
-    }
-    if (dfHoy) {
-      ['dot', 'abasto', 'cordoba'].forEach(k => {
-        if (dfHoy[k]) {
-          var nombre = k === 'dot' ? 'Dot' : k === 'abasto' ? 'Abasto' : 'Córdoba';
-          if (!locales[nombre]) locales[nombre] = { hoy: 0, ayer: 0, opsHoy: 0, opsAyer: 0 };
-          locales[nombre].hoy = dfHoy[k].total || 0;
-          locales[nombre].opsHoy = dfHoy[k].cantidad || 0;
-        }
-      });
-    }
-    if (dfAyer) {
-      ['dot', 'abasto', 'cordoba'].forEach(k => {
-        if (dfAyer[k]) {
-          var nombre = k === 'dot' ? 'Dot' : k === 'abasto' ? 'Abasto' : 'Córdoba';
-          if (!locales[nombre]) locales[nombre] = { hoy: 0, ayer: 0, opsHoy: 0, opsAyer: 0 };
-          locales[nombre].ayer = dfAyer[k].total || 0;
-          locales[nombre].opsAyer = dfAyer[k].cantidad || 0;
-        }
-      });
-    }
+
+    const wooStores = [['palermo','Palermo'],['laplata','La Plata'],['tiendanube','Online']];
+    const dfStores = [['dot','Dot'],['abasto','Abasto'],['cordoba','Córdoba']];
+    addStore(ventasHoy, 'hoy', wooStores);
+    addStore(ventasAyer, 'ayer', wooStores);
+    addStore(dfHoy, 'hoy', dfStores);
+    addStore(dfAyer, 'ayer', dfStores);
 
     var totalHoy = 0, totalAyer = 0, opsHoy = 0, opsAyer = 0;
     Object.values(locales).forEach(l => {
@@ -104,7 +69,6 @@ module.exports = async function handler(req, res) {
 
     var diff = totalAyer > 0 ? (((totalHoy - totalAyer) / totalAyer) * 100).toFixed(1) : '---';
     var signo = diff > 0 ? '+' : '';
-    function fmt(n) { return n.toLocaleString('es-AR'); }
 
     var mejor = '', mejorTotal = 0;
     Object.entries(locales).forEach(([name, data]) => {
@@ -112,41 +76,17 @@ module.exports = async function handler(req, res) {
     });
 
     var fechaFmt = `${pad(now.getUTCDate())}/${pad(now.getUTCMonth()+1)}`;
-    var pushBody = `$${fmt(totalHoy)} (${opsHoy} ventas) | ${signo}${diff}% vs ayer | Mejor: ${mejor}`;
 
-    var resumenData = {
+    res.status(200).json({
+      ok: true,
       fecha: hoy, fechaFmt, totalHoy, totalAyer, opsHoy, opsAyer,
       diff: `${signo}${diff}%`,
       ticketHoy: opsHoy > 0 ? Math.round(totalHoy / opsHoy) : 0,
       ticketAyer: opsAyer > 0 ? Math.round(totalAyer / opsAyer) : 0,
-      mejor, mejorTotal, locales
-    };
-
-    global.__lastResumen = resumenData;
-
-    let sent = 0;
-    const payload = JSON.stringify({
-      title: `Resumen Tussy ${fechaFmt}`,
-      body: pushBody,
-      url: '/?resumen=1'
+      mejor, mejorTotal, locales,
+      subs: subs.length
     });
-
-    if (webpush) {
-      for (const sub of subs) {
-        try {
-          await webpush.sendNotification(sub.subscription, payload);
-          sent++;
-        } catch (err) {
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            const idx = subs.findIndex(s => s.subscription.endpoint === sub.subscription.endpoint);
-            if (idx !== -1) subs.splice(idx, 1);
-          }
-        }
-      }
-    }
-
-    res.status(200).json({ ok: true, sent, resumen: resumenData });
   } catch (err) {
-    res.status(500).json({ error: err.message, stack: err.stack ? err.stack.split('\n').slice(0,3) : null });
+    res.status(500).json({ error: err.message });
   }
 };
