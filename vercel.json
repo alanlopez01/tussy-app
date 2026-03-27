@@ -1,5 +1,11 @@
 {
   "rewrites": [
     { "source": "/((?!api|sw\\.js|manifest\\.json|logo\\.png).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/resumen-diario?secret=tussy2026",
+      "schedule": "59 2 * * *"
+    }
   ]
 }

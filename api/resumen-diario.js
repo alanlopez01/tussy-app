@@ -1,3 +1,5 @@
+const webpush = require('web-push');
+
 // In-memory push subscriptions
 const subs = global.__pushSubs || (global.__pushSubs = []);
 
@@ -21,10 +23,16 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, total: subs.length });
   }
 
-  // === GET RESUMEN ===
+  // === SEND RESUMEN ===
   if (secret !== process.env.PUSH_SECRET) {
     return res.status(401).json({ error: "unauthorized" });
   }
+
+  webpush.setVapidDetails(
+    'mailto:alan@tussy.com.ar',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
 
   try {
     const now = new Date(Date.now() - 3 * 3600000);
@@ -76,15 +84,38 @@ module.exports = async function handler(req, res) {
     });
 
     var fechaFmt = `${pad(now.getUTCDate())}/${pad(now.getUTCMonth()+1)}`;
+    function fmt(n) { return n.toLocaleString('es-AR'); }
+    var pushBody = `$${fmt(totalHoy)} (${opsHoy} ventas) | ${signo}${diff}% vs ayer | Mejor: ${mejor}`;
+
+    // Send push to all subscribers
+    let sent = 0, failed = 0;
+    const payload = JSON.stringify({
+      title: 'Resumen Tussy ' + fechaFmt,
+      body: pushBody,
+      url: '/'
+    });
+
+    const toRemove = [];
+    for (const sub of subs) {
+      try {
+        await webpush.sendNotification(sub.subscription, payload);
+        sent++;
+      } catch (err) {
+        failed++;
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          toRemove.push(sub.subscription.endpoint);
+        }
+      }
+    }
+    for (const ep of toRemove) {
+      const idx = subs.findIndex(s => s.subscription.endpoint === ep);
+      if (idx !== -1) subs.splice(idx, 1);
+    }
 
     res.status(200).json({
-      ok: true,
+      ok: true, sent, failed, totalSubs: subs.length,
       fecha: hoy, fechaFmt, totalHoy, totalAyer, opsHoy, opsAyer,
-      diff: `${signo}${diff}%`,
-      ticketHoy: opsHoy > 0 ? Math.round(totalHoy / opsHoy) : 0,
-      ticketAyer: opsAyer > 0 ? Math.round(totalAyer / opsAyer) : 0,
-      mejor, mejorTotal, locales,
-      subs: subs.length
+      diff: `${signo}${diff}%`, mejor, mejorTotal, locales
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
