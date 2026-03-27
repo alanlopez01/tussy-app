@@ -38,15 +38,14 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: "unauthorized" });
   }
 
-  if (webpush) {
-    webpush.setVapidDetails(
-      'mailto:alan@tussy.com.ar',
-      process.env.VAPID_PUBLIC_KEY,
-      process.env.VAPID_PRIVATE_KEY
-    );
-  }
-
   try {
+    if (webpush) {
+      webpush.setVapidDetails(
+        'mailto:alan@tussy.com.ar',
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+      );
+    }
     const now = new Date(Date.now() - 3 * 3600000);
     const pad = n => String(n).padStart(2, '0');
     const hoy = `${now.getUTCFullYear()}-${pad(now.getUTCMonth()+1)}-${pad(now.getUTCDate())}`;
