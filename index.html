@@ -68,6 +68,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .home-card-sub{font-size:11px;color:#aaa;font-weight:600}
 .home-card-arrow{font-size:18px;color:#ddd;margin-left:auto}
 
+/* KPI DASHBOARD */
+.kpi-section{margin-bottom:20px}
+.kpi-total-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);border-radius:18px;padding:20px;color:white;margin-bottom:12px;position:relative;overflow:hidden}
+.kpi-total-card::after{content:"";position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:50%}
+.kpi-total-label{font-size:12px;opacity:0.6;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.kpi-total-value{font-size:32px;font-weight:900;margin:6px 0}
+.kpi-total-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kpi-delta{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,0.15)}
+.kpi-delta.up{background:rgba(39,174,96,0.25);color:#2ECC71}
+.kpi-delta.down{background:rgba(231,76,60,0.25);color:#E74C3C}
+.kpi-delta.neutral{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.7)}
+.kpi-vs-text{font-size:11px;opacity:0.5}
+.kpi-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi-stat{background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.kpi-stat-label{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.kpi-stat-value{font-size:22px;font-weight:800;color:var(--negro);margin-top:2px}
+.kpi-stat-sub{font-size:11px;color:#bbb;margin-top:2px}
+.kpi-stores{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.kpi-store{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);position:relative;overflow:hidden}
+.kpi-store-name{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.3px}
+.kpi-store-total{font-size:15px;font-weight:800;color:var(--negro);margin-top:3px}
+.kpi-store-cant{font-size:10px;color:#bbb;margin-top:1px}
+.kpi-store-bar{height:3px;border-radius:2px;margin-top:8px;background:#f0f0f0;overflow:hidden}
+.kpi-store-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#3498DB,#2ECC71);transition:width 0.6s ease}
+.kpi-loading{text-align:center;padding:30px;color:#bbb;font-size:13px}
+.kpi-loading .spinner{margin:0 auto 10px}
+@media(max-width:400px){.kpi-stores{grid-template-columns:1fr 1fr}.kpi-total-value{font-size:28px}}
+
 /* CARDS */
 .card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
 .card-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#aaa;margin-bottom:16px}
@@ -307,6 +335,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
           <div class="home-nombre" id="home-nombre"></div>
           <div class="home-fecha" id="home-fecha"></div>
         </div>
+        <div id="home-kpi"></div>
         <div class="home-grid" id="home-grid"></div>
       </div>
 
@@ -553,6 +582,102 @@ function entrarApp(rol,nombre,local){
   if(rol==="produccion") goTo("produccion","Produccion");
   else if(rol==="encargado") goTo("locales","Locales");
   else if(rol==="supervisor") goTo("locales","Locales");
+  if(rol==="admin"||rol==="socio"||rol==="supervisor") cargarKPI();
+}
+
+function cargarKPI(){
+  var kpiEl=document.getElementById("home-kpi");
+  if(!kpiEl) return;
+  kpiEl.innerHTML='<div class="kpi-section"><div class="kpi-loading"><div class="spinner"></div>Cargando KPIs...</div></div>';
+  var hoy=hoyStr(), ayer=ayerStr();
+  Promise.all([
+    fetch("/api/ventas?desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}),
+    fetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy).then(function(r){return r.json();}),
+    fetch("/api/ventas?desde="+ayer+"&hasta="+ayer).then(function(r){return r.json();}),
+    fetch(DF_URL+"?action=ventas&desde="+ayer+"&hasta="+ayer).then(function(r){return r.json();})
+  ]).then(function(res){
+    var wooHoy=res[0], dfHoy=res[1], wooAyer=res[2], dfAyer=res[3];
+    renderKPI(wooHoy, dfHoy, wooAyer, dfAyer);
+  }).catch(function(err){
+    kpiEl.innerHTML='<div class="kpi-section"><div class="kpi-loading" style="color:#E74C3C">Error al cargar KPIs</div></div>';
+  });
+}
+
+function renderKPI(wooHoy, dfHoy, wooAyer, dfAyer){
+  var kpiEl=document.getElementById("home-kpi");
+  if(!kpiEl) return;
+
+  // Build store data
+  var stores=[];
+  var canalesWoo=["tiendanube","palermo","laplata"];
+  var nombresWoo={tiendanube:"Online",palermo:"Palermo",laplata:"La Plata"};
+  canalesWoo.forEach(function(c){
+    if(wooHoy[c]) stores.push({
+      nombre:nombresWoo[c],
+      total:wooHoy[c].total||0,
+      cantidad:wooHoy[c].cantidad||0,
+      totalAyer:(wooAyer[c]?wooAyer[c].total:0)||0
+    });
+  });
+  var canalesDf=[{key:"dot",nombre:"Dot"},{key:"abasto",nombre:"Abasto"},{key:"cordoba",nombre:"Córdoba"}];
+  canalesDf.forEach(function(c){
+    if(dfHoy&&dfHoy[c.key]&&!dfHoy[c.key].error) stores.push({
+      nombre:c.nombre,
+      total:dfHoy[c.key].total||0,
+      cantidad:dfHoy[c.key].cantidad||0,
+      totalAyer:(dfAyer&&dfAyer[c.key]?dfAyer[c.key].total:0)||0
+    });
+  });
+
+  // Totals
+  var totalHoy=stores.reduce(function(s,x){return s+x.total;},0);
+  var totalAyer=stores.reduce(function(s,x){return s+x.totalAyer;},0);
+  var totalOps=stores.reduce(function(s,x){return s+x.cantidad;},0);
+  var ticketProm=totalOps>0?Math.round(totalHoy/totalOps):0;
+  var maxStore=Math.max.apply(null,stores.map(function(s){return s.total;}))||1;
+
+  // Delta
+  var deltaP=totalAyer>0?((totalHoy-totalAyer)/totalAyer*100):totalHoy>0?100:0;
+  var deltaClass=deltaP>0?"up":deltaP<0?"down":"neutral";
+  var deltaIcon=deltaP>0?"↑":deltaP<0?"↓":"→";
+  var deltaText=Math.abs(Math.round(deltaP))+"%";
+
+  var html='<div class="kpi-section">';
+
+  // Total card
+  html+='<div class="kpi-total-card">';
+  html+='<div class="kpi-total-label">Ventas hoy</div>';
+  html+='<div class="kpi-total-value">'+fmt(totalHoy)+'</div>';
+  html+='<div class="kpi-total-row">';
+  html+='<span class="kpi-delta '+deltaClass+'">'+deltaIcon+' '+deltaText+'</span>';
+  html+='<span class="kpi-vs-text">vs ayer '+fmt(totalAyer)+'</span>';
+  html+='</div></div>';
+
+  // Stats row
+  html+='<div class="kpi-stats-row">';
+  html+='<div class="kpi-stat"><div class="kpi-stat-label">Operaciones</div><div class="kpi-stat-value">'+totalOps+'</div><div class="kpi-stat-sub">ventas totales hoy</div></div>';
+  html+='<div class="kpi-stat"><div class="kpi-stat-label">Ticket promedio</div><div class="kpi-stat-value">'+fmt(ticketProm)+'</div><div class="kpi-stat-sub">'+(totalOps>0?"por operación":"sin ventas aún")+'</div></div>';
+  html+='</div>';
+
+  // Stores breakdown
+  html+='<div class="kpi-stores">';
+  stores.forEach(function(s){
+    var pct=Math.round(s.total/maxStore*100);
+    var stDelta=s.totalAyer>0?((s.total-s.totalAyer)/s.totalAyer*100):s.total>0?100:0;
+    var stClass=stDelta>0?"up":stDelta<0?"down":"neutral";
+    var stIcon=stDelta>0?"↑":stDelta<0?"↓":"";
+    html+='<div class="kpi-store">';
+    html+='<div class="kpi-store-name">'+s.nombre+'</div>';
+    html+='<div class="kpi-store-total">'+fmt(s.total)+'</div>';
+    html+='<div class="kpi-store-cant">'+s.cantidad+' ops';
+    if(stIcon) html+=' <span style="color:'+(stClass==="up"?"#2ECC71":"#E74C3C")+'">'+stIcon+Math.abs(Math.round(stDelta))+'%</span>';
+    html+='</div>';
+    html+='<div class="kpi-store-bar"><div class="kpi-store-bar-fill" style="width:'+pct+'%"></div></div>';
+    html+='</div>';
+  });
+  html+='</div></div>';
+
+  kpiEl.innerHTML=html;
 }
 
 function construirHome(rol){
