@@ -582,7 +582,7 @@ function entrarApp(rol,nombre,local){
   if(rol==="produccion") goTo("produccion","Produccion");
   else if(rol==="encargado") goTo("locales","Locales");
   else if(rol==="supervisor") goTo("locales","Locales");
-  if(rol==="admin"||rol==="socio"||rol==="supervisor") cargarKPI();
+  if(rol==="admin"||rol==="socio") cargarKPI();
 }
 
 function cargarKPI(){
