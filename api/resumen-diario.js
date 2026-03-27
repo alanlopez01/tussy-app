@@ -130,11 +130,13 @@ async function sendPushNotification(subscription, payload, vapidPublic, vapidPri
     body
   });
 
+  const responseText = await response.text();
   if (!response.ok) {
-    const err = new Error(`Push failed: ${response.status}`);
+    const err = new Error(`Push failed: ${response.status} ${responseText}`);
     err.statusCode = response.status;
     throw err;
   }
+  return { status: response.status, body: responseText };
 }
 
 // === Main handler ===
@@ -228,12 +230,15 @@ module.exports = async function handler(req, res) {
     const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
     const toRemove = [];
 
+    const pushResults = [];
     for (const sub of subs) {
       try {
-        await sendPushNotification(sub.subscription, payload, vapidPublic, vapidPrivate);
+        const result = await sendPushNotification(sub.subscription, payload, vapidPublic, vapidPrivate);
         sent++;
+        pushResults.push({ user: sub.usuario, status: result.status });
       } catch (err) {
         failed++;
+        pushResults.push({ user: sub.usuario, error: err.message });
         if (err.statusCode === 410 || err.statusCode === 404) {
           toRemove.push(sub.subscription.endpoint);
         }
@@ -245,7 +250,7 @@ module.exports = async function handler(req, res) {
     }
 
     res.status(200).json({
-      ok: true, sent, failed, totalSubs: subs.length,
+      ok: true, sent, failed, totalSubs: subs.length, pushResults,
       fecha: hoy, fechaFmt, totalHoy, totalAyer, opsHoy, opsAyer,
       diff: `${signo}${diff}%`, mejor, mejorTotal, locales
     });
