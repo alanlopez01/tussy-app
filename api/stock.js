@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
           variantes = vData.map(v => ({
             sku: v.sku || "",
             precio: parseFloat(v.price || 0),
-            stock: v.stock_quantity || 0,
+            stock: v.stock_quantity != null ? v.stock_quantity : null,
             tiene_stock: v.stock_status === "instock",
             atributos: (v.attributes || []).map(a => `${a.name}: ${a.option}`).join(" / ")
           }));
@@ -58,7 +58,7 @@ module.exports = async function handler(req, res) {
         variantes = [{
           sku: p.sku || "",
           precio: parseFloat(p.price || 0),
-          stock: p.stock_quantity || 0,
+          stock: p.stock_quantity != null ? p.stock_quantity : null,
           tiene_stock: p.stock_status === "instock",
           atributos: "Talle único"
         }];

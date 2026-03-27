@@ -990,7 +990,7 @@ function mostrarStock(dataWoo,dataDf,queryStr){
       [{key:"palermo",label:"Palermo",clase:"local-palermo"},{key:"laplata",label:"La Plata",clase:"local-laplata"}].forEach(function(loc){
         if(!p.locales[loc.key]) return;
         html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
-        p.locales[loc.key].forEach(function(v){ var sq=v.stock!=null?v.stock:0; html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(sq>0?"badge-si":"badge-no")+'">'+(sq>0?sq+" u.":"Sin stock")+"</span></div></div>"; });
+        p.locales[loc.key].forEach(function(v){ var sq=v.stock!=null?v.stock:0; var ts=v.tiene_stock; var badgeCls=sq>0?"badge-si":ts?"badge-si":"badge-no"; var badgeTxt=sq>0?sq+" u.":ts?"\u2714 Stock":"Sin stock"; html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+badgeCls+'">'+badgeTxt+"</span></div></div>"; });
         html+='<div style="margin-bottom:8px"></div>';
       });
       html+="</div>";
@@ -1003,7 +1003,7 @@ function mostrarStock(dataWoo,dataDf,queryStr){
       [{key:"dot",label:"Dot",clase:"local-dot"},{key:"abasto",label:"Abasto",clase:"local-abasto"},{key:"cordoba",label:"C\u00f3rdoba",clase:"local-cordoba"}].forEach(function(loc){
         if(!p.locales[loc.key]||!p.locales[loc.key].length) return;
         html+='<div class="local-titulo '+loc.clase+'">'+loc.label+"</div>";
-        p.locales[loc.key].forEach(function(v){ var sq=v.stock!=null?v.stock:0; html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+(sq>0?"badge-si":"badge-no")+'">'+(sq>0?sq+" u.":"Sin stock")+"</span></div></div>"; });
+        p.locales[loc.key].forEach(function(v){ var sq=v.stock!=null?v.stock:0; var ts=v.tiene_stock; var badgeCls=sq>0?"badge-si":ts?"badge-si":"badge-no"; var badgeTxt=sq>0?sq+" u.":ts?"\u2714 Stock":"Sin stock"; html+='<div class="variante-row"><span class="variante-attr">'+v.atributos+'</span><div class="variante-right"><span class="variante-precio">$'+Math.round(v.precio).toLocaleString("es-AR")+'</span><span class="badge-stock '+badgeCls+'">'+badgeTxt+"</span></div></div>"; });
         html+='<div style="margin-bottom:8px"></div>';
       });
       html+="</div>";
