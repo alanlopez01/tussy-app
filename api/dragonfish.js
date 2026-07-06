@@ -185,9 +185,10 @@ module.exports = async function handler(req, res) {
     const isNumeric = /^\d+$/.test(query.trim());
 
     // Search by name always; if numeric, also search by barcode (Equivalencia)
+    // stockcero: true = incluir productos con stock 0 (para que aparezcan productos agotados)
     const searches = [
       dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
-        query, limit: 50, stockcero: false,
+        query, limit: 50, stockcero: true,
       }, sessionToken, local.idCliente),
     ];
 
@@ -277,50 +278,126 @@ module.exports = async function handler(req, res) {
   try {
     // ── GET /api/dragonfish?action=ventas&desde=YYYY-MM-DD&hasta=YYYY-MM-DD ──
     if (action === "ventas") {
-      const { desde, hasta } = req.query;
+      const { desde, hasta, local: localFilter } = req.query;
       if (!desde) return res.status(400).json({ error: "Falta parámetro 'desde'" });
 
-      const cacheKey = `ventas_${desde}_${hasta}`;
+      const cacheKey = `ventas_${desde}_${hasta}_${localFilter || 'all'}`;
       const cached = getCache(cacheKey);
       if (cached) return res.status(200).json(cached);
 
+      // If a specific local is requested, only fetch that one
+      const targetLocales = localFilter
+        ? localesConfigurados.filter(l => l.key === localFilter)
+        : localesConfigurados;
+
       const resultados = await Promise.allSettled(
-        localesConfigurados.map(local => getVentasLocal(local, desde, hasta))
+        targetLocales.map(local => getVentasLocal(local, desde, hasta))
       );
 
       const respuesta = {};
       let totalGeneral = 0;
 
-      localesConfigurados.forEach((local, i) => {
+      targetLocales.forEach((local, i) => {
         const r = resultados[i];
-        if (r.status === "fulfilled") {
+        if (r.status === "fulfilled" && !r.value.error) {
+          // Éxito limpio: datos confiables
           respuesta[local.key] = {
             nombre: local.nombre,
             total: r.value.total,
             cantidad: r.value.cantidad,
             pedidos: r.value.pedidos,
+            ok: true,
           };
-          if (r.value.error) respuesta[local.key].error = r.value.error;
           totalGeneral += r.value.total;
-        } else {
+        } else if (r.status === "fulfilled" && r.value.error) {
+          // Éxito parcial (paginación cortada por error): NO es confiable, marcar como fallido
+          // para que el consumidor (resumen-diario) no pise VentasDiarias con un total parcial.
           respuesta[local.key] = {
             nombre: local.nombre,
-            total: 0,
-            cantidad: 0,
+            total: null,       // ← null = "no confiable", el consumidor debe preservar valor previo
+            cantidad: null,
+            pedidos: r.value.pedidos || [],
+            error: r.value.error,
+            ok: false,
+            totalParcial: r.value.total, // dato informativo, no para persistir
+          };
+        } else {
+          // Fetch completamente caído
+          respuesta[local.key] = {
+            nombre: local.nombre,
+            total: null,
+            cantidad: null,
             pedidos: [],
             error: r.reason?.message || "Error de conexión",
+            ok: false,
           };
         }
       });
 
       const responseData = { ...respuesta, total: totalGeneral };
-      // Solo cachear si hay datos reales (evitar cachear errores o $0)
-      const tieneError = Object.values(respuesta).some(v => v.error);
-      if (totalGeneral > 0 && !tieneError) setCache(cacheKey, responseData);
+      // Solo cachear si TODOS los locales están OK (evitar cachear parciales)
+      const algunoFallo = Object.values(respuesta).some(v => v && v.ok === false);
+      if (totalGeneral > 0 && !algunoFallo) setCache(cacheKey, responseData);
       return res.status(200).json(responseData);
     }
 
     // ── GET /api/dragonfish?action=stock&q=REMERA ──
+    // ── GET /api/dragonfish?action=reporteStock ──
+    if (action === "reporteStock") {
+      async function paginarStockLocal(local) {
+        const sessionToken = await autenticar(local);
+        const resultados = [];
+        let page = 1;
+        const limit = 200;
+        const maxPages = 30; // tope de seguridad
+        while (page <= maxPages) {
+          const d = await dfFetch(local.url, local.token, local.baseDatos, "/ConsultaStockYPrecios/", {
+            query: "", limit, page, stockcero: false,
+          }, sessionToken, local.idCliente);
+          const rows = Array.isArray(d) ? d : (d.Resultados || []);
+          if (!rows.length) break;
+          resultados.push(...rows);
+          if (rows.length < limit) break;
+          page++;
+        }
+        return resultados;
+      }
+
+      const reportes = await Promise.allSettled(
+        localesConfigurados.map(local => paginarStockLocal(local))
+      );
+      const mapa = {};
+      localesConfigurados.forEach((local, i) => {
+        if (reportes[i].status !== "fulfilled") return;
+        const rows = reportes[i].value;
+        for (const row of rows) {
+          const nombre = (row.ArticuloDescripcion || row.Descripcion || "").toUpperCase().trim();
+          if (!nombre) continue;
+          if (!mapa[nombre]) mapa[nombre] = { nombre: row.ArticuloDescripcion || row.Descripcion, dot:0, abasto:0, cordoba:0, precio: 0 };
+          const stock = parseFloat(row.Stock || 0);
+          if (stock > 0) mapa[nombre][local.key] += stock;
+          // Capturar precio (PUBLICO si existe, sino row.Precio)
+          if (mapa[nombre].precio === 0) {
+            let precio = parseFloat(row.Precio || 0);
+            if (Array.isArray(row.Precios)) {
+              const pub = row.Precios.find(p => p.Lista === "PUBLICO" || p.Lista === "publico");
+              if (pub && pub.Precio > 0) precio = parseFloat(pub.Precio);
+            }
+            if (precio > 0) mapa[nombre].precio = precio;
+          }
+        }
+      });
+      const productos = Object.values(mapa);
+      const totales = { dot:0, abasto:0, cordoba:0 };
+      for (const p of productos) {
+        totales.dot += p.dot;
+        totales.abasto += p.abasto;
+        totales.cordoba += p.cordoba;
+      }
+      productos.sort((a,b) => (b.dot+b.abasto+b.cordoba) - (a.dot+a.abasto+a.cordoba));
+      return res.status(200).json({ productos, totales, cantidadProductos: productos.length });
+    }
+
     if (action === "stock") {
       const { q } = req.query;
       if (!q || q.trim().length < 2) {
@@ -470,6 +547,45 @@ module.exports = async function handler(req, res) {
         });
       } catch(e) {
         return res.status(500).json({ error: e.message, stack: e.stack });
+      }
+    }
+
+    // ── Test: buscar endpoint de detalle de factura ──
+    if (action === "testDetalle") {
+      const localKey = req.query.local || "dot";
+      const local = localesConfigurados.find(l => l.key === localKey);
+      if (!local) return res.status(404).json({ error: `Local '${localKey}' no configurado` });
+      try {
+        const sessionToken = await autenticar(local);
+        // Primero traer una factura real
+        const facturas = await dfFetch(local.url, local.token, local.baseDatos, "/Facturaagrupada/", { limit: 1, sort: "-Fecha" }, sessionToken, local.idCliente);
+        const lista = Array.isArray(facturas) ? facturas : (facturas.Resultados || []);
+        if (!lista.length) return res.status(200).json({ error: "Sin facturas" });
+        const fac = lista[0];
+        const facId = fac.Id || fac.id || fac.Numero || fac.numero;
+
+        // Probar endpoints de detalle candidatos
+        const candidatos = [
+          `/FacturaagrupadaDetalle/?facturaId=${facId}`,
+          `/FacturaagrupadaDetalle/?factura=${facId}`,
+          `/FacturaagrupadaDetalle/?Numero=${fac.Numero}`,
+          `/Facturaagrupada/${facId}`,
+          `/FacturaDetalle/?facturaId=${facId}`,
+        ];
+        const resultados = {};
+        for (const path of candidatos) {
+          try {
+            const qs = path.includes("?") ? "" : "";
+            const fullUrl = `${local.url}/api.Dragonfish${path}`;
+            const r = await fetch(fullUrl, { headers: buildHeaders(sessionToken, local.baseDatos, local.idCliente), signal: AbortSignal.timeout(8000) });
+            resultados[path] = { status: r.status, body: r.ok ? (await r.json()) : await r.text() };
+          } catch(e) {
+            resultados[path] = { error: e.message };
+          }
+        }
+        return res.status(200).json({ factura: fac, candidatos: resultados });
+      } catch(e) {
+        return res.status(500).json({ error: e.message });
       }
     }
 
