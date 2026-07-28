@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
-import { getSerie, getHoyVivo, hoyISO, diasAtras, primerDiaMes, LOCALES, fmtPesos, fmtPesosCorto } from "../lib/api.js";
+import { getSerie, getHoyVivo, hoyISO, diasAtras, primerDiaMes, mesAnteriorRango, LOCALES, fmtPesos, fmtPesosCorto } from "../lib/api.js";
 import { Card, StatTile, Spinner, LeyendaLocal, TooltipPesos, BotonActualizar } from "../components/ui.jsx";
 
 function fechaCorta(iso) {
@@ -10,17 +10,26 @@ function fechaCorta(iso) {
   return `${parseInt(d)}/${parseInt(m)}`;
 }
 
+const RANGOS_GRAFICO = [
+  { key: 7, label: "7 días" },
+  { key: 30, label: "30 días" },
+  { key: 90, label: "90 días" },
+];
+
 export default function Home() {
   const [serie, setSerie] = useState(null);
   const [hoyVivo, setHoyVivo] = useState(null);
   const [errorSerie, setErrorSerie] = useState(null);
   const [cargando, setCargando] = useState(false);
+  const [diasGrafico, setDiasGrafico] = useState(30);
 
   const cargar = useCallback(() => {
     setCargando(true);
     setErrorSerie(null);
-    const p1 = getSerie(diasAtras(30), diasAtras(1))
-      .then(d => setSerie(d.dias))
+    // Serie amplia: cubre 90 días de gráfico y el mes anterior completo para comparativas
+    const desde = [diasAtras(89), mesAnteriorRango().desde].sort()[0];
+    const p1 = getSerie(desde, diasAtras(1))
+      .then(d => setSerie(d.dias.sort((a, b) => a.fecha.localeCompare(b.fecha))))
       .catch(e => setErrorSerie(e.message));
     const p2 = getHoyVivo().then(setHoyVivo).catch(() => setHoyVivo({ woo: null, df: null }));
     Promise.allSettled([p1, p2]).then(() => setCargando(false));
@@ -49,16 +58,29 @@ export default function Home() {
     return { stores, total, ops, ticket: ops > 0 ? total / ops : 0 };
   }, [hoyVivo]);
 
-  const promedioMismoDia = useMemo(() => {
+  // Comparativa HOY vs AYER
+  const totalAyer = useMemo(() => {
     if (!serie) return null;
-    const dow = new Date(hoyISO() + "T12:00:00Z").getUTCDay();
-    const mismos = serie.filter(d => new Date(d.fecha + "T12:00:00Z").getUTCDay() === dow);
-    if (!mismos.length) return null;
-    return mismos.reduce((a, d) => a + d.total, 0) / mismos.length;
+    const ayer = serie.find(d => d.fecha === diasAtras(1));
+    return ayer ? ayer.total : null;
   }, [serie]);
 
-  const serieMes = useMemo(() => (serie || []).filter(d => d.fecha >= primerDiaMes()), [serie]);
-  const totalMes = serieMes.reduce((a, d) => a + d.total, 0) + (hoy?.total || 0);
+  // Comparativa MES ACTUAL (1 → hoy) vs MES ANTERIOR (mismas fechas)
+  const mes = useMemo(() => {
+    if (!serie) return null;
+    const serieMesActual = serie.filter(d => d.fecha >= primerDiaMes());
+    const actual = serieMesActual.reduce((a, d) => a + d.total, 0) + (hoy?.total || 0);
+    const pm = mesAnteriorRango();
+    const anterior = serie
+      .filter(d => d.fecha >= pm.desde && d.fecha <= pm.hastaMismasFechas)
+      .reduce((a, d) => a + d.total, 0);
+    return { actual, anterior };
+  }, [serie, hoy]);
+
+  const serieGrafico = useMemo(
+    () => (serie || []).filter(d => d.fecha >= diasAtras(diasGrafico)),
+    [serie, diasGrafico]
+  );
 
   const barrasHoy = hoy?.stores
     .filter(s => !s.cargando)
@@ -82,8 +104,8 @@ export default function Home() {
         <StatTile
           label="Ventas de hoy"
           value={hoy ? fmtPesos(hoy.total) : "…"}
-          delta={hoy && promedioMismoDia ? ((hoy.total - promedioMismoDia) / promedioMismoDia) * 100 : null}
-          sub={promedioMismoDia ? "vs. promedio del mismo día" : ""}
+          delta={hoy && totalAyer ? ((hoy.total - totalAyer) / totalAyer) * 100 : null}
+          sub={totalAyer ? `ayer: ${fmtPesosCorto(totalAyer)}` : ""}
         />
         <StatTile
           label="Operaciones de hoy"
@@ -92,8 +114,9 @@ export default function Home() {
         />
         <StatTile
           label="Facturación del mes"
-          value={serie ? fmtPesosCorto(totalMes) : "…"}
-          sub={serie ? `al ${fechaCorta(hoyISO())}` : ""}
+          value={mes ? fmtPesosCorto(mes.actual) : "…"}
+          delta={mes && mes.anterior ? ((mes.actual - mes.anterior) / mes.anterior) * 100 : null}
+          sub={mes && mes.anterior ? `mes pasado mismas fechas: ${fmtPesosCorto(mes.anterior)}` : ""}
         />
       </div>
 
@@ -123,13 +146,30 @@ export default function Home() {
         )}
       </Card>
 
-      <Card title="Facturación diaria · últimos 30 días" right={serie && <LeyendaLocal locales={LOCALES} />}>
+      <Card
+        title="Facturación diaria"
+        right={
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <div className="flex gap-1">
+              {RANGOS_GRAFICO.map(r => (
+                <button key={r.key} onClick={() => setDiasGrafico(r.key)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
+                    diasGrafico === r.key ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde hover:bg-surface"
+                  }`}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            {serie && <LeyendaLocal locales={LOCALES} />}
+          </div>
+        }
+      >
         {errorSerie ? (
           <p className="text-[13px] text-bad py-6 text-center">No pude leer la base: {errorSerie}</p>
         ) : !serie ? <Spinner /> : (
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={serie} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barCategoryGap="22%">
+              <BarChart data={serieGrafico} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barCategoryGap="22%">
                 <CartesianGrid vertical={false} stroke="var(--color-borde)" />
                 <XAxis dataKey="fecha" tickFormatter={fechaCorta} axisLine={false} tickLine={false}
                        tick={{ fontSize: 11, fill: "var(--color-ink-3)" }} minTickGap={20} />

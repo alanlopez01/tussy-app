@@ -100,6 +100,75 @@ export function BarraH({ etiqueta, valor, max, texto, color = "var(--color-negro
   );
 }
 
+// Filtro de fechas compartido: chips de rangos + rango personalizado.
+// `rango` = { key, desde, hasta }; el padre lo guarda en su estado.
+import { useState } from "react";
+import { rangoDe } from "../lib/api.js";
+
+const RANGOS_DEF = [
+  { key: "hoy", label: "Hoy" },
+  { key: "ayer", label: "Ayer" },
+  { key: "7d", label: "7 días" },
+  { key: "mes", label: "Este mes" },
+  { key: "mesPasado", label: "Mes pasado" },
+];
+
+export function SelectorFechas({ rango, onChange, opciones = RANGOS_DEF }) {
+  const [abierto, setAbierto] = useState(false);
+  const [desde, setDesde] = useState(rango.desde);
+  const [hasta, setHasta] = useState(rango.hasta);
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {opciones.map(o => (
+        <button key={o.key}
+          onClick={() => { setAbierto(false); onChange({ key: o.key, ...rangoDe(o.key) }); }}
+          className={`px-3 py-1.5 rounded-md text-[12px] font-semibold border transition-colors ${
+            rango.key === o.key ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde hover:bg-surface"
+          }`}>
+          {o.label}
+        </button>
+      ))}
+      <button onClick={() => setAbierto(!abierto)}
+        className={`px-3 py-1.5 rounded-md text-[12px] font-semibold border transition-colors ${
+          rango.key === "custom" ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde hover:bg-surface"
+        }`}>
+        Personalizado
+      </button>
+      {abierto && (
+        <span className="inline-flex items-center gap-1.5">
+          <input type="date" value={desde} onChange={e => setDesde(e.target.value)}
+                 className="rounded-md border border-borde bg-surface-1 px-2 py-1 text-[12px] text-ink-2" />
+          <span className="text-[12px] text-ink-3">a</span>
+          <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
+                 className="rounded-md border border-borde bg-surface-1 px-2 py-1 text-[12px] text-ink-2" />
+          <button onClick={() => { if (desde && hasta && desde <= hasta) { setAbierto(false); onChange({ key: "custom", desde, hasta }); } }}
+                  className="px-3 py-1.5 rounded-md text-[12px] font-semibold bg-negro text-white">
+            Aplicar
+          </button>
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function Paginacion({ pagina, totalPaginas, onChange }) {
+  if (totalPaginas <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-3 pt-3 border-t border-borde mt-2">
+      <button onClick={() => onChange(pagina - 1)} disabled={pagina <= 1}
+              className="px-3 py-1 rounded-md border border-borde text-[12px] font-semibold text-ink-2 disabled:opacity-40 hover:bg-surface">
+        ‹ Anterior
+      </button>
+      <span className="text-[12px] text-ink-3 tabular-nums">{pagina} / {totalPaginas}</span>
+      <button onClick={() => onChange(pagina + 1)} disabled={pagina >= totalPaginas}
+              className="px-3 py-1 rounded-md border border-borde text-[12px] font-semibold text-ink-2 disabled:opacity-40 hover:bg-surface">
+        Siguiente ›
+      </button>
+    </div>
+  );
+}
+
 // Tooltip compartido para Recharts
 export function TooltipPesos({ active, payload, label, labelFormatter }) {
   if (!active || !payload || !payload.length) return null;

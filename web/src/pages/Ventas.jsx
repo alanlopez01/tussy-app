@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getVentasLive, LOCALES, fmtPesos } from "../lib/api.js";
+import { getVentasLive, hoyISO, diasAtras, LOCALES, fmtPesos } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar, StatTile } from "../components/ui.jsx";
 
-const REFRESH_MS = 120000; // auto-actualiza cada 2 minutos
+const REFRESH_MS = 120000; // auto-actualiza cada 2 minutos (solo mirando "hoy")
 
 export default function Ventas() {
   const [localKey, setLocalKey] = useState("palermo");
+  const [fecha, setFecha] = useState(hoyISO());
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [ultimaAct, setUltimaAct] = useState(null);
   const timerRef = useRef(null);
 
-  const cargar = useCallback((key) => {
+  const cargar = useCallback((key, f) => {
     setCargando(true);
-    getVentasLive(key)
+    getVentasLive(key, f)
       .then(d => { setData(d); setUltimaAct(new Date()); })
       .catch(e => setData({ ok: false, error: e.message, operaciones: [] }))
       .finally(() => setCargando(false));
@@ -21,13 +22,16 @@ export default function Ventas() {
 
   useEffect(() => {
     setData(null);
-    cargar(localKey);
+    cargar(localKey, fecha);
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => cargar(localKey), REFRESH_MS);
+    if (fecha === hoyISO()) {
+      timerRef.current = setInterval(() => cargar(localKey, fecha), REFRESH_MS);
+    }
     return () => clearInterval(timerRef.current);
-  }, [localKey, cargar]);
+  }, [localKey, fecha, cargar]);
 
   const local = LOCALES.find(l => l.key === localKey);
+  const esHoy = fecha === hoyISO();
 
   return (
     <div className="space-y-4">
@@ -35,18 +39,29 @@ export default function Ventas() {
         <div>
           <h1 className="text-[20px] font-bold text-ink">Ventas</h1>
           <p className="text-[12px] text-ink-3">
-            Operaciones de hoy por local · se actualiza sola cada 2 min
-            {ultimaAct && ` · última actualización ${ultimaAct.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
+            Operaciones por local{esHoy ? " · se actualiza sola cada 2 min" : ""}
+            {ultimaAct && ` · actualizado ${ultimaAct.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
           </p>
         </div>
-        <BotonActualizar onClick={() => cargar(localKey)} cargando={cargando} />
+        <BotonActualizar onClick={() => cargar(localKey, fecha)} cargando={cargando} />
       </header>
 
-      <Chips
-        opciones={LOCALES.map(l => ({ value: l.key, label: l.nombre, color: l.color }))}
-        valor={localKey}
-        onChange={setLocalKey}
-      />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <Chips
+          opciones={LOCALES.map(l => ({ value: l.key, label: l.nombre, color: l.color }))}
+          valor={localKey}
+          onChange={setLocalKey}
+        />
+        <div className="flex items-center gap-1.5">
+          <Chips
+            opciones={[{ value: hoyISO(), label: "Hoy" }, { value: diasAtras(1), label: "Ayer" }]}
+            valor={fecha}
+            onChange={setFecha}
+          />
+          <input type="date" value={fecha} max={hoyISO()} onChange={e => e.target.value && setFecha(e.target.value)}
+                 className="rounded-md border border-borde bg-surface-1 px-2 py-1.5 text-[12px] font-semibold text-ink-2" />
+        </div>
+      </div>
 
       {!data ? <Spinner texto={`Consultando ${local?.nombre}…`} /> : !data.ok ? (
         <Card>
@@ -58,14 +73,16 @@ export default function Ventas() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatTile label={`Total hoy · ${data.local}`} value={fmtPesos(data.total)} />
+            <StatTile label={`Total · ${data.local} · ${esHoy ? "hoy" : fecha}`} value={fmtPesos(data.total)} />
             <StatTile label="Operaciones" value={data.ops} />
             <StatTile label="Ticket promedio" value={data.ops > 0 ? fmtPesos(data.total / data.ops) : "—"} />
           </div>
 
-          <Card title={`Operaciones de hoy (${data.ops})`}>
+          <Card title={`Operaciones (${data.ops})`}>
             {data.operaciones.length === 0 ? (
-              <p className="text-[13px] text-ink-3 py-6 text-center">Todavía no hay ventas hoy en {data.local}.</p>
+              <p className="text-[13px] text-ink-3 py-6 text-center">
+                {esHoy ? `Todavía no hay ventas hoy en ${data.local}.` : `Sin ventas el ${fecha} en ${data.local}.`}
+              </p>
             ) : (
               <ul className="divide-y divide-borde">
                 {data.operaciones.map(op => (

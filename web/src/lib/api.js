@@ -19,6 +19,34 @@ export function primerDiaMes() {
   return hoyISO().slice(0, 8) + "01";
 }
 
+export function mesAnteriorRango() {
+  // Primer día del mes pasado y "mismas fechas": hasta el mismo día del mes que hoy
+  const hoy = hoyISO();
+  const [y, m, d] = hoy.split("-").map(Number);
+  const pm = m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 };
+  const ultimoDiaPm = new Date(Date.UTC(pm.y, pm.m, 0)).getUTCDate();
+  const pad = n => String(n).padStart(2, "0");
+  return {
+    desde: `${pm.y}-${pad(pm.m)}-01`,
+    hastaMismasFechas: `${pm.y}-${pad(pm.m)}-${pad(Math.min(d, ultimoDiaPm))}`,
+    hasta: `${pm.y}-${pad(pm.m)}-${pad(ultimoDiaPm)}`,
+  };
+}
+
+// Rangos predefinidos para los filtros de fecha
+export function rangoDe(key) {
+  const hoy = hoyISO();
+  switch (key) {
+    case "hoy": return { desde: hoy, hasta: hoy };
+    case "ayer": return { desde: diasAtras(1), hasta: diasAtras(1) };
+    case "7d": return { desde: diasAtras(6), hasta: hoy };
+    case "30d": return { desde: diasAtras(29), hasta: hoy };
+    case "mes": return { desde: primerDiaMes(), hasta: hoy };
+    case "mesPasado": { const r = mesAnteriorRango(); return { desde: r.desde, hasta: r.hasta }; }
+    default: return { desde: primerDiaMes(), hasta: hoy };
+  }
+}
+
 // ── Base Postgres ──
 export function getSerie(desde, hasta) {
   return getJSON(`/api/metricas?action=serie&desde=${desde}&hasta=${hasta}`);
