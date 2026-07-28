@@ -2,10 +2,18 @@
   "rewrites": [
     { "source": "/((?!api|sw\\.js|manifest\\.json|logo\\.png).*)", "destination": "/index.html" }
   ],
+  "functions": {
+    "api/resumen-diario.js": { "maxDuration": 60 },
+    "api/dragonfish.js": { "maxDuration": 60 },
+    "api/ventas.js": { "maxDuration": 60 },
+    "api/comparacion.js": { "maxDuration": 60 },
+    "api/stock.js": { "maxDuration": 60 },
+    "api/chat.js": { "maxDuration": 60 }
+  },
   "crons": [
     {
       "path": "/api/resumen-diario?secret=tussy2026",
-      "schedule": "59 2 * * *"
+      "schedule": "1 3 * * *"
     }
   ]
 }
