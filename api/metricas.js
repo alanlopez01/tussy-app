@@ -12,6 +12,50 @@ const KEY_LOCAL = {
   "Dot": "dot", "Abasto": "abasto", "Córdoba": "cordoba", "Cordoba": "cordoba",
 };
 
+// ── Normalización de productos (portada de Apps Script) ──
+// Unifica "REMERA OVERSIZE ECLIPSE, NEGRO" con "REMERA OVERSIZE ECLIPSE".
+const CATEGORIAS = ["REMERA","REMERON","POLO","POLERA","PANTALON","PANTALONES","BUZO","CAMPERA",
+  "CAMISA","BERMUDA","BERMUDAS","SHORT","SHORTS","VESTIDO","TOP","BOXER","LLAVERO",
+  "MUSCULOSA","SWEATER","JEAN","JEANS","CHALECO","CARDIGAN","CHOMBA","BODY",
+  "CALZA","CALZAS","FALDA","RIÑONERA","GORRA","MEDIAS","SACO"];
+const IGNORAR = new Set([
+  "OVERSIZE","TSSY","TSSYA","BOXY","BAGGY","MUJER","HOMBRE","UNISEX",
+  "REGULAR","CLASSIC","CLASSICO","CLASICO","PREMIUM","LIMITED","EDITION","EDICION",
+  "ALGODON","GABARDINA","TENCEL","LINO","POLIESTER","RUSTICO","RUSTICA","LISO","LISA",
+  "SET","LINE","KIT","PACK","COLECCION","FW","SS","SPRING","SUMMER","FALL","WINTER",
+  "NUEVO","NUEVA","NEW","XL","NARANJA","VIOLETA","BEIGE","GRIS","NEGRO","NEGRA",
+  "BLANCO","BLANCA","AZUL","ROJO","ROJA","VERDE","AMARILLO","CELESTE","HUESO",
+  "MARRON","BORDO","ROSA","LAVANDA","MELANGE","TAUPE","OLIVA","PETROLEO",
+]);
+const CATEGORIAS_SET = new Set(CATEGORIAS);
+
+function normalizarProducto(nombre) {
+  if (!nombre) return { nombre: "", categoria: "" };
+  const n = String(nombre).replace(/\([^)]*\)/g, " ").toUpperCase()
+    .replace(/[ÁÀÄÂ]/g, "A").replace(/[ÉÈËÊ]/g, "E").replace(/[ÍÌÏÎ]/g, "I")
+    .replace(/[ÓÒÖÔ]/g, "O").replace(/[ÚÙÜÛ]/g, "U").replace(/Ñ/g, "N")
+    .replace(/[-_\/.,;:]/g, " ")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ").trim();
+
+  const palabras = n.split(" ").filter(Boolean);
+  let categoria = "";
+  for (const p of palabras) {
+    if (CATEGORIAS_SET.has(p)) { categoria = p; break; }
+  }
+  const categoriaSing = categoria.replace(/ES$/, "").replace(/^REMERON$/, "REMERA");
+
+  const modelo = [];
+  for (let p of palabras) {
+    if (CATEGORIAS_SET.has(p) || IGNORAR.has(p) || p.length < 2) continue;
+    if (p.length > 4 && p.endsWith("S") && !p.endsWith("SS") && !p.endsWith("US")) p = p.slice(0, -1);
+    modelo.push(p);
+  }
+  const modeloStr = modelo.join(" ");
+  const nombreNorm = categoriaSing && modeloStr ? `${categoriaSing} ${modeloStr}` : (modeloStr || categoriaSing || n);
+  return { nombre: nombreNorm, categoria: categoriaSing || "OTROS" };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
@@ -44,23 +88,63 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ dias: Object.values(porDia) });
     }
 
-    if (action === "topProductos") {
+    if (action === "topProductos" || action === "categorias" || action === "variantes") {
       if (!desde || !hasta) return res.status(400).json({ error: "Faltan desde/hasta" });
-      const lim = Math.min(parseInt(limite || 20), 100);
       const localFiltro = local || null;
       const rows = await sql`
-        SELECT producto,
+        SELECT producto, talle, color,
                SUM(cantidad)::int AS cantidad,
-               ROUND(SUM(total))::bigint AS total,
-               COUNT(DISTINCT orden_id)::int AS ops
+               ROUND(SUM(total))::bigint AS total
         FROM ventas
         WHERE fecha BETWEEN ${desde} AND ${hasta}
           AND producto NOT IN ('ENVIO', 'DESCUENTO', 'AJUSTE')
           AND (${localFiltro}::text IS NULL OR local = ${localFiltro})
-        GROUP BY producto
-        ORDER BY SUM(cantidad) DESC
-        LIMIT ${lim}`;
-      return res.status(200).json({ productos: rows.map(r => ({ ...r, total: Number(r.total) })) });
+        GROUP BY producto, talle, color`;
+
+      if (action === "topProductos") {
+        const lim = Math.min(parseInt(limite || 20), 100);
+        const orden = req.query.orden === "total" ? "total" : "cantidad";
+        const agg = {};
+        for (const r of rows) {
+          const { nombre } = normalizarProducto(r.producto);
+          if (!agg[nombre]) agg[nombre] = { producto: nombre, cantidad: 0, total: 0 };
+          agg[nombre].cantidad += r.cantidad;
+          agg[nombre].total += Number(r.total);
+        }
+        const productos = Object.values(agg).sort((a, b) => b[orden] - a[orden]).slice(0, lim);
+        return res.status(200).json({ productos });
+      }
+
+      if (action === "categorias") {
+        const agg = {};
+        for (const r of rows) {
+          const { categoria } = normalizarProducto(r.producto);
+          if (!agg[categoria]) agg[categoria] = { categoria, cantidad: 0, total: 0 };
+          agg[categoria].cantidad += r.cantidad;
+          agg[categoria].total += Number(r.total);
+        }
+        return res.status(200).json({ categorias: Object.values(agg).sort((a, b) => b.total - a.total) });
+      }
+
+      // variantes: talles y colores más vendidos
+      const talles = {}, colores = {};
+      const normTalle = t => String(t || "").toUpperCase().trim();
+      const normColor = c => String(c || "").toUpperCase().trim();
+      for (const r of rows) {
+        const t = normTalle(r.talle), c = normColor(r.color);
+        if (t) {
+          if (!talles[t]) talles[t] = { valor: t, cantidad: 0, total: 0 };
+          talles[t].cantidad += r.cantidad; talles[t].total += Number(r.total);
+        }
+        if (c) {
+          if (!colores[c]) colores[c] = { valor: c, cantidad: 0, total: 0 };
+          colores[c].cantidad += r.cantidad; colores[c].total += Number(r.total);
+        }
+      }
+      return res.status(200).json({
+        talles: Object.values(talles).sort((a, b) => b.cantidad - a.cantidad).slice(0, 12),
+        colores: Object.values(colores).sort((a, b) => b.cantidad - a.cantidad).slice(0, 12),
+      });
     }
 
     if (action === "sync") {
@@ -73,7 +157,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ pendientes: rows });
     }
 
-    return res.status(400).json({ error: "action inválida (serie | topProductos | sync)" });
+    return res.status(400).json({ error: "action inválida (serie | topProductos | categorias | variantes | sync)" });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
