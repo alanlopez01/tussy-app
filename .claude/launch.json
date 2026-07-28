@@ -3,9 +3,14 @@
   "configurations": [
     {
       "name": "tussy-dev",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "3002", "--directory", "/Users/alanlopez/Desktop/Claudito/tussy-app"],
-      "port": 3002
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "/Users/alanlopez/Desktop/Claudito/tussy-app/web"
+      ],
+      "port": 5180
     }
   ]
 }

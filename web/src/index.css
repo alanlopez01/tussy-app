@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Marca Tussy */
+  --color-negro: #1a1a2e;
+  --color-negro-2: #16213e;
+
+  /* Superficies y texto (modo claro) */
+  --color-surface: #f4f4f6;
+  --color-surface-1: #fcfcfb;
+  --color-ink: #0b0b0b;
+  --color-ink-2: #52514e;
+  --color-ink-3: #8a897f;
+  --color-borde: #e8e8ea;
+
+  /* Paleta categórica validada (dataviz) — orden fijo por local, nunca reciclar */
+  --color-s-palermo: #2a78d6;  /* slot 1 azul    */
+  --color-s-laplata: #eb6834;  /* slot 2 naranja */
+  --color-s-online: #1baf7a;   /* slot 3 aqua    */
+  --color-s-dot: #eda100;      /* slot 4 amarillo*/
+  --color-s-abasto: #e87ba4;   /* slot 5 magenta */
+  --color-s-cordoba: #008300;  /* slot 6 verde   */
+
+  /* Estado */
+  --color-ok: #008300;
+  --color-warn: #eda100;
+  --color-bad: #e34948;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
