@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "tussy-dev",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/alanlopez/Desktop/Claudito/tussy-app && python3 -m http.server 3002"],
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "3002", "--directory", "/Users/alanlopez/Desktop/Claudito/tussy-app"],
       "port": 3002
     }
   ]

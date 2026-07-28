@@ -5,17 +5,9 @@ module.exports = async function handler(req, res) {
   const { usuario, password } = req.query;
 
   const USUARIOS = {
-    alan:      { pass: process.env.PASS_ALAN,      rol: "admin",      nombre: "Alan",      local: null },
-    fede:      { pass: process.env.PASS_FEDE,      rol: "socio",      nombre: "Federico",  local: null },
-    nico:      { pass: process.env.PASS_NICO,      rol: "socio",      nombre: "Nicolas",   local: null },
-    benjamin:  { pass: process.env.PASS_BENJAMIN,  rol: "encargado",  nombre: "Benjamin",  local: "Palermo" },
-    ramiro:    { pass: process.env.PASS_RAMIRO,    rol: "encargado",  nombre: "Ramiro",    local: "Abasto" },
-    pablo:     { pass: process.env.PASS_PABLO,     rol: "supervisor", nombre: "Pablo",     local: "Dot" },
-    noah:      { pass: process.env.PASS_NOAH,      rol: "encargado",  nombre: "Noah",      local: "Dot" },
-    sebastian: { pass: process.env.PASS_SEBASTIAN, rol: "encargado",  nombre: "Sebastian", local: "La Plata" },
-    analia:    { pass: process.env.PASS_ANALIA,    rol: "encargado",  nombre: "Analia",    local: "Córdoba" },
-    marianela: { pass: process.env.PASS_MARIANELA, rol: "produccion", nombre: "Marianela", local: null },
-    stock:     { pass: process.env.PASS_STOCK,     rol: "stock",      nombre: "Stock",     local: null },
+    alan: { pass: process.env.PASS_ALAN, rol: "admin", nombre: "Alan",     local: null },
+    fede: { pass: process.env.PASS_FEDE, rol: "socio", nombre: "Federico", local: null },
+    nico: { pass: process.env.PASS_NICO, rol: "socio", nombre: "Nicolas",  local: null },
   };
 
   const u = (usuario || "").toLowerCase().trim();
