@@ -34,12 +34,13 @@ async function guardarDiaLocal(sql, fecha, local, filas) {
   for (let i = 0; i < filas.length; i += 500) {
     const c = filas.slice(i, i + 500);
     await sql`
-      INSERT INTO ventas (fecha, local, sistema, orden_id, producto, sku, color, talle, cantidad, precio_unit, total)
+      INSERT INTO ventas (fecha, local, sistema, orden_id, hora, producto, sku, color, talle, cantidad, precio_unit, total)
       SELECT * FROM UNNEST(
         ${c.map(f => f.fecha)}::date[],
         ${c.map(f => f.local)}::text[],
         ${c.map(f => f.sistema)}::text[],
         ${c.map(f => f.orden_id || null)}::text[],
+        ${c.map(f => f.hora || null)}::text[],
         ${c.map(f => f.producto)}::text[],
         ${c.map(f => f.sku)}::text[],
         ${c.map(f => f.color)}::text[],
@@ -79,12 +80,15 @@ async function main() {
   const dias = listaDias(desde, hasta);
   console.log(`Backfill desde fuentes reales: ${desde} → ${hasta} (${dias.length} días)\n`);
 
-  // Reanudación: saltear (fecha, local) que ya están ok en sync_estado
-  const yaOk = new Set(
+  // Reanudación: saltear (fecha, local) que ya están ok en sync_estado.
+  // Con "force" como 3er argumento se recargan igual (ej. para poblar columnas nuevas).
+  const force = process.argv[4] === "force";
+  const yaOk = force ? new Set() : new Set(
     (await conReintentos(() => sql`SELECT fecha::text, local FROM sync_estado WHERE estado = 'ok' AND fecha BETWEEN ${desde} AND ${hasta}`))
       .map(r => `${r.fecha}|${r.local}`)
   );
   if (yaOk.size) console.log(`(reanudando: ${yaOk.size} fecha×local ya cargados se saltean)\n`);
+  if (force) console.log("(force: se recargan todos los días del rango)\n");
 
   // ── Woo + TN: por día (filtro server-side por fecha) ──
   for (const dia of dias) {

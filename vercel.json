@@ -9,7 +9,7 @@
     "api/comparacion.js": { "maxDuration": 60 },
     "api/stock.js": { "maxDuration": 60 },
     "api/chat.js": { "maxDuration": 60 },
-    "api/metricas.js": { "maxDuration": 60 }
+    "api/metricas.js": { "maxDuration": 300 }
   },
   "crons": [
     {
