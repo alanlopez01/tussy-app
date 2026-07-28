@@ -1,11 +1,13 @@
 // Métricas desde Postgres (Neon) — la fuente de verdad nueva.
 // GET /api/metricas?action=serie&desde=YYYY-MM-DD&hasta=YYYY-MM-DD
 //   → { dias: [{fecha, palermo, laplata, online, dot, abasto, cordoba, total, ops}] }
-// GET /api/metricas?action=topProductos&desde=&hasta=&local=(opcional)&limite=20
-//   → { productos: [{producto, cantidad, total, ops}] }
-// GET /api/metricas?action=sync&desde=&hasta=
-//   → { pendientes: [{fecha, local, estado, intentos, ultimo_error}] }
+// GET /api/metricas?action=topProductos&desde=&hasta=&local=&orden=cantidad|total&limite=20
+// GET /api/metricas?action=categorias / variantes — agregados por categoría / talle+color
+// GET /api/metricas?action=live&local=palermo|laplata|online|dot|abasto|cordoba[&fecha=]
+//   → ventas del día en vivo desde la fuente, agrupadas por operación
+// GET /api/metricas?action=sync — (fecha, local) con errores de sincronización
 const { neon } = require("@neondatabase/serverless");
+const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchDFDia } = require("../lib/fuentes");
 
 const KEY_LOCAL = {
   "Palermo": "palermo", "La Plata": "laplata", "Tiendanube": "online",
@@ -56,17 +58,67 @@ function normalizarProducto(nombre) {
   return { nombre: nombreNorm, categoria: categoriaSing || "OTROS" };
 }
 
+// Ventas del día en vivo por local, agrupadas por operación (no toca la base)
+async function ventasLive(req, res) {
+  const local = String(req.query.local || "").toLowerCase();
+  const fecha = req.query.fecha || new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+
+  let r, nombre;
+  if (local === "palermo" || local === "laplata") {
+    const cfg = wooLocales().find(l => (local === "palermo" ? l.nombre === "Palermo" : l.nombre === "La Plata"));
+    if (!cfg) return res.status(503).json({ ok: false, error: "local sin credenciales" });
+    nombre = cfg.nombre;
+    r = await fetchWooDia(cfg, fecha);
+  } else if (local === "online") {
+    nombre = "Online";
+    r = await fetchTNDia(fecha);
+  } else if (local === "dot" || local === "abasto" || local === "cordoba") {
+    const cfg = dfLocales().find(l => l.key === local);
+    if (!cfg) return res.status(503).json({ ok: false, error: "local sin credenciales" });
+    nombre = cfg.nombre;
+    r = await fetchDFDia(cfg, fecha);
+  } else {
+    return res.status(400).json({ ok: false, error: "local inválido" });
+  }
+
+  if (!r.ok) return res.status(200).json({ ok: false, local: nombre, fecha, error: r.error, operaciones: [] });
+
+  const ops = {};
+  for (const f of r.filas) {
+    const id = f.orden_id || "s/n";
+    if (!ops[id]) ops[id] = { orden_id: id, hora: f.hora || null, total: 0, unidades: 0, items: [] };
+    ops[id].total += Number(f.total) || 0;
+    if (!["ENVIO", "DESCUENTO", "AJUSTE"].includes(f.producto)) {
+      ops[id].unidades += Number(f.cantidad) || 0;
+      ops[id].items.push({ producto: f.producto, cantidad: f.cantidad, talle: f.talle, color: f.color });
+    }
+    if (f.hora && (!ops[id].hora || f.hora > ops[id].hora)) ops[id].hora = f.hora;
+  }
+  const operaciones = Object.values(ops)
+    .map(o => ({ ...o, total: Math.round(o.total) }))
+    .sort((a, b) => String(b.hora || "").localeCompare(String(a.hora || "")));
+
+  return res.status(200).json({
+    ok: true, local: nombre, fecha,
+    total: operaciones.reduce((a, o) => a + o.total, 0),
+    ops: operaciones.length,
+    operaciones,
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
 
-  if (!process.env.DATABASE_URL) {
-    return res.status(503).json({ error: "DATABASE_URL no configurada" });
-  }
-  const sql = neon(process.env.DATABASE_URL);
   const { action, desde, hasta, local, limite } = req.query;
 
   try {
+    if (action === "live") return await ventasLive(req, res);
+
+    if (!process.env.DATABASE_URL) {
+      return res.status(503).json({ error: "DATABASE_URL no configurada" });
+    }
+    const sql = neon(process.env.DATABASE_URL);
     if (action === "serie") {
       if (!desde || !hasta) return res.status(400).json({ error: "Faltan desde/hasta" });
       const rows = await sql`
@@ -157,7 +209,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ pendientes: rows });
     }
 
-    return res.status(400).json({ error: "action inválida (serie | topProductos | categorias | variantes | sync)" });
+    return res.status(400).json({ error: "action inválida (serie | topProductos | categorias | variantes | live | sync)" });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }

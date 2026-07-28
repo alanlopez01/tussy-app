@@ -1,6 +1,6 @@
 // Cliente de las APIs. En dev, vite proxya /api a producción.
 
-export async function getJSON(url, timeoutMs = 50000) {
+export async function getJSON(url, timeoutMs = 55000) {
   const r = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
@@ -19,18 +19,32 @@ export function primerDiaMes() {
   return hoyISO().slice(0, 8) + "01";
 }
 
-// Serie diaria desde Postgres
+// ── Base Postgres ──
 export function getSerie(desde, hasta) {
   return getJSON(`/api/metricas?action=serie&desde=${desde}&hasta=${hasta}`);
 }
 
-// Top productos desde Postgres
-export function getTopProductos(desde, hasta, local) {
-  const l = local ? `&local=${encodeURIComponent(local)}` : "";
-  return getJSON(`/api/metricas?action=topProductos&desde=${desde}&hasta=${hasta}${l}`);
+export function getTopProductos(desde, hasta, { local, orden, limite } = {}) {
+  const qs = new URLSearchParams({ action: "topProductos", desde, hasta });
+  if (local) qs.set("local", local);
+  if (orden) qs.set("orden", orden);
+  if (limite) qs.set("limite", limite);
+  return getJSON(`/api/metricas?${qs}`);
 }
 
-// Ventas de HOY en vivo (desde las fuentes, hasta que el cron llene el día en curso)
+export function getCategorias(desde, hasta, local) {
+  const qs = new URLSearchParams({ action: "categorias", desde, hasta });
+  if (local) qs.set("local", local);
+  return getJSON(`/api/metricas?${qs}`);
+}
+
+export function getVariantes(desde, hasta, local) {
+  const qs = new URLSearchParams({ action: "variantes", desde, hasta });
+  if (local) qs.set("local", local);
+  return getJSON(`/api/metricas?${qs}`);
+}
+
+// ── En vivo (fuentes directas) ──
 export async function getHoyVivo() {
   const hoy = hoyISO();
   const [woo, df] = await Promise.allSettled([
@@ -43,13 +57,25 @@ export async function getHoyVivo() {
   };
 }
 
+export function getVentasLive(localKey, fecha) {
+  const f = fecha ? `&fecha=${fecha}` : "";
+  return getJSON(`/api/metricas?action=live&local=${localKey}${f}`, 60000);
+}
+
+// ── Finanzas (Google Sheet, como siempre) ──
+export function getDashboardFinanzas(mes, anio, marca = "tussy") {
+  const target = marca === "shato" ? "&target=shato" : "";
+  const params = encodeURIComponent(JSON.stringify({ mes, anio }));
+  return getJSON(`/api/proxy?action=getDashboard&params=${params}${target}`, 30000);
+}
+
 export const LOCALES = [
-  { key: "palermo", nombre: "Palermo",  color: "var(--color-s-palermo)" },
-  { key: "laplata", nombre: "La Plata", color: "var(--color-s-laplata)" },
-  { key: "online",  nombre: "Online",   color: "var(--color-s-online)" },
-  { key: "dot",     nombre: "Dot",      color: "var(--color-s-dot)" },
-  { key: "abasto",  nombre: "Abasto",   color: "var(--color-s-abasto)" },
-  { key: "cordoba", nombre: "Córdoba",  color: "var(--color-s-cordoba)" },
+  { key: "palermo", nombre: "Palermo",  db: "Palermo",    color: "var(--color-s-palermo)" },
+  { key: "laplata", nombre: "La Plata", db: "La Plata",   color: "var(--color-s-laplata)" },
+  { key: "online",  nombre: "Online",   db: "Tiendanube", color: "var(--color-s-online)" },
+  { key: "dot",     nombre: "Dot",      db: "Dot",        color: "var(--color-s-dot)" },
+  { key: "abasto",  nombre: "Abasto",   db: "Abasto",     color: "var(--color-s-abasto)" },
+  { key: "cordoba", nombre: "Córdoba",  db: "Córdoba",    color: "var(--color-s-cordoba)" },
 ];
 
 export function fmtPesos(n) {

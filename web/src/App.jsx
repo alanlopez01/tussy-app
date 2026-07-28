@@ -37,8 +37,8 @@ function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="px-5 py-4 text-[11px] text-white/35">
-        Datos: base Tussy · en vivo
+      <div className="px-5 py-4 text-[10px] uppercase tracking-widest text-white/30 font-semibold">
+        Tussy · Métricas
       </div>
     </aside>
   );
