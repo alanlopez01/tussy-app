@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/alanlopez01/tussy-app#readme",
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "web-push": "^3.6.7"
   }
 }
