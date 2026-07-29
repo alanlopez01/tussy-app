@@ -59,7 +59,7 @@ function Sidebar({ user }) {
 
 function TabBar() {
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-negro text-white flex justify-around py-2 pb-[max(8px,env(safe-area-inset-bottom))]">
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-negro text-white flex justify-around pt-2 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))]">
       {NAV.map(item => (
         <NavLink
           key={item.to}

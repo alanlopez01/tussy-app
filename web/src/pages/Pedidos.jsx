@@ -22,6 +22,7 @@ export default function Pedidos() {
   const [ultimaAct, setUltimaAct] = useState(null);
   const [estadoPush, setEstadoPush] = useState("verificando");
   const [msgPush, setMsgPush] = useState("");
+  const [abierta, setAbierta] = useState(null); // orden expandida
   const timerRef = useRef(null);
 
   const cargar = useCallback(() => {
@@ -96,27 +97,63 @@ export default function Pedidos() {
           <p className="text-[13px] text-ink-3 py-6 text-center">Todavía no hay ventas registradas hoy.</p>
         ) : (
           <ul className="divide-y divide-borde">
-            {ops.map(op => (
-              <li key={`${op.local}-${op.orden_id}`} className="py-3 flex items-center gap-3 sm:gap-4">
-                <span className="w-1 self-stretch rounded-full shrink-0" style={{ background: colorDeLocal(op.local) }} />
-                <div className="w-12 shrink-0">
-                  <div className="text-[13px] font-semibold text-ink tabular-nums">{op.hora ? op.hora.slice(0, 5) : "—"}</div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-semibold text-ink">
-                    {nombreCorto(op.local)}
-                    <span className="text-ink-3 font-normal hidden sm:inline"> · #{op.orden_id}</span>
-                  </div>
-                  <div className="text-[12px] text-ink-3 truncate">
-                    {(op.productos || []).join(", ") || "—"}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-[14px] font-bold text-ink tabular-nums">{fmtPesos(op.total)}</div>
-                  <div className="text-[11px] text-ink-3">{op.unidades} {op.unidades === 1 ? "unidad" : "unidades"}</div>
-                </div>
-              </li>
-            ))}
+            {ops.map(op => {
+              const clave = `${op.local}-${op.orden_id}`;
+              const expandida = abierta === clave;
+              return (
+                <li key={clave}>
+                  <button
+                    onClick={() => setAbierta(expandida ? null : clave)}
+                    className="w-full text-left py-3 flex items-center gap-3 sm:gap-4 cursor-pointer hover:bg-surface/60 rounded-md px-1 -mx-1 transition-colors"
+                  >
+                    <span className="w-1 self-stretch rounded-full shrink-0" style={{ background: colorDeLocal(op.local) }} />
+                    <div className="w-12 shrink-0">
+                      <div className="text-[13px] font-semibold text-ink tabular-nums">{op.hora ? op.hora.slice(0, 5) : "—"}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-ink">
+                        {nombreCorto(op.local)}
+                        <span className="text-ink-3 font-normal hidden sm:inline"> · #{op.orden_id}</span>
+                      </div>
+                      {!expandida && (
+                        <div className="text-[12px] text-ink-3 truncate">
+                          {(op.items || []).map(i => i.producto).join(", ") || "—"}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[14px] font-bold text-ink tabular-nums">{fmtPesos(op.total)}</div>
+                      <div className="text-[11px] text-ink-3">{op.unidades} {op.unidades === 1 ? "unidad" : "unidades"}</div>
+                    </div>
+                    <span className={`text-ink-3 text-[11px] shrink-0 transition-transform ${expandida ? "rotate-180" : ""}`}>▾</span>
+                  </button>
+                  {expandida && (
+                    <div className="ml-8 sm:ml-10 mb-3 rounded-md bg-surface px-4 py-3 space-y-1.5">
+                      <div className="text-[11px] text-ink-3 sm:hidden">#{op.orden_id}</div>
+                      {(op.items || []).map((it, i) => (
+                        <div key={i} className="flex items-center justify-between gap-3 text-[12px]">
+                          <span className="text-ink-2 min-w-0 truncate">
+                            {it.cantidad > 1 ? `${it.cantidad}× ` : ""}{it.producto}
+                            {(it.color || it.talle) && (
+                              <span className="text-ink-3"> · {[it.color, it.talle].filter(Boolean).join(" / ")}</span>
+                            )}
+                          </span>
+                          <span className="font-semibold text-ink tabular-nums shrink-0">{fmtPesos(it.total)}</span>
+                        </div>
+                      ))}
+                      {op.total !== (op.items || []).reduce((a, i) => a + Number(i.total || 0), 0) && (
+                        <div className="flex items-center justify-between gap-3 text-[12px] border-t border-borde pt-1.5">
+                          <span className="text-ink-3">Envío / descuentos</span>
+                          <span className="font-semibold text-ink tabular-nums">
+                            {fmtPesos(op.total - (op.items || []).reduce((a, i) => a + Number(i.total || 0), 0))}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </Card>

@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { getTopProductos, getCategorias, getVariantes, rangoDe, fmtPesosCorto, LOCALES } from "../lib/api.js";
-import { Card, Spinner, Chips, BotonActualizar, BarraH, SelectorFechas, Paginacion } from "../components/ui.jsx";
+import { Card, Spinner, Chips, BotonActualizar, BarraH, Paginacion } from "../components/ui.jsx";
 
 const POR_PAGINA = 10;
+const PERIODOS = [
+  { key: "hoy", label: "Hoy" },
+  { key: "ayer", label: "Ayer" },
+  { key: "7d", label: "Últimos 7 días" },
+  { key: "mes", label: "Este mes" },
+  { key: "mesPasado", label: "Mes pasado" },
+  { key: "custom", label: "Personalizado…" },
+];
+const selectCls = "rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[12px] font-semibold text-ink-2";
 
 export default function Productos() {
   const [localKey, setLocalKey] = useState("");
@@ -49,16 +58,24 @@ export default function Productos() {
         <BotonActualizar onClick={cargar} cargando={cargando} />
       </header>
 
-      <SelectorFechas rango={rango} onChange={setRango} />
-
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
+        <select value={rango.key} className={selectCls}
+                onChange={e => { const k = e.target.value; if (k !== "custom") setRango({ key: k, ...rangoDe(k) }); else setRango(r => ({ ...r, key: "custom" })); }}>
+          {PERIODOS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+        </select>
+        {rango.key === "custom" && (
+          <span className="inline-flex items-center gap-1.5">
+            <input type="date" value={rango.desde} onChange={e => setRango(r => ({ ...r, desde: e.target.value }))} className={selectCls} />
+            <span className="text-[12px] text-ink-3">a</span>
+            <input type="date" value={rango.hasta} onChange={e => setRango(r => ({ ...r, hasta: e.target.value }))} className={selectCls} />
+          </span>
+        )}
+        <select value={localKey} onChange={e => setLocalKey(e.target.value)} className={selectCls}>
+          <option value="">Todos los locales</option>
+          {LOCALES.map(l => <option key={l.key} value={l.key}>{l.nombre}</option>)}
+        </select>
         <Chips
-          opciones={[{ value: "", label: "Todos" }, ...LOCALES.map(l => ({ value: l.key, label: l.nombre, color: l.color }))]}
-          valor={localKey}
-          onChange={setLocalKey}
-        />
-        <Chips
-          opciones={[{ value: "cantidad", label: "Por unidades" }, { value: "total", label: "Por facturación" }]}
+          opciones={[{ value: "cantidad", label: "Unidades" }, { value: "total", label: "Facturación" }]}
           valor={orden}
           onChange={setOrden}
         />

@@ -209,31 +209,94 @@ async function ingesta(req, res) {
   // 3) Notificaciones push (9 a 23 ARG)
   let notificadas = 0;
   const hora = horaArgNum();
-  if (eventos.length > 0 && hora >= 9 && hora < 23 &&
-      process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-    try {
-      webpush.setVapidDetails("mailto:alansergio67@gmail.com", process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
-      const opsUrl = process.env.APPS_SCRIPT_URL_OPERACIONES;
-      const subsResp = await fetch(`${opsUrl}?action=getPushSubs&params=%7B%7D`, { redirect: "follow", signal: AbortSignal.timeout(10000) }).then(r => r.json()).catch(() => null);
-      const subs = subsResp?.subs || [];
-      const fmt = n => "$" + Math.round(n).toLocaleString("es-AR");
-      // Muchas ventas juntas (puesta al día) → una sola notificación resumen
-      const payloads = eventos.length > 6
-        ? [{ title: "Tussy — ventas nuevas", body: `${eventos.length} ventas · ${fmt(eventos.reduce((a, e) => a + e.total, 0))}`, url: "/pedidos" }]
-        : eventos.map(e => ({
-            title: `Venta ${e.local === "Tiendanube" ? "Online" : e.local}`,
-            body: `${fmt(e.total)} · ${e.unidades} ${e.unidades === 1 ? "unidad" : "unidades"}${e.hora ? " · " + e.hora : ""}`,
-            url: "/pedidos",
-          }));
-      for (const sub of subs) {
-        for (const p of payloads) {
-          try { await webpush.sendNotification(sub.subscription, JSON.stringify(p)); notificadas++; } catch {}
-        }
-      }
-    } catch {}
+  if (eventos.length > 0 && hora >= 9 && hora < 23) {
+    const fmt = n => "$" + Math.round(n).toLocaleString("es-AR");
+    // Muchas ventas juntas (puesta al día) → una sola notificación resumen
+    const payloads = eventos.length > 6
+      ? [{ title: "Tussy — ventas nuevas", body: `${eventos.length} ventas · ${fmt(eventos.reduce((a, e) => a + e.total, 0))}`, url: "/pedidos" }]
+      : eventos.map(e => ({
+          title: `Venta ${e.local === "Tiendanube" ? "Online" : e.local}`,
+          body: `${fmt(e.total)} · ${e.unidades} ${e.unidades === 1 ? "unidad" : "unidades"}${e.hora ? " · " + e.hora : ""}`,
+          url: "/pedidos",
+        }));
+    notificadas = await enviarPush(payloads);
   }
 
   return res.status(200).json({ ok: true, fecha: hoy, resumen, eventos: eventos.length, notificadas });
+}
+
+// ── Envío de push a todas las suscripciones guardadas ──
+async function enviarPush(payloads) {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return 0;
+  let enviadas = 0;
+  try {
+    webpush.setVapidDetails("mailto:alansergio67@gmail.com", process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+    const opsUrl = process.env.APPS_SCRIPT_URL_OPERACIONES;
+    const subsResp = await fetch(`${opsUrl}?action=getPushSubs&params=%7B%7D`, { redirect: "follow", signal: AbortSignal.timeout(10000) }).then(r => r.json()).catch(() => null);
+    const subs = subsResp?.subs || [];
+    for (const sub of subs) {
+      for (const p of payloads) {
+        try { await webpush.sendNotification(sub.subscription, JSON.stringify(p)); enviadas++; } catch { /* sub vencida */ }
+      }
+    }
+  } catch { /* no bloquear */ }
+  return enviadas;
+}
+
+// Totales por local para un rango, desde la base
+async function totalesRango(sql, desde, hasta) {
+  const rows = await sql`
+    SELECT local, ROUND(SUM(total))::bigint AS total
+    FROM ventas WHERE fecha BETWEEN ${desde} AND ${hasta}
+    GROUP BY local ORDER BY SUM(total) DESC`;
+  const total = rows.reduce((a, r) => a + Number(r.total), 0);
+  return { rows, total };
+}
+
+const CORTO_LOCAL = { "Palermo": "Pal", "La Plata": "LP", "Tiendanube": "Online", "Dot": "Dot", "Abasto": "Ab", "Córdoba": "Cba", "Cordoba": "Cba" };
+function fmtCortoPesos(n) {
+  const v = Math.round(n || 0);
+  if (Math.abs(v) >= 1e6) return "$" + (v / 1e6).toLocaleString("es-AR", { maximumFractionDigits: 1 }) + "M";
+  if (Math.abs(v) >= 1e3) return "$" + Math.round(v / 1e3) + "mil";
+  return "$" + v;
+}
+
+// ── Cierre del día anterior (cron diario 00:05 ARG via cron-job.org) ──
+async function cierreDiario(req, res) {
+  const secret = process.env.CRON_SECRET || "tussy2026";
+  if (req.query.secret !== secret) return res.status(401).json({ error: "secret inválido" });
+  const sql = neon(process.env.DATABASE_URL);
+  const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
+  const { rows, total } = await totalesRango(sql, ayer, ayer);
+  const [d, m] = [ayer.slice(8, 10), ayer.slice(5, 7)];
+  const desglose = rows.map(r => `${CORTO_LOCAL[r.local] || r.local} ${fmtCortoPesos(r.total)}`).join(" · ");
+  const enviadas = await enviarPush([{
+    title: `Cierre ${d}/${m} — Total ${fmtCortoPesos(total)}`,
+    body: desglose || "Sin ventas registradas",
+    url: "/",
+  }]);
+  return res.status(200).json({ ok: true, fecha: ayer, total, porLocal: rows, notificadas: enviadas });
+}
+
+// ── Resumen de los lunes: mes en curso desglosado (cron lunes 09:00 ARG) ──
+async function resumenSemanal(req, res) {
+  const secret = process.env.CRON_SECRET || "tussy2026";
+  if (req.query.secret !== secret) return res.status(401).json({ error: "secret inválido" });
+  const sql = neon(process.env.DATABASE_URL);
+  const hoy = hoyArg();
+  const desde = hoy.slice(0, 8) + "01";
+  const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
+  const hasta = ayer >= desde ? ayer : hoy;
+  const { rows, total } = await totalesRango(sql, desde, hasta);
+  const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const mesNombre = MESES[parseInt(hoy.slice(5, 7)) - 1];
+  const desglose = rows.map(r => `${CORTO_LOCAL[r.local] || r.local} ${fmtCortoPesos(r.total)}`).join(" · ");
+  const enviadas = await enviarPush([{
+    title: `Mes de ${mesNombre}: ${fmtCortoPesos(total)} facturados`,
+    body: desglose || "Sin ventas registradas",
+    url: "/",
+  }]);
+  return res.status(200).json({ ok: true, desde, hasta, total, porLocal: rows, notificadas: enviadas });
 }
 
 // ── Feed: todas las operaciones de HOY (día argentino), desde la base ──
@@ -246,7 +309,9 @@ async function feed(req, res) {
            MAX(hora) AS hora,
            ROUND(SUM(total))::bigint AS total,
            SUM(CASE WHEN producto NOT IN ('ENVIO','DESCUENTO','AJUSTE') THEN cantidad ELSE 0 END)::int AS unidades,
-           (ARRAY_AGG(producto ORDER BY total DESC) FILTER (WHERE producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')))[1:3] AS productos
+           JSON_AGG(JSON_BUILD_OBJECT('producto', producto, 'cantidad', cantidad, 'talle', talle, 'color', color, 'total', ROUND(total))
+                    ORDER BY total DESC)
+             FILTER (WHERE producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')) AS items
     FROM ventas
     WHERE fecha = ${hoy} AND orden_id IS NOT NULL
     GROUP BY fecha, local, orden_id
@@ -254,7 +319,7 @@ async function feed(req, res) {
     LIMIT ${lim}`;
   return res.status(200).json({
     fecha: hoy,
-    operaciones: rows.map(r => ({ ...r, total: Number(r.total), productos: r.productos || [] })),
+    operaciones: rows.map(r => ({ ...r, total: Number(r.total), items: r.items || [] })),
   });
 }
 
@@ -298,6 +363,8 @@ module.exports = async function handler(req, res) {
     if (action === "ingesta") return await ingesta(req, res);
     if (action === "feed") return await feed(req, res);
     if (action === "operaciones") return await operaciones(req, res);
+    if (action === "cierre") return await cierreDiario(req, res);
+    if (action === "semanal") return await resumenSemanal(req, res);
 
     if (!process.env.DATABASE_URL) {
       return res.status(503).json({ error: "DATABASE_URL no configurada" });

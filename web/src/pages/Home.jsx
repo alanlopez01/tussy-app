@@ -10,24 +10,17 @@ function fechaCorta(iso) {
   return `${parseInt(d)}/${parseInt(m)}`;
 }
 
-const RANGOS_GRAFICO = [
-  { key: 7, label: "7 días" },
-  { key: 30, label: "30 días" },
-  { key: 90, label: "90 días" },
-];
-
 export default function Home() {
   const [serie, setSerie] = useState(null);
   const [hoyVivo, setHoyVivo] = useState(null);
   const [errorSerie, setErrorSerie] = useState(null);
   const [cargando, setCargando] = useState(false);
-  const [diasGrafico, setDiasGrafico] = useState(30);
 
   const cargar = useCallback(() => {
     setCargando(true);
     setErrorSerie(null);
-    // Serie amplia: cubre 90 días de gráfico y el mes anterior completo para comparativas
-    const desde = [diasAtras(89), mesAnteriorRango().desde].sort()[0];
+    // Serie desde el mes anterior completo (para las comparativas) hasta ayer
+    const desde = mesAnteriorRango().desde;
     const p1 = getSerie(desde, diasAtras(1))
       .then(d => setSerie(d.dias.sort((a, b) => a.fecha.localeCompare(b.fecha))))
       .catch(e => setErrorSerie(e.message));
@@ -77,10 +70,26 @@ export default function Home() {
     return { actual, anterior };
   }, [serie, hoy]);
 
-  const serieGrafico = useMemo(
-    () => (serie || []).filter(d => d.fecha >= diasAtras(diasGrafico)),
-    [serie, diasGrafico]
-  );
+  // Gráfico: SIEMPRE el mes actual completo (día 1 → fin de mes), con hoy en vivo.
+  // Los días futuros quedan vacíos pero la línea de tiempo se ve entera.
+  const serieGrafico = useMemo(() => {
+    const inicio = primerDiaMes();
+    const [y, m] = inicio.split("-").map(Number);
+    const ultimoDia = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const porFecha = {};
+    for (const d of serie || []) if (d.fecha >= inicio) porFecha[d.fecha] = d;
+    if (hoy) {
+      const fila = { fecha: hoyISO() };
+      for (const s of hoy.stores) fila[s.key] = s.total || 0;
+      porFecha[hoyISO()] = fila;
+    }
+    const dias = [];
+    for (let d = 1; d <= ultimoDia; d++) {
+      const fecha = `${inicio.slice(0, 8)}${String(d).padStart(2, "0")}`;
+      dias.push(porFecha[fecha] || { fecha });
+    }
+    return dias;
+  }, [serie, hoy]);
 
   const barrasHoy = hoy?.stores
     .filter(s => !s.cargando)
@@ -156,29 +165,15 @@ export default function Home() {
       </Card>
 
       <Card
-        title="Facturación diaria"
-        right={
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            <div className="flex gap-1">
-              {RANGOS_GRAFICO.map(r => (
-                <button key={r.key} onClick={() => setDiasGrafico(r.key)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
-                    diasGrafico === r.key ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde hover:bg-surface"
-                  }`}>
-                  {r.label}
-                </button>
-              ))}
-            </div>
-            {serie && <LeyendaLocal locales={LOCALES} />}
-          </div>
-        }
+        title={`Facturación diaria · ${new Date().toLocaleDateString("es-AR", { month: "long" })}`}
+        right={serie && <LeyendaLocal locales={LOCALES} />}
       >
         {errorSerie ? (
           <p className="text-[13px] text-bad py-6 text-center">No pude leer la base: {errorSerie}</p>
         ) : !serie ? <Spinner /> : (
           // En mobile el gráfico scrollea horizontal para que cada día siga siendo legible
           <div className="overflow-x-auto">
-            <div className="h-[280px]" style={{ minWidth: Math.max(diasGrafico * 22, 320) + "px" }}>
+            <div className="h-[280px]" style={{ minWidth: serieGrafico.length * 22 + "px" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={serieGrafico} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barCategoryGap="22%">
                   <CartesianGrid vertical={false} stroke="var(--color-borde)" />

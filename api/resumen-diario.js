@@ -167,7 +167,11 @@ module.exports = async function handler(req, res) {
     const pushResults = [];
     const toRemove = [];
 
-    if (!soloGuardar) {
+    // El push de cierre ahora lo manda /api/metricas?action=cierre (con desglose
+    // por local). Este push legacy queda apagado salvo que se saque la env var.
+    const legacyPushOff = process.env.LEGACY_PUSH_OFF === "1";
+
+    if (!soloGuardar && !legacyPushOff) {
       for (const sub of subs) {
         try {
           await webpush.sendNotification(sub.subscription, payload);
