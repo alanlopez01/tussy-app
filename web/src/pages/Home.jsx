@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
 import { getSerie, getHoyVivo, hoyISO, diasAtras, primerDiaMes, mesAnteriorRango, LOCALES, fmtPesos, fmtPesosCorto } from "../lib/api.js";
-import { Card, StatTile, Spinner, LeyendaLocal, TooltipPesos, BotonActualizar } from "../components/ui.jsx";
+import { Card, StatTile, Spinner, LeyendaLocal, TooltipPesos, BotonActualizar, BarraH } from "../components/ui.jsx";
 
 function fechaCorta(iso) {
   const [, m, d] = iso.split("-");
@@ -123,7 +123,16 @@ export default function Home() {
       <Card title="Ventas de hoy por local">
         {!hoy ? <Spinner /> : (
           <>
-            <div className="h-[200px]">
+            {/* Mobile: barras horizontales, más legibles en pantalla angosta */}
+            <div className="sm:hidden">
+              {barrasHoy.map(b => (
+                <BarraH key={b.nombre} etiqueta={b.nombre} valor={b.total}
+                        max={Math.max(...barrasHoy.map(x => x.total), 1)}
+                        texto={fmtPesosCorto(b.total)} color={b.color} />
+              ))}
+            </div>
+            {/* Desktop: gráfico de barras verticales */}
+            <div className="hidden sm:block h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barrasHoy} margin={{ top: 20, right: 8, left: 8, bottom: 0 }} barCategoryGap="35%">
                   <CartesianGrid vertical={false} stroke="var(--color-borde)" />
@@ -167,22 +176,25 @@ export default function Home() {
         {errorSerie ? (
           <p className="text-[13px] text-bad py-6 text-center">No pude leer la base: {errorSerie}</p>
         ) : !serie ? <Spinner /> : (
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={serieGrafico} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barCategoryGap="22%">
-                <CartesianGrid vertical={false} stroke="var(--color-borde)" />
-                <XAxis dataKey="fecha" tickFormatter={fechaCorta} axisLine={false} tickLine={false}
-                       tick={{ fontSize: 11, fill: "var(--color-ink-3)" }} minTickGap={20} />
-                <YAxis tickFormatter={fmtPesosCorto} axisLine={false} tickLine={false}
-                       tick={{ fontSize: 11, fill: "var(--color-ink-3)" }} width={62} />
-                <Tooltip content={<TooltipPesos labelFormatter={fechaCorta} />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
-                {LOCALES.map((l, i) => (
-                  <Bar key={l.key} dataKey={l.key} name={l.nombre} stackId="dia" fill={l.color}
-                       stroke="var(--color-surface-1)" strokeWidth={1}
-                       radius={i === LOCALES.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
+          // En mobile el gráfico scrollea horizontal para que cada día siga siendo legible
+          <div className="overflow-x-auto">
+            <div className="h-[280px]" style={{ minWidth: Math.max(diasGrafico * 22, 320) + "px" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={serieGrafico} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barCategoryGap="22%">
+                  <CartesianGrid vertical={false} stroke="var(--color-borde)" />
+                  <XAxis dataKey="fecha" tickFormatter={fechaCorta} axisLine={false} tickLine={false}
+                         tick={{ fontSize: 11, fill: "var(--color-ink-3)" }} minTickGap={20} />
+                  <YAxis tickFormatter={fmtPesosCorto} axisLine={false} tickLine={false}
+                         tick={{ fontSize: 11, fill: "var(--color-ink-3)" }} width={62} />
+                  <Tooltip content={<TooltipPesos labelFormatter={fechaCorta} />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
+                  {LOCALES.map((l, i) => (
+                    <Bar key={l.key} dataKey={l.key} name={l.nombre} stackId="dia" fill={l.color}
+                         stroke="var(--color-surface-1)" strokeWidth={1}
+                         radius={i === LOCALES.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
       </Card>

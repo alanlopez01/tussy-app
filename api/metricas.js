@@ -236,10 +236,11 @@ async function ingesta(req, res) {
   return res.status(200).json({ ok: true, fecha: hoy, resumen, eventos: eventos.length, notificadas });
 }
 
-// ── Feed de operaciones recientes (desde la base) ──
+// ── Feed: todas las operaciones de HOY (día argentino), desde la base ──
 async function feed(req, res) {
   const sql = neon(process.env.DATABASE_URL);
-  const lim = Math.min(parseInt(req.query.limite || 40), 100);
+  const lim = Math.min(parseInt(req.query.limite || 100), 300);
+  const hoy = hoyArg();
   const rows = await sql`
     SELECT fecha::text, local, orden_id,
            MAX(hora) AS hora,
@@ -247,11 +248,41 @@ async function feed(req, res) {
            SUM(CASE WHEN producto NOT IN ('ENVIO','DESCUENTO','AJUSTE') THEN cantidad ELSE 0 END)::int AS unidades,
            (ARRAY_AGG(producto ORDER BY total DESC) FILTER (WHERE producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')))[1:3] AS productos
     FROM ventas
-    WHERE fecha >= CURRENT_DATE - 3 AND orden_id IS NOT NULL
+    WHERE fecha = ${hoy} AND orden_id IS NOT NULL
     GROUP BY fecha, local, orden_id
+    ORDER BY MAX(hora) DESC NULLS LAST
+    LIMIT ${lim}`;
+  return res.status(200).json({
+    fecha: hoy,
+    operaciones: rows.map(r => ({ ...r, total: Number(r.total), productos: r.productos || [] })),
+  });
+}
+
+// ── Operaciones por local y rango (desde la base) — usado por Ventas "Este mes" ──
+async function operaciones(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const { desde, hasta } = req.query;
+  const local = req.query.local;
+  if (!desde || !hasta || !local) return res.status(400).json({ error: "Faltan local/desde/hasta" });
+  const lim = Math.min(parseInt(req.query.limite || 60), 300);
+
+  const [tot] = await sql`
+    SELECT ROUND(SUM(total))::bigint AS total, COUNT(DISTINCT orden_id)::int AS ops
+    FROM ventas WHERE fecha BETWEEN ${desde} AND ${hasta} AND local = ${local}`;
+  const rows = await sql`
+    SELECT fecha::text, orden_id,
+           MAX(hora) AS hora,
+           ROUND(SUM(total))::bigint AS total,
+           SUM(CASE WHEN producto NOT IN ('ENVIO','DESCUENTO','AJUSTE') THEN cantidad ELSE 0 END)::int AS unidades,
+           (ARRAY_AGG(producto ORDER BY total DESC) FILTER (WHERE producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')))[1:4] AS productos
+    FROM ventas
+    WHERE fecha BETWEEN ${desde} AND ${hasta} AND local = ${local} AND orden_id IS NOT NULL
+    GROUP BY fecha, orden_id
     ORDER BY fecha DESC, MAX(hora) DESC NULLS LAST
     LIMIT ${lim}`;
   return res.status(200).json({
+    ok: true, local, desde, hasta,
+    total: Number(tot?.total || 0), ops: tot?.ops || 0,
     operaciones: rows.map(r => ({ ...r, total: Number(r.total), productos: r.productos || [] })),
   });
 }
@@ -266,6 +297,7 @@ module.exports = async function handler(req, res) {
     if (action === "live") return await ventasLive(req, res);
     if (action === "ingesta") return await ingesta(req, res);
     if (action === "feed") return await feed(req, res);
+    if (action === "operaciones") return await operaciones(req, res);
 
     if (!process.env.DATABASE_URL) {
       return res.status(503).json({ error: "DATABASE_URL no configurada" });
