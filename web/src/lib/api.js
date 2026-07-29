@@ -72,24 +72,6 @@ export function getVariantes(desde, hasta, local) {
   return getJSON(`/api/metricas?${qs}`);
 }
 
-// ── En vivo (fuentes directas) ──
-export async function getHoyVivo() {
-  const hoy = hoyISO();
-  const [woo, df] = await Promise.allSettled([
-    getJSON(`/api/ventas?desde=${hoy}&hasta=${hoy}`, 30000),
-    getJSON(`/api/dragonfish?action=ventas&desde=${hoy}&hasta=${hoy}`, 55000),
-  ]);
-  return {
-    woo: woo.status === "fulfilled" ? woo.value : null,
-    df: df.status === "fulfilled" ? df.value : null,
-  };
-}
-
-export function getVentasLive(localKey, fecha) {
-  const f = fecha ? `&fecha=${fecha}` : "";
-  return getJSON(`/api/metricas?action=live&local=${localKey}${f}`, 60000);
-}
-
 // ── Finanzas (Google Sheet, como siempre) ──
 export function getDashboardFinanzas(mes, anio, marca = "tussy") {
   const target = marca === "shato" ? "&target=shato" : "";

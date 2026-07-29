@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
-import { getSerie, getHoyVivo, hoyISO, diasAtras, primerDiaMes, mesAnteriorRango, LOCALES, fmtPesos, fmtPesosCorto } from "../lib/api.js";
+import { getSerie, getJSON, hoyISO, diasAtras, primerDiaMes, mesAnteriorRango, LOCALES, fmtPesos, fmtPesosCorto } from "../lib/api.js";
 import { Card, StatTile, Spinner, LeyendaLocal, TooltipPesos, BotonActualizar, BarraH } from "../components/ui.jsx";
 
 function fechaCorta(iso) {
@@ -19,36 +19,41 @@ export default function Home() {
   const cargar = useCallback(() => {
     setCargando(true);
     setErrorSerie(null);
-    // Serie desde el mes anterior completo (para las comparativas) hasta ayer
+    // Todo sale de la base (el cron la actualiza cada 5 min): carga en <1 segundo.
+    // Serie desde el mes anterior completo (comparativas) hasta HOY inclusive.
     const desde = mesAnteriorRango().desde;
-    const p1 = getSerie(desde, diasAtras(1))
+    const p1 = getSerie(desde, hoyISO())
       .then(d => setSerie(d.dias.sort((a, b) => a.fecha.localeCompare(b.fecha))))
       .catch(e => setErrorSerie(e.message));
-    const p2 = getHoyVivo().then(setHoyVivo).catch(() => setHoyVivo({ woo: null, df: null }));
+    // Estado de sincronización: para avisar si algún local viene fallando hoy
+    const p2 = getJSON("/api/metricas?action=sync", 15000)
+      .then(d => setHoyVivo(d.pendientes || []))
+      .catch(() => setHoyVivo([]));
     Promise.allSettled([p1, p2]).then(() => setCargando(false));
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
 
   const hoy = useMemo(() => {
-    if (!hoyVivo) return null;
-    const { woo, df } = hoyVivo;
-    const stores = [
-      { key: "palermo", nombre: "Palermo",  src: woo?.palermo },
-      { key: "laplata", nombre: "La Plata", src: woo?.laplata },
-      { key: "online",  nombre: "Online",   src: woo?.tiendanube },
-      { key: "dot",     nombre: "Dot",      src: df?.dot },
-      { key: "abasto",  nombre: "Abasto",   src: df?.abasto },
-      { key: "cordoba", nombre: "Córdoba",  src: df?.cordoba },
-    ].map(s => ({
-      ...s,
-      total: s.src?.ok === false ? null : (s.src?.total ?? null),
-      cantidad: s.src?.cantidad ?? 0,
-      cargando: s.src == null,
+    if (!serie) return null;
+    const fila = serie.find(d => d.fecha === hoyISO());
+    const stores = LOCALES.map(l => ({
+      key: l.key, nombre: l.nombre,
+      total: fila ? (fila[l.key] || 0) : 0,
+      cargando: false,
     }));
-    const total = stores.reduce((a, s) => a + (s.total || 0), 0);
-    const ops = stores.reduce((a, s) => a + (s.total != null ? s.cantidad : 0), 0);
+    const total = fila?.total || 0;
+    const ops = fila?.ops || 0;
     return { stores, total, ops, ticket: ops > 0 ? total / ops : 0 };
+  }, [serie]);
+
+  // Locales con error de sincronización HOY (ej. computadora apagada)
+  const localesConError = useMemo(() => {
+    if (!hoyVivo) return [];
+    const nombres = { "Tiendanube": "Online" };
+    return hoyVivo
+      .filter(p => p.fecha === hoyISO())
+      .map(p => nombres[p.local] || p.local);
   }, [hoyVivo]);
 
   // Comparativa HOY vs AYER
@@ -58,17 +63,16 @@ export default function Home() {
     return ayer ? ayer.total : null;
   }, [serie]);
 
-  // Comparativa MES ACTUAL (1 → hoy) vs MES ANTERIOR (mismas fechas)
+  // Comparativa MES ACTUAL (1 → hoy, hoy ya incluido en la serie) vs MES ANTERIOR (mismas fechas)
   const mes = useMemo(() => {
     if (!serie) return null;
-    const serieMesActual = serie.filter(d => d.fecha >= primerDiaMes());
-    const actual = serieMesActual.reduce((a, d) => a + d.total, 0) + (hoy?.total || 0);
+    const actual = serie.filter(d => d.fecha >= primerDiaMes()).reduce((a, d) => a + d.total, 0);
     const pm = mesAnteriorRango();
     const anterior = serie
       .filter(d => d.fecha >= pm.desde && d.fecha <= pm.hastaMismasFechas)
       .reduce((a, d) => a + d.total, 0);
     return { actual, anterior };
-  }, [serie, hoy]);
+  }, [serie]);
 
   // Gráfico: SIEMPRE el mes actual completo (día 1 → fin de mes), con hoy en vivo.
   // Los días futuros quedan vacíos pero la línea de tiempo se ve entera.
@@ -78,32 +82,25 @@ export default function Home() {
     const ultimoDia = new Date(Date.UTC(y, m, 0)).getUTCDate();
     const porFecha = {};
     for (const d of serie || []) if (d.fecha >= inicio) porFecha[d.fecha] = d;
-    if (hoy) {
-      const fila = { fecha: hoyISO() };
-      for (const s of hoy.stores) fila[s.key] = s.total || 0;
-      porFecha[hoyISO()] = fila;
-    }
     const dias = [];
     for (let d = 1; d <= ultimoDia; d++) {
       const fecha = `${inicio.slice(0, 8)}${String(d).padStart(2, "0")}`;
       dias.push(porFecha[fecha] || { fecha });
     }
     return dias;
-  }, [serie, hoy]);
+  }, [serie]);
 
   const barrasHoy = hoy?.stores
-    .filter(s => !s.cargando)
     .map(s => ({ nombre: s.nombre, total: s.total || 0, color: LOCALES.find(l => l.key === s.key)?.color })) || [];
-
-  const localesCaidos = hoy?.stores.filter(s => s.total === null && !s.cargando) || [];
 
   return (
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[20px] font-bold text-ink">Resumen</h1>
-          <p className="text-[12px] text-ink-3 capitalize">
-            {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          <p className="text-[12px] text-ink-3">
+            <span className="capitalize">{new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
+            {" · datos con hasta 5 min de demora"}
           </p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />
@@ -155,9 +152,9 @@ export default function Home() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            {localesCaidos.length > 0 && (
+            {localesConError.length > 0 && (
               <p className="text-[12px] text-warn font-medium mt-2">
-                Sin conexión en este momento: {localesCaidos.map(s => s.nombre).join(", ")}. El dato se completa automáticamente.
+                Sin conexión con: {[...new Set(localesConError)].join(", ")}. El dato se recupera solo cuando vuelva.
               </p>
             )}
           </>

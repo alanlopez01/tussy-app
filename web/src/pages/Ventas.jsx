@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getVentasLive, getJSON, hoyISO, diasAtras, primerDiaMes, LOCALES, fmtPesos } from "../lib/api.js";
+import { getJSON, hoyISO, diasAtras, primerDiaMes, LOCALES, fmtPesos } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar, StatTile } from "../components/ui.jsx";
 
 const REFRESH_MS = 120000; // auto-actualiza cada 2 minutos (solo mirando "hoy")
@@ -15,10 +15,12 @@ export default function Ventas() {
   const cargar = useCallback((key, per) => {
     setCargando(true);
     const localDb = LOCALES.find(l => l.key === key)?.db;
-    const promesa = per === "mes"
-      ? getJSON(`/api/metricas?action=operaciones&local=${encodeURIComponent(localDb)}&desde=${primerDiaMes()}&hasta=${hoyISO()}&limite=60`, 30000)
-      : getVentasLive(key, per === "ayer" ? diasAtras(1) : hoyISO());
-    promesa
+    // Siempre desde la base (el cron la actualiza cada 5 min): carga instantánea
+    const [desde, hasta] = per === "mes" ? [primerDiaMes(), hoyISO()]
+      : per === "ayer" ? [diasAtras(1), diasAtras(1)]
+      : [hoyISO(), hoyISO()];
+    const lim = per === "mes" ? 60 : 150;
+    getJSON(`/api/metricas?action=operaciones&local=${encodeURIComponent(localDb)}&desde=${desde}&hasta=${hasta}&limite=${lim}`, 30000)
       .then(d => { setData(d); setUltimaAct(new Date()); })
       .catch(e => setData({ ok: false, error: e.message, operaciones: [] }))
       .finally(() => setCargando(false));
@@ -44,7 +46,7 @@ export default function Ventas() {
         <div>
           <h1 className="text-[20px] font-bold text-ink">Ventas</h1>
           <p className="text-[12px] text-ink-3">
-            Operaciones por local{periodo === "hoy" ? " · se actualiza sola cada 2 min" : ""}
+            Operaciones por local · datos con hasta 5 min de demora
             {ultimaAct && ` · actualizado ${ultimaAct.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
           </p>
         </div>
@@ -67,8 +69,7 @@ export default function Ventas() {
       {!data ? <Spinner texto={`Consultando ${local?.nombre}…`} /> : !data.ok ? (
         <Card>
           <p className="text-[13px] text-warn py-6 text-center font-medium">
-            {local?.nombre} no responde en este momento ({data.error}).
-            {["dot", "abasto", "cordoba"].includes(localKey) && " Si el local está cerrado, la computadora puede estar apagada."}
+            No pude leer la base ({data.error}). Probá actualizar en unos segundos.
           </p>
         </Card>
       ) : (
