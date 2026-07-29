@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tussy">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="manifest" href="/manifest.json">
+<title>Tussy</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --negro:#1A1A2E;--verde:#1E8449;--rojo:#C0392B;--azul:#1A5276;
+  --gris:#F0F2F5;--texto:#2C3E50;--borde:#E5E7EB;
+  --safe-top:env(safe-area-inset-top);--safe-bottom:env(safe-area-inset-bottom);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gris);color:var(--texto);display:flex;flex-direction:column}
+
+/* LOGIN */
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:var(--negro);padding:32px;padding-top:calc(32px + var(--safe-top))}
+.login-logo{width:200px;margin-bottom:32px}
+.login-card{background:rgba(255,255,255,0.06);border-radius:20px;padding:28px;width:100%;max-width:340px}
+.login-field{margin-bottom:16px}
+.login-label{color:rgba(255,255,255,0.6);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
+.login-input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:16px;outline:none}
+.login-input::placeholder{color:rgba(255,255,255,0.3)}
+.login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer}
+.login-remember input{width:18px;height:18px;accent-color:white}
+.login-remember span{color:rgba(255,255,255,0.6);font-size:13px}
+.login-btn{width:100%;padding:16px;background:white;color:var(--negro);border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer}
+.login-btn:disabled{opacity:0.5}
+.login-error{color:#E74C3C;font-size:13px;margin-top:12px;min-height:20px;font-weight:600;text-align:center}
+
+/* APP */
+.app{display:none;flex-direction:column;height:100%}
+.header{background:var(--negro);color:white;padding:12px 20px;padding-top:calc(12px + var(--safe-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-back{background:none;border:none;color:rgba(255,255,255,0.7);font-size:24px;cursor:pointer;padding:2px 6px;display:none;line-height:1}
+.header-title{color:white;font-size:15px;font-weight:800;display:none}
+.header-right{display:flex;align-items:center;gap:10px}
+.rol-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700}
+.rol-badge.admin{background:#F39C12;color:#000}
+.rol-badge.socio{background:rgba(255,255,255,0.15);color:white}
+.rol-badge.encargado{background:#27AE60;color:white}
+.rol-badge.produccion{background:#8E44AD;color:white}
+.rol-badge.stock{background:#3498DB;color:white}
+.logout-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:22px;cursor:pointer;padding:4px}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.content{padding:16px;max-width:480px;margin:0 auto;padding-bottom:24px}
+.section{display:none}.section.active{display:block}
+
+/* HOME */
+.home-header{background:linear-gradient(135deg,var(--negro),#2C3E6E);padding:24px 20px 28px;color:white;margin:-16px -16px 20px;border-radius:0 0 24px 24px}
+.home-saludo{font-size:13px;opacity:0.6;margin-bottom:4px}
+.home-nombre{font-size:24px;font-weight:900}
+.home-fecha{font-size:12px;opacity:0.5;margin-top:2px}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.home-card{background:white;border-radius:18px;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.08);transition:transform 0.15s;border:none;text-align:left;width:100%}
+.home-card:active{transform:scale(0.97)}
+.home-card.full{grid-column:1/-1;flex-direction:row;align-items:center;gap:16px}
+.home-icon{font-size:32px;line-height:1}
+.home-card.full .home-icon{font-size:36px}
+.home-card-info{flex:1}
+.home-card-title{font-size:15px;font-weight:800;color:var(--negro);margin-bottom:2px}
+.home-card-sub{font-size:11px;color:#aaa;font-weight:600}
+.home-card-arrow{font-size:18px;color:#ddd;margin-left:auto}
+
+/* KPI DASHBOARD */
+.kpi-section{margin-bottom:20px}
+.kpi-total-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);border-radius:18px;padding:20px;color:white;margin-bottom:12px;position:relative;overflow:hidden}
+.kpi-total-card::after{content:"";position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:rgba(255,255,255,0.05);border-radius:50%}
+.kpi-total-label{font-size:12px;opacity:0.6;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.kpi-total-value{font-size:32px;font-weight:900;margin:6px 0}
+.kpi-total-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kpi-delta{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,0.15)}
+.kpi-delta.up{background:rgba(39,174,96,0.25);color:#2ECC71}
+.kpi-delta.down{background:rgba(231,76,60,0.25);color:#E74C3C}
+.kpi-delta.neutral{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.7)}
+.kpi-vs-text{font-size:11px;opacity:0.5}
+.kpi-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi-stat{background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.kpi-stat-label{font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.kpi-stat-value{font-size:22px;font-weight:800;color:var(--negro);margin-top:2px}
+.kpi-stat-sub{font-size:11px;color:#bbb;margin-top:2px}
+.kpi-stores{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.kpi-store{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);position:relative;overflow:hidden}
+.kpi-store-name{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.3px}
+.kpi-store-total{font-size:15px;font-weight:800;color:var(--negro);margin-top:3px}
+.kpi-store-cant{font-size:10px;color:#bbb;margin-top:1px}
+.kpi-store-bar{height:3px;border-radius:2px;margin-top:8px;background:#f0f0f0;overflow:hidden}
+.kpi-store-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#3498DB,#2ECC71);transition:width 0.6s ease}
+.kpi-loading{text-align:center;padding:30px;color:#bbb;font-size:13px}
+.kpi-loading .spinner{margin:0 auto 10px}
+@media(max-width:400px){.kpi-stores{grid-template-columns:1fr 1fr}.kpi-total-value{font-size:28px}}
+
+/* ALERTAS STOCK */
+
+/* CARDS */
+.card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.card-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#aaa;margin-bottom:16px}
+.mes-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.mes-row select,.form-control{width:100%;padding:13px 14px;border:1.5px solid var(--borde);border-radius:12px;font-size:15px;background:white;-webkit-appearance:none;color:var(--texto);font-weight:600}
+.form-control:focus{outline:none;border-color:var(--negro)}
+.mes-btn{padding:12px 18px;background:var(--negro);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.marca-tab{padding:8px 16px;border:2px solid #E0E0E0;background:white;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;color:#888;transition:all 0.2s}
+.marca-tab.active{background:var(--negro);color:white;border-color:var(--negro)}
+.search-box{width:100%;padding:12px 14px;border:1.5px solid var(--borde);border-radius:12px;font-size:15px;background:white;color:var(--texto);margin-bottom:12px;outline:none}
+.search-box:focus{border-color:var(--negro)}
+
+/* SALDO */
+.saldo-card{background:linear-gradient(135deg,#1A1A2E,#2C3E6E);color:white;border-radius:16px;padding:22px 20px;margin-bottom:14px;text-align:center}
+.saldo-label{font-size:12px;opacity:0.55;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.saldo-value{font-size:36px;font-weight:900;letter-spacing:-1px}
+.saldo-neg{color:#E74C3C}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{background:white;border-radius:14px;padding:16px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.stat.full{grid-column:1/-1}
+.stat-label{font-size:11px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:5px}
+.stat-value{font-size:24px;font-weight:900}
+.stat-delta{font-size:11px;margin-top:4px;color:#aaa;font-weight:600}
+.stat-delta.up{color:var(--verde)}.stat-delta.down{color:var(--rojo)}
+.gasto{color:var(--rojo)}.ingreso{color:var(--verde)}.pos{color:var(--verde)}.neg{color:var(--rojo)}
+.chart-wrap{height:200px;position:relative;margin:4px 0 16px}
+.cat-list{list-style:none}
+.cat-item{padding:11px 0;border-bottom:1px solid #F3F4F6}
+.cat-item:last-child{border-bottom:none}
+.cat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.cat-name{font-size:14px;font-weight:600;color:var(--texto)}
+.cat-right{display:flex;align-items:center;gap:8px}
+.cat-pct{font-size:11px;color:#aaa;font-weight:600}
+.cat-monto{font-size:15px;font-weight:800}
+.bar-wrap{height:5px;background:#F0F0F0;border-radius:3px}
+.bar{height:5px;border-radius:3px}
+.tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F3F4F6}
+.tx-item:last-child{border-bottom:none}
+.tx-left{flex:1;min-width:0}
+.tx-desc{font-size:14px;font-weight:700;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-cat{font-size:12px;color:#aaa;margin-top:2px}
+.tx-monto{font-size:16px;font-weight:900;margin-left:12px;white-space:nowrap}
+
+/* VENTAS */
+.consolidado{background:linear-gradient(135deg,#1E8449,#27AE60);color:white;border-radius:16px;padding:20px;margin-bottom:14px;text-align:center}
+.consolidado-label{font-size:12px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.consolidado-value{font-size:36px;font-weight:900;letter-spacing:-1px}
+.canales-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.canal-mini{background:white;border-radius:12px;padding:14px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.canal-mini-nombre{font-size:10px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.canal-mini-total{font-size:18px;font-weight:900;color:var(--negro)}
+.canal-mini-cant{font-size:11px;color:#aaa;margin-top:2px}
+.canal-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07)}
+.canal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.canal-nombre{font-size:15px;font-weight:800;color:var(--texto)}
+.canal-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;background:var(--gris);color:#666}
+.canal-total{font-size:28px;font-weight:900;color:var(--negro);margin-bottom:4px}
+.canal-divider{height:1px;background:#F3F4F6;margin:12px 0}
+.pedido-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;border-bottom:1px solid #F9F9F9}
+.pedido-item:last-child{border-bottom:none}
+.pedido-left{flex:1}
+.pedido-cliente{font-weight:600;color:var(--texto)}
+.pedido-estado{font-size:11px;color:#aaa;margin-top:1px}
+.pedido-monto{font-weight:800;color:var(--verde)}
+
+/* STOCK */
+
+/* RANKING */
+.ranking-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F3F4F6}
+.ranking-item:last-child{border-bottom:none}
+.ranking-pos{font-size:20px;width:32px;text-align:center}
+.ranking-info{flex:1;min-width:0}
+.ranking-nombre{font-size:14px;font-weight:700;color:var(--texto);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ranking-detalle{font-size:11px;color:#aaa;margin-top:2px}
+.ranking-cant{font-size:18px;font-weight:900;color:var(--negro);text-align:right}
+.ranking-cant span{font-size:11px;color:#aaa;font-weight:600;display:block}
+
+/* PRODUCCION */
+.prod-tab{padding:8px 14px;border:2px solid var(--borde);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:white;color:#aaa;white-space:nowrap;transition:all 0.2s;flex-shrink:0}
+.prod-tab.active{background:var(--negro);border-color:var(--negro);color:white}
+
+/* FORM */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:800;color:#666;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.3px}
+.tipo-toggle{display:flex;gap:10px}
+.tipo-btn{flex:1;padding:15px;border:2px solid var(--borde);border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.2s;background:white}
+.tipo-btn.gasto.active{background:#FEF2F2;border-color:var(--rojo);color:var(--rojo)}
+.tipo-btn.ingreso.active{background:#F0FFF4;border-color:var(--verde);color:var(--verde)}
+.btn-submit{width:100%;padding:18px;background:var(--negro);color:white;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;margin-top:8px}
+.btn-submit:disabled{opacity:0.4}
+
+/* MISC */
+.empty{text-align:center;padding:40px 20px;color:#bbb}
+.empty .e-icon{font-size:48px;margin-bottom:12px}
+.empty p{font-size:15px;font-weight:600}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;color:#bbb}
+.spinner{width:32px;height:32px;border:3px solid #eee;border-top-color:var(--negro);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(24px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--negro);color:white;padding:13px 24px;border-radius:24px;font-size:14px;font-weight:700;transition:all 0.3s;z-index:999;white-space:nowrap;opacity:0;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.ok{background:var(--verde)}.toast.err{background:var(--rojo)}
+.tabs-row{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.marca-toggle{display:flex;gap:8px;margin-bottom:12px}
+.marca-btn{flex:1;padding:10px;border:2px solid var(--borde);border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;background:white;color:#aaa;transition:all 0.2s;text-align:center}
+.marca-btn.tussy.active{background:#1A1A2E;border-color:#1A1A2E;color:white}
+.marca-btn.shato.active{background:#E67E22;border-color:#E67E22;color:white}
+.refresh-btn{background:none;border:1.5px solid var(--borde);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;color:#666;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:12px;width:100%}
+.refresh-btn:active{background:#f0f0f0}
+.refresh-icon{display:inline-block;transition:transform 0.5s}
+.local-filter{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px}
+.local-btn{padding:7px 12px;border-radius:20px;border:1.5px solid var(--borde);background:white;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;color:#888}
+.local-btn.active{background:var(--negro);border-color:var(--negro);color:white}
+.refresh-icon.spinning{transform:rotate(360deg)}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="login-screen">
+  <img src="logo.png" class="login-logo" alt="Tussy">
+  <div class="login-card">
+    <div class="login-field">
+      <label class="login-label">Usuario</label>
+      <input type="text" id="login-user" class="login-input" placeholder="Tu usuario" autocomplete="username" autocapitalize="none">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Contrasena</label>
+      <input type="password" id="login-pass" class="login-input" placeholder="Tu contrasena" autocomplete="current-password">
+    </div>
+    <label class="login-remember">
+      <input type="checkbox" id="login-remember">
+      <span>Recordarme</span>
+    </label>
+    <button class="login-btn" id="login-btn" onclick="hacerLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="header">
+    <div class="header-left">
+      <button class="header-back" id="btn-back" onclick="goBack()">&#8592;</button>
+      <img src="logo.png" id="header-logo" style="height:40px;filter:invert(1)" alt="Tussy">
+      <span class="header-title" id="header-title"></span>
+    </div>
+    <div class="header-right">
+      <span class="rol-badge" id="rol-badge"></span>
+      <button class="logout-btn" id="btn-push" onclick="activarNotificaciones()" style="display:none;font-size:18px;background:none;border:none;color:white;cursor:pointer;padding:4px">🔔</button>
+      <button class="logout-btn" onclick="logout()">&#8617;</button>
+    </div>
+  </div>
+  <div class="scroll-area" id="scroll-area">
+    <div class="content">
+
+      <!-- HOME -->
+      <div class="section active" id="sec-home">
+        <div class="home-header">
+          <div class="home-saludo">Bienvenido,</div>
+          <div class="home-nombre" id="home-nombre"></div>
+          <div class="home-fecha" id="home-fecha"></div>
+        </div>
+        <div id="push-banner-container"></div>
+        <div id="home-kpi"></div>
+        <div id="home-kpi-refresh" style="display:none"><button class="refresh-btn" onclick="cargarKPI()"><span class="refresh-icon">&#128260;</span> Actualizar KPIs</button></div>
+        <div class="home-grid" id="home-grid"></div>
+      </div>
+
+      <!-- FINANZAS -->
+      <div class="section" id="sec-resumen">
+        <div class="marca-toggle">
+          <button class="marca-btn tussy active" id="marca-tussy" onclick="setMarca('tussy')">&#128153; Tussy</button>
+          <button class="marca-btn shato" id="marca-shato" onclick="setMarca('shato')">&#128992; Shato</button>
+        </div>
+        <div class="tabs-row">
+          <button class="prod-tab active" id="fin-tab-info" onclick="finTab('info')">Informacion</button>
+          <button class="prod-tab" id="fin-tab-cargar" onclick="finTab('cargar')">Cargar</button>
+        </div>
+        <div id="fin-info">
+          <div class="mes-row">
+            <select id="sel-mes">
+              <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+              <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+              <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+            <select id="sel-anio" style="width:90px;flex:none"></select>
+            <button class="mes-btn" onclick="cargarDashboard()">Ver</button>
+          </div>
+          <div id="dashboard-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+        </div>
+        <div id="fin-cargar" style="display:none">
+          <div class="card">
+            <div class="card-title">Nueva transaccion</div>
+            <div class="form-group">
+              <label class="form-label">Tipo</label>
+              <div class="tipo-toggle">
+                <button class="tipo-btn gasto active" id="btn-gasto" onclick="setTipo('Gasto')">Gasto</button>
+                <button class="tipo-btn ingreso" id="btn-ingreso" onclick="setTipo('Ingreso')">Ingreso</button>
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Fecha</label><input type="date" id="f-fecha" class="form-control"></div>
+            <div class="form-group"><label class="form-label">Descripcion</label><input type="text" id="f-desc" class="form-control" placeholder="Ej: Tela Juan..."></div>
+            <div class="form-group"><label class="form-label">Categoria</label><select id="f-cat" class="form-control"></select></div>
+            <div class="form-group"><label class="form-label">Medio de pago</label>
+              <select id="f-medio" class="form-control"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select></div>
+            <div class="form-group"><label class="form-label">Monto ($)</label><input type="number" id="f-monto" class="form-control" placeholder="0" inputmode="numeric"></div>
+            <div class="form-group"><label class="form-label">Notas (opcional)</label><input type="text" id="f-notas" class="form-control" placeholder="Aclaraciones..."></div>
+            <button class="btn-submit" id="btn-guardar" onclick="guardarTransaccion()">Guardar transaccion</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VENTAS -->
+      <div class="section" id="sec-ventas">
+        <div id="marca-tabs" style="display:none;margin-bottom:12px">
+          <div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0">
+            <button class="marca-tab active" onclick="seleccionarMarca('todas')">Todas</button>
+            <button class="marca-tab" onclick="seleccionarMarca('tussy')">Tussy</button>
+            <button class="marca-tab" onclick="seleccionarMarca('shato')">Shato</button>
+            <button class="marca-tab" onclick="seleccionarMarca('blanks')">Blanks</button>
+          </div>
+        </div>
+        <div class="mes-row">
+          <select id="v-periodo" class="form-control" style="flex:1" onchange="toggleFechaCustom()">
+            <option value="hoy">Hoy</option><option value="ayer">Ayer</option>
+            <option value="mes">Este mes</option><option value="custom">Personalizado</option>
+          </select>
+          <button class="mes-btn" onclick="cargarVentas()">Ver</button>
+        </div>
+        <button class="refresh-btn" onclick="refreshSeccion('ventas')"><span class="refresh-icon" id="ri-ventas">&#128260;</span> Actualizar</button>
+        <div id="custom-fechas" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
+          <input type="date" id="v-desde" class="form-control">
+          <input type="date" id="v-hasta" class="form-control">
+        </div>
+        <div id="ventas-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+      </div>
+
+
+      <!-- REPORTES -->
+      <div class="section" id="sec-reportes">
+        <div class="tabs-row">
+          <button class="prod-tab active" id="rep-tab-ranking" onclick="repTab('ranking')">Ranking</button>
+          <button class="prod-tab" id="rep-tab-productos" onclick="repTab('productos')">Top Productos</button>
+        </div>
+        <div id="rep-ranking">
+          <button class="refresh-btn" onclick="refreshSeccion('comparacion')"><span class="refresh-icon" id="ri-comparacion">&#128260;</span> Actualizar</button>
+          <div id="comparacion-content"><div class="loading"><div class="spinner"></div><p>Cargando...</p></div></div>
+        </div>
+        <div id="rep-productos" style="display:none">
+          <button class="refresh-btn" onclick="refreshSeccion('reportes')"><span class="refresh-icon" id="ri-reportes">&#128260;</span> Actualizar</button>
+          <div class="mes-row">
+            <select id="rep-canal" class="form-control" style="flex:1">
+              <option value="online">Online (Tiendanube)</option>
+              <option value="fisico">Fisico (Locales)</option>
+            </select>
+          </div>
+          <div class="mes-row">
+            <select id="rep-periodo" class="form-control" style="flex:1" onchange="toggleRepCustom()">
+              <option value="mes">Este mes</option><option value="custom">Personalizado</option>
+            </select>
+            <button class="mes-btn" onclick="cargarReportes()">Ver</button>
+          </div>
+          <div id="rep-custom" style="display:none;flex-direction:column;gap:8px;margin-bottom:14px">
+            <input type="date" id="rep-desde" class="form-control">
+            <input type="date" id="rep-hasta" class="form-control">
+          </div>
+          <div id="reportes-content"><div class="empty"><div class="e-icon">&#128202;</div><p>Selecciona canal y periodo</p></div></div>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+
+<script>
+var APPS_SCRIPT_URL = "/api/proxy";
+var DF_URL = "/api/dragonfish";
+var SHATO_URL = "/api/proxy?target=shato";
+var OPS_URL = "/api/proxy-operaciones";
+var VAPID_PUBLIC = "BNeV0j4t-3qHIw1xEt_w127cJfyM7IWQISOH7s3ATqXJjO5jE5xclve1znRpHmYN5cEDshXbUfX4H5t7XN-c8s8";
+var marcaActual = "tussy";
+var localActual = null;
+var nombreActual = "";
+var rolActual = "";
+
+var catsGasto = [], catsIngreso = [];
+var tipoActual = "Gasto";
+var chartGasto = null, chartIngreso = null;
+var navStack = [];
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") hacerLogin(); });
+  document.getElementById("login-user").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("login-pass").focus(); });
+  var r = localStorage.getItem("tussy_remember");
+  if(r==="1"){
+    var u=localStorage.getItem("tussy_user"), p=localStorage.getItem("tussy_pass");
+    if(u&&p){ document.getElementById("login-user").value=u; document.getElementById("login-pass").value=p; document.getElementById("login-remember").checked=true; hacerLogin(); }
+  }
+});
+
+// ══ LOGIN ══
+async function hacerLogin() {
+  var user=document.getElementById("login-user").value.trim().toLowerCase();
+  var pass=document.getElementById("login-pass").value.trim();
+  var recordar=document.getElementById("login-remember").checked;
+  var btn=document.getElementById("login-btn"), err=document.getElementById("login-error");
+  if(!user||!pass){ err.textContent="Completa usuario y contrasena"; return; }
+  btn.disabled=true; btn.textContent="Ingresando..."; err.textContent="";
+  try {
+    var res=await fetch("/api/auth?usuario="+encodeURIComponent(user)+"&password="+encodeURIComponent(pass));
+    var data=await res.json();
+    if(data.ok){
+      if(recordar){ localStorage.setItem("tussy_user",user); localStorage.setItem("tussy_pass",pass); localStorage.setItem("tussy_remember","1"); }
+      else{ localStorage.removeItem("tussy_user"); localStorage.removeItem("tussy_pass"); localStorage.removeItem("tussy_remember"); }
+      entrarApp(data.rol,data.nombre,data.local);
+    } else {
+      err.textContent=data.error||"Usuario o contrasena incorrectos";
+      btn.disabled=false; btn.textContent="Ingresar";
+    }
+  } catch(e){ err.textContent="Error de conexion."; btn.disabled=false; btn.textContent="Ingresar"; }
+}
+
+// ══ SECCIONES CONFIG ══
+var SECCIONES = {
+  admin:[
+    {id:"resumen",icon:"\ud83d\udcca",title:"Finanzas",sub:"Info y cargar transacciones"},
+    {id:"ventas",icon:"\ud83d\udecd\ufe0f",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"reportes",icon:"\ud83d\udcc8",title:"Reportes",sub:"Ranking y top productos"}
+  ],
+  socio:[
+    {id:"resumen",icon:"\ud83d\udcca",title:"Finanzas",sub:"Info del mes"},
+    {id:"ventas",icon:"\ud83d\udecd\ufe0f",title:"Ventas",sub:"Hoy, ayer y este mes"},
+    {id:"reportes",icon:"\ud83d\udcc8",title:"Reportes",sub:"Ranking y top productos"}
+  ]
+};
+
+function entrarApp(rol,nombre,local){
+  localActual = local || null;
+  nombreActual = nombre || "";
+  rolActual = rol;
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="flex";
+  var badge=document.getElementById("rol-badge");
+  badge.textContent=rol==="admin"?"Admin":rol==="socio"?"Socio":nombreActual;
+  badge.className="rol-badge "+rol;
+  var hoy=new Date();
+  document.getElementById("home-nombre").textContent=nombreActual;
+  document.getElementById("home-fecha").textContent=hoy.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"});
+  var sa=document.getElementById("sel-anio"); sa.innerHTML="";
+  for(var y=hoy.getFullYear();y>=2023;y--){ var o=document.createElement("option"); o.value=y; o.text=y; sa.appendChild(o); }
+  document.getElementById("sel-mes").value=hoy.getMonth()+1;
+  document.getElementById("f-fecha").value=hoy.toISOString().split("T")[0];
+  construirHome(rol);
+  if(rol==="socio") document.getElementById("fin-tab-cargar").style.display="none";
+  callScript("getCategorias",{},function(d){ catsGasto=d.gasto; catsIngreso=d.ingreso; updateCatSelect(); });
+  cargarKPI();
+  var kpiRefBtn=document.getElementById("home-kpi-refresh"); if(kpiRefBtn) kpiRefBtn.style.display="block";
+  initChat(); chatLimpiar();
+  mostrarBotonPush();
+}
+
+function mostrarBotonPush(){
+  var btn=document.getElementById("btn-push");
+  if(btn) btn.style.display="inline-block";
+}
+
+function activarNotificaciones(){
+  if(!('Notification' in window)){
+    alert('Tu navegador no soporta notificaciones. Asegurate de abrir la app desde el ícono de la pantalla de inicio (no desde Safari).');
+    return;
+  }
+  if(!('serviceWorker' in navigator)){
+    alert('Service Workers no disponibles. Abrí la app desde el ícono de la pantalla de inicio.');
+    return;
+  }
+  Notification.requestPermission().then(function(permission){
+    if(permission==='granted'){
+      registrarPush(nombreActual);
+      var btn=document.getElementById('btn-push');
+      if(btn){ btn.textContent='🔔'; btn.style.opacity='0.5'; btn.onclick=null; }
+    } else if(permission==='denied'){
+      alert('Notificaciones bloqueadas. Andá a Ajustes > Tussy > Notificaciones y activalas.');
+    }
+  }).catch(function(err){
+    alert('Error: ' + err.message + '. Asegurate de abrir la app desde el ícono de la pantalla de inicio.');
+  });
+}
+
+function registrarPush(nombre){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    // Fallback: SW-based local notification
+    navigator.serviceWorker && navigator.serviceWorker.register('/sw.js').then(function(reg){
+      reg.active && reg.active.postMessage({type:'CHECK_RESUMEN'});
+    });
+    return;
+  }
+  navigator.serviceWorker.register('/sw.js').then(function(reg){
+    return reg.pushManager.getSubscription().then(function(sub){
+      if(sub) return sub;
+      var key=urlBase64ToUint8Array(VAPID_PUBLIC);
+      return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});
+    });
+  }).then(function(sub){
+    if(sub){
+      fetch('/api/resumen-diario?action=subscribe',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({subscription:sub.toJSON(),usuario:nombre})
+      });
+    }
+  }).catch(function(e){ console.log('Push registration failed:',e); });
+}
+
+function urlBase64ToUint8Array(base64String){
+  var padding='='.repeat((4-base64String.length%4)%4);
+  var base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  var raw=window.atob(base64);
+  var arr=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;++i) arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+
+function cargarKPI(){
+  var kpiEl=document.getElementById("home-kpi");
+  if(!kpiEl) return;
+  kpiEl.innerHTML='<div class="kpi-section"><div class="kpi-loading"><div class="spinner"></div>Cargando KPIs...</div></div>';
+  var hoy=hoyStr(), ayer=ayerStr();
+  var nc="&_t="+Date.now();
+  var safeFetch=function(url){return fetch(url+nc,{cache:"no-store"}).then(function(r){return r.json();}).catch(function(){return null;});};
+  // Cargar WooCommerce primero (rápido), después Dragonfish
+  Promise.all([
+    safeFetch("/api/ventas?desde="+hoy+"&hasta="+hoy),
+    safeFetch("/api/ventas?desde="+ayer+"&hasta="+ayer)
+  ]).then(function(res){
+    var wooHoy=res[0]||{}, wooAyer=res[1]||{};
+    renderKPI(wooHoy, {}, wooAyer, {});
+    // Ahora cargar Dragonfish en segundo plano
+    Promise.all([
+      safeFetch(DF_URL+"?action=ventas&desde="+hoy+"&hasta="+hoy),
+      safeFetch(DF_URL+"?action=ventas&desde="+ayer+"&hasta="+ayer)
+    ]).then(function(dfRes){
+      renderKPI(wooHoy, dfRes[0]||{}, wooAyer, dfRes[1]||{});
+    });
+  }).catch(function(err){
+    kpiEl.innerHTML='<div class="kpi-section"><div class="kpi-loading" style="color:#E74C3C">Error al cargar KPIs <button onclick="cargarKPI()" style="margin-left:8px;padding:4px 12px;border-radius:8px;border:1px solid #E74C3C;background:none;color:#E74C3C;cursor:pointer">Reintentar</button></div></div>';
+  });
+}
+
+function renderKPI(wooHoy, dfHoy, wooAyer, dfAyer){
+  var kpiEl=document.getElementById("home-kpi");
+  if(!kpiEl) return;
+  var dfCargando = !dfHoy || Object.keys(dfHoy).length === 0;
+
+  // Build store data
+  var stores=[];
+  var canalesWoo=["tiendanube","palermo","laplata"];
+  var nombresWoo={tiendanube:"Online",palermo:"Palermo",laplata:"La Plata"};
+  canalesWoo.forEach(function(c){
+    if(wooHoy[c]) stores.push({
+      nombre:nombresWoo[c],
+      total:wooHoy[c].total||0,
+      cantidad:wooHoy[c].cantidad||0,
+      totalAyer:(wooAyer[c]?wooAyer[c].total:0)||0,
+      cargando:false
+    });
+  });
+  var canalesDf=[{key:"dot",nombre:"Dot"},{key:"abasto",nombre:"Abasto"},{key:"cordoba",nombre:"Córdoba"}];
+  canalesDf.forEach(function(c){
+    var tieneDatos = dfHoy&&dfHoy[c.key]&&!dfHoy[c.key].error;
+    stores.push({
+      nombre:c.nombre,
+      total:tieneDatos?dfHoy[c.key].total||0:0,
+      cantidad:tieneDatos?dfHoy[c.key].cantidad||0:0,
+      totalAyer:(dfAyer&&dfAyer[c.key]?dfAyer[c.key].total:0)||0,
+      cargando:dfCargando
+    });
+  });
+
+  // Totals
+  var totalHoy=stores.reduce(function(s,x){return s+x.total;},0);
+  var totalAyer=stores.reduce(function(s,x){return s+x.totalAyer;},0);
+  var totalOps=stores.reduce(function(s,x){return s+x.cantidad;},0);
+  var ticketProm=totalOps>0?Math.round(totalHoy/totalOps):0;
+  var maxStore=Math.max.apply(null,stores.map(function(s){return s.total;}))||1;
+
+  // Delta
+  var deltaP=totalAyer>0?((totalHoy-totalAyer)/totalAyer*100):totalHoy>0?100:0;
+  var deltaClass=deltaP>0?"up":deltaP<0?"down":"neutral";
+  var deltaIcon=deltaP>0?"↑":deltaP<0?"↓":"→";
+  var deltaText=Math.abs(Math.round(deltaP))+"%";
+
+  var html='<div class="kpi-section">';
+
+  // Total card
+  html+='<div class="kpi-total-card">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center"><div class="kpi-total-label">Ventas hoy</div><button onclick="cargarKPI()" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:14px;padding:4px 10px;border-radius:8px;cursor:pointer">🔄</button></div>';
+  if(dfCargando){
+    html+='<div class="kpi-total-value" style="font-size:16px;opacity:0.7">Cargando todos los locales...</div>';
+  } else {
+    html+='<div class="kpi-total-value">'+fmt(totalHoy)+'</div>';
+    html+='<div class="kpi-total-row">';
+    html+='<span class="kpi-delta '+deltaClass+'">'+deltaIcon+' '+deltaText+'</span>';
+    html+='<span class="kpi-vs-text">vs ayer '+fmt(totalAyer)+'</span>';
+    html+='</div>';
+  }
+  html+='</div>';
+
+  // Stats row
+  if(!dfCargando){
+    html+='<div class="kpi-stats-row">';
+    html+='<div class="kpi-stat"><div class="kpi-stat-label">Operaciones</div><div class="kpi-stat-value">'+totalOps+'</div><div class="kpi-stat-sub">ventas totales hoy</div></div>';
+    html+='<div class="kpi-stat"><div class="kpi-stat-label">Ticket promedio</div><div class="kpi-stat-value">'+fmt(ticketProm)+'</div><div class="kpi-stat-sub">'+(totalOps>0?"por operación":"sin ventas aún")+'</div></div>';
+    html+='</div>';
+  }
+
+  // Stores breakdown
+  html+='<div class="kpi-stores">';
+  stores.forEach(function(s){
+    var pct=Math.round(s.total/maxStore*100);
+    var stDelta=s.totalAyer>0?((s.total-s.totalAyer)/s.totalAyer*100):s.total>0?100:0;
+    var stClass=stDelta>0?"up":stDelta<0?"down":"neutral";
+    var stIcon=stDelta>0?"↑":stDelta<0?"↓":"";
+    html+='<div class="kpi-store">';
+    html+='<div class="kpi-store-name">'+s.nombre+'</div>';
+    html+='<div class="kpi-store-total">'+(s.cargando?'<span style="font-size:12px;color:#aaa">Cargando...</span>':fmt(s.total))+'</div>';
+    html+='<div class="kpi-store-cant">'+(s.cargando?'':s.cantidad+' ops');
+    if(stIcon) html+=' <span style="color:'+(stClass==="up"?"#2ECC71":"#E74C3C")+'">'+stIcon+Math.abs(Math.round(stDelta))+'%</span>';
+    html+='</div>';
+    html+='<div class="kpi-store-bar"><div class="kpi-store-bar-fill" style="width:'+pct+'%"></div></div>';
+    html+='</div>';
+  });
+  html+='</div></div>';
+
+  kpiEl.innerHTML=html;
+}
+
+
+function construirHome(rol){
+  var grid=document.getElementById("home-grid");
+  var items=SECCIONES[rol]||SECCIONES.encargado;
+  grid.innerHTML=items.map(function(s){
+    return '<button class="home-card'+(s.full?" full":"")+'" onclick="goTo(\''+s.id+'\',\''+s.title+'\')">'+
+      '<div class="home-icon">'+s.icon+'</div>'+
+      '<div class="home-card-info"><div class="home-card-title">'+s.title+'</div><div class="home-card-sub">'+s.sub+'</div></div>'+
+      (s.full?'<div class="home-card-arrow">\u2192</div>':'')+
+      '</button>';
+  }).join("");
+}
+
+// ══ NAVEGACION ══
+function goTo(sectionId, title){
+  navStack.push({ sectionId: sectionId, title: title });
+  _mostrarSeccion(sectionId, title);
+}
+
+function goBack(){
+  if(navStack.length<=1){
+    navStack=[]; _mostrarSeccion("home",""); return;
+  }
+  navStack.pop();
+  var prev=navStack[navStack.length-1];
+  _mostrarSeccion(prev.sectionId, prev.title);
+}
+
+function showSection(id, title){
+  goTo(id, title);
+}
+
+function _mostrarSeccion(id, title){
+  document.querySelectorAll(".section").forEach(function(s){ s.classList.remove("active"); });
+  document.getElementById("sec-"+id).classList.add("active");
+  document.getElementById("scroll-area").scrollTop=0;
+  var isHome=(id==="home"||navStack.length===0);
+  document.getElementById("btn-back").style.display=isHome?"none":"block";
+  document.getElementById("header-logo").style.display=isHome?"block":"none";
+  var titleEl=document.getElementById("header-title");
+  titleEl.style.display=isHome?"none":"block";
+  titleEl.textContent=title||"";
+  if(id==="resumen") cargarDashboard();
+  if(id==="ventas") cargarVentas();
+  if(id==="reportes") cargarComparacion();
+}
+
+function logout(){
+  rolActual=""; nombreActual=""; navStack=[];
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("app").style.display="none";
+  document.getElementById("login-pass").value="";
+  document.getElementById("login-error").textContent="";
+  document.getElementById("login-btn").disabled=false;
+  document.getElementById("login-btn").textContent="Ingresar";
+  document.getElementById("fin-tab-cargar").style.display="";
+}
+
+function finTab(tab){
+  document.getElementById("fin-tab-info").classList.toggle("active",tab==="info");
+  document.getElementById("fin-tab-cargar").classList.toggle("active",tab==="cargar");
+  document.getElementById("fin-info").style.display=tab==="info"?"":"none";
+  document.getElementById("fin-cargar").style.display=tab==="cargar"?"":"none";
+}
+
+// ══ MARCA TUSSY / SHATO ══
+function setMarca(marca) {
+  marcaActual = marca;
+  document.getElementById("marca-tussy").classList.toggle("active", marca === "tussy");
+  document.getElementById("marca-shato").classList.toggle("active", marca === "shato");
+  var tabCargar = document.getElementById("fin-tab-cargar");
+  if (tabCargar) tabCargar.style.display = rolActual === "admin" ? "" : "none";
+  finTab("info");
+  callScript("getCategorias", {}, function(d) {
+    catsGasto = d.gasto || [];
+    catsIngreso = d.ingreso || [];
+    updateCatSelect();
+  });
+  cargarDashboard();
+}
+
+// ══ APPS SCRIPT ══
+async function callScript(action,params,callback){
+  try {
+    var baseUrl = marcaActual === "shato" ? SHATO_URL : APPS_SCRIPT_URL;
+    var sep = baseUrl.indexOf("?") >= 0 ? "&" : "?";
+    var url = baseUrl + sep + "action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
+    var res = await fetch(url, {redirect:"follow"});
+    var text = await res.text();
+    try{ callback(JSON.parse(text)); } catch(e){ console.error("Parse error",text); }
+  } catch(err){ console.error("Script error:",err); }
+}
+
+// ══ DASHBOARD ══
+function cargarDashboard(){
+  var mes=parseInt(document.getElementById("sel-mes").value);
+  var anio=parseInt(document.getElementById("sel-anio").value);
+  document.getElementById("dashboard-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando...</p></div>';
+  if(chartGasto){chartGasto.destroy();chartGasto=null;}
+  if(chartIngreso){chartIngreso.destroy();chartIngreso=null;}
+  callScript("getDashboard",{mes:mes,anio:anio},function(data){ mostrarDashboard(data, marcaActual); });
+}
+
+function fmt(n){ return "$"+Math.round(n).toLocaleString("es-AR"); }
+function deltaHtml(actual,ant){
+  if(!ant||ant===0) return "";
+  var d=((actual-ant)/ant*100).toFixed(1);
+  return '<div class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"\u25b2":"\u25bc")+" "+Math.abs(d)+"% vs mes ant.</div>";
+}
+
+function mostrarDashboard(data, marca){
+  var nc=data.neto>=0?"pos":"neg";
+  var marcaNombre = (marca === "shato") ? "\ud83d\udfe0 SHATO" : "\ud83d\udc99 TUSSY";
+  var marcaColor = (marca === "shato") ? "background:linear-gradient(135deg,#E67E22,#CA6F1E)" : "";
+  var html='<div class="saldo-card" style="'+marcaColor+'"><div class="saldo-label">'+marcaNombre+' \u2014 Saldo acumulado en caja</div><div class="saldo-value '+(data.saldoActual<0?"saldo-neg":"")+'">'+fmt(data.saldoActual||0)+"</div></div>";
+  html+='<div class="stats"><div class="stat"><div class="stat-label">Gastos</div><div class="stat-value gasto">'+fmt(data.totalGasto)+"</div>"+deltaHtml(data.totalGasto,data.totalGastoAnt)+'</div><div class="stat"><div class="stat-label">Ingresos</div><div class="stat-value ingreso">'+fmt(data.totalIngreso)+"</div>"+deltaHtml(data.totalIngreso,data.totalIngresoAnt)+'</div><div class="stat full"><div class="stat-label">Resultado neto</div><div class="stat-value '+nc+'">'+fmt(data.neto)+"</div>"+deltaHtml(data.neto,data.netoAnt)+"</div></div>";
+  var gE=Object.entries(data.porCatGasto||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  if(gE.length>0){
+    var mG=gE[0][1];
+    html+='<div class="card"><div class="card-title">Gastos por categoria</div><div class="chart-wrap"><canvas id="cg"></canvas></div><ul class="cat-list">';
+    gE.forEach(function(e){ var p=(e[1]/data.totalGasto*100).toFixed(1); html+='<li class="cat-item"><div class="cat-row"><span class="cat-name">'+e[0]+'</span><div class="cat-right"><span class="cat-pct">'+p+'%</span><span class="cat-monto gasto">'+fmt(e[1])+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+Math.round(e[1]/mG*100)+'%;background:#E74C3C"></div></div></li>'; });
+    html+="</ul></div>";
+  }
+  var iE=Object.entries(data.porCatIngreso||{}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  if(iE.length>0){
+    var mI=iE[0][1];
+    html+='<div class="card"><div class="card-title">Ingresos por categoria</div><div class="chart-wrap"><canvas id="ci"></canvas></div><ul class="cat-list">';
+    iE.forEach(function(e){ var p=(e[1]/data.totalIngreso*100).toFixed(1); html+='<li class="cat-item"><div class="cat-row"><span class="cat-name">'+e[0]+'</span><div class="cat-right"><span class="cat-pct">'+p+'%</span><span class="cat-monto ingreso">'+fmt(e[1])+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+Math.round(e[1]/mI*100)+'%;background:#27AE60"></div></div></li>'; });
+    html+="</ul></div>";
+  }
+  if(data.txHoy&&data.txHoy.length>0){
+    html+='<div class="card"><div class="card-title">Movimientos de hoy</div>';
+    data.txHoy.forEach(function(tx){ html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+tx.desc+'</div><div class="tx-cat">'+tx.cat+'</div></div><div class="tx-monto '+(tx.monto<0?"gasto":"ingreso")+'">'+fmt(Math.abs(tx.monto))+"</div></div>"; });
+    html+="</div>";
+  }
+  if(gE.length===0&&iE.length===0) html+='<div class="empty"><div class="e-icon">\ud83d\udced</div><p>Sin movimientos este mes</p></div>';
+  document.getElementById("dashboard-content").innerHTML=html;
+  setTimeout(function(){
+    var CG=["#E74C3C","#C0392B","#E67E22","#D35400","#E91E63","#9C27B0","#673AB7","#3F51B5"];
+    var CI=["#27AE60","#1E8449","#2ECC71","#16A085","#1ABC9C","#3498DB","#2980B9","#1A5276"];
+    if(gE.length>0){var cg=document.getElementById("cg");if(cg)chartGasto=new Chart(cg,{type:"doughnut",data:{labels:gE.map(function(e){return e[0];}),datasets:[{data:gE.map(function(e){return e[1];}),backgroundColor:CG,borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}
+    if(iE.length>0){var ci=document.getElementById("ci");if(ci)chartIngreso=new Chart(ci,{type:"doughnut",data:{labels:iE.map(function(e){return e[0];}),datasets:[{data:iE.map(function(e){return e[1];}),backgroundColor:CI,borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}
+  },100);
+}
+
+// ══ VENTAS ══
+var marcaActual = "todas";
+
+function seleccionarMarca(marca){
+  marcaActual = marca;
+  document.querySelectorAll(".marca-tab").forEach(function(t){ t.classList.remove("active"); });
+  event.target.classList.add("active");
+  cargarVentas();
+}
+
+function mostrarTabsMarca(){
+  var tabs = document.getElementById("marca-tabs");
+  if(tabs && (rolActual==="admin"||rolActual==="socio")) tabs.style.display="block";
+}
+
+function toggleFechaCustom(){ document.getElementById("custom-fechas").style.display=document.getElementById("v-periodo").value==="custom"?"flex":"none"; }
+
+async function cargarVentas(){
+  var periodo=document.getElementById("v-periodo").value;
+  document.getElementById("ventas-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando ventas...</p></div>';
+  mostrarTabsMarca();
+  var ahora=new Date(), argTime=new Date(ahora.getTime()-3*60*60*1000);
+  var pad=function(n){return String(n).padStart(2,"0");};
+  var fd=function(d){return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());};
+  var desde,hasta=fd(argTime);
+  if(periodo==="hoy"){ desde=fd(argTime); }
+  else if(periodo==="ayer"){ var ay=new Date(argTime.getTime()-86400000); desde=fd(ay); hasta=fd(ay); }
+  else if(periodo==="custom"){ desde=document.getElementById("v-desde").value; hasta=document.getElementById("v-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
+  else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; }
+
+  try{
+    var marca = marcaActual;
+
+    // === ESTE MES: usar /api/comparacion para Tussy ===
+    if (periodo === "mes" && (marca === "tussy" || marca === "todas")) {
+      var promises = [fetch("/api/comparacion").then(function(r){return r.json();})];
+      if (marca === "todas") {
+        promises.push(fetch("/api/ventas-marcas?marca=shato&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return null;}));
+        promises.push(fetch("/api/ventas-marcas?marca=blanks&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}).catch(function(){return null;}));
+      }
+      var mesResults = await Promise.all(promises);
+      if (marca === "todas") {
+        mostrarVentasTodas(mesResults[0], mesResults[1], mesResults[2], periodo);
+      } else {
+        mostrarVentasMes(mesResults[0], periodo);
+      }
+      limpiarCacheViejo();
+      return;
+    }
+
+    // === SHATO o BLANKS (cualquier periodo) ===
+    if (marca === "shato" || marca === "blanks") {
+      var marcaData = await fetch("/api/ventas-marcas?marca="+marca+"&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();});
+      mostrarVentasMarca(marcaData, periodo);
+      return;
+    }
+
+    // === TODAS (hoy/ayer/custom) ===
+    if (marca === "todas") {
+      var allResults = await Promise.allSettled([
+        fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}),
+        fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}),
+        fetch("/api/ventas-marcas?marca=shato&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}),
+        fetch("/api/ventas-marcas?marca=blanks&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();})
+      ]);
+      var resWoo = allResults[0].status==="fulfilled" ? allResults[0].value : {total:0};
+      var dfData = allResults[1].status==="fulfilled" ? allResults[1].value : null;
+      var shatoData = allResults[2].status==="fulfilled" ? allResults[2].value : null;
+      var blanksData = allResults[3].status==="fulfilled" ? allResults[3].value : null;
+      mostrarVentasTodasDia(resWoo, dfData, shatoData, blanksData, periodo);
+      return;
+    }
+
+    // === TUSSY (hoy/ayer/custom) ===
+    var dfPromise = fetch(DF_URL+"?action=ventas&desde="+desde+"&hasta="+hasta).then(function(r){return r.json();});
+    var results = await Promise.allSettled([
+      fetch("/api/ventas?desde="+desde+"&hasta="+hasta).then(function(r){return r.json();}),
+      dfPromise
+    ]);
+    var resWoo = results[0].status==="fulfilled" ? results[0].value : {total:0};
+    var dfData = results[1].status==="fulfilled" ? results[1].value : null;
+    mostrarVentas(resWoo, dfData, periodo);
+    limpiarCacheViejo();
+  } catch(err){
+    document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar ventas</p></div>';
+  }
+}
+function mostrarVentas(data,dataDf,periodo){
+  var tx={hoy:"hoy",ayer:"ayer",mes:"este mes",custom:"el periodo"};
+  var pt=tx[periodo]||"el periodo";
+  var totalDf=((dataDf&&dataDf.dot?dataDf.dot.total:0)+(dataDf&&dataDf.abasto?dataDf.abasto.total:0)+(dataDf&&dataDf.cordoba?dataDf.cordoba.total:0));
+  var totalGlobal=(data.total||0)+totalDf;
+  var html='<div class="consolidado"><div class="consolidado-label">Total vendido '+pt+'</div><div class="consolidado-value">'+fmt(totalGlobal)+"</div></div>";
+  var canalesWoo=["tiendanube","palermo","laplata"], nombresWoo={tiendanube:"Tiendanube",palermo:"Palermo",laplata:"La Plata"};
+  var canalesDf=[{key:"dot",nombre:"Dot"},{key:"abasto",nombre:"Abasto"},{key:"cordoba",nombre:"C\u00f3rdoba"}];
+  html+='<div class="canales-grid">';
+  canalesWoo.forEach(function(c){ if(data[c]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+nombresWoo[c]+'</div><div class="canal-mini-total">'+fmt(data[c].total||0)+'</div><div class="canal-mini-cant">'+(data[c].cantidad||0)+" pedidos</div></div>"; });
+  if(dataDf&&!dataDf.error){
+    canalesDf.forEach(function(c){ if(dataDf[c.key]) html+='<div class="canal-mini"><div class="canal-mini-nombre">'+c.nombre+'</div><div class="canal-mini-total">'+fmt(dataDf[c.key].total||0)+'</div><div class="canal-mini-cant">'+(dataDf[c.key].cantidad||0)+" facturas</div></div>"; });
+  }
+  html+="</div>";
+  canalesWoo.forEach(function(c){
+    if(!data[c]) return;
+    var canal=data[c];
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+canal.nombre+'</span><span class="canal-badge">'+canal.cantidad+' pedidos</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
+    if(canal.pedidos&&canal.pedidos.length>0){
+      html+='<div class="canal-divider"></div>';
+      canal.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Cliente")+'</div><div class="pedido-estado">#'+p.numero+" \u00b7 "+p.estado+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
+    } else html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas '+pt+"</div>";
+    html+="</div>";
+  });
+  if(dataDf&&!dataDf.error){
+    canalesDf.forEach(function(c){
+      var canal=dataDf[c.key]; if(!canal) return;
+      if(canal.error){
+        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+c.nombre+'</span><span class="canal-badge" style="background:#FADBD8;color:#C0392B">Sin conexi\u00f3n</span></div>';
+        html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">'+(canal.error||"API no disponible")+"</div></div>";
+      } else {
+        html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">\ud83d\udc1f '+c.nombre+'</span><span class="canal-badge">'+canal.cantidad+' facturas</span></div><div class="canal-total">'+fmt(canal.total||0)+"</div>";
+        if(canal.pedidos&&canal.pedidos.length>0){
+          html+='<div class="canal-divider"></div>';
+          canal.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Consumidor Final")+'</div><div class="pedido-estado">Fac #'+p.numero+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
+        } else html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas '+pt+"</div>";
+        html+="</div>";
+      }
+    });
+  } else if(dataDf&&dataDf.error){
+    html+='<div class="canal-card" style="border:1.5px dashed #E5E7EB"><div style="text-align:center;padding:20px"><div style="font-size:24px;margin-bottom:8px">\ud83d\udd0c</div><div style="font-size:13px;font-weight:700;color:#aaa">Dragonfish sin conexi\u00f3n</div><div style="font-size:12px;color:#bbb;margin-top:4px">Configur\u00e1 la IP p\u00fablica o DDNS en Vercel</div></div></div>';
+  }
+  document.getElementById("ventas-content").innerHTML=html;
+}
+
+function mostrarVentasMes(data, periodo) {
+  if (!data || data.error) {
+    document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar ventas</p></div>';
+    return;
+  }
+  var html='<div class="consolidado"><div class="consolidado-label">Total vendido este mes</div><div class="consolidado-value">'+fmt(data.totalMes)+"</div></div>";
+  html+='<div class="canales-grid">';
+  data.locales.forEach(function(l){
+    html+='<div class="canal-mini"><div class="canal-mini-nombre">'+l.nombre+'</div><div class="canal-mini-total">'+fmt(l.mes.total)+'</div><div class="canal-mini-cant">'+(l.mes.cantidad||0)+" pedidos</div></div>";
+  });
+  html+="</div>";
+  data.locales.forEach(function(l){
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+l.nombre+'</span><span class="canal-badge">'+(l.mes.cantidad||0)+' pedidos</span></div><div class="canal-total">'+fmt(l.mes.total)+"</div>";
+    if(l.hoy.total>0){
+      html+='<div class="canal-divider"></div>';
+      html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">Hoy</div><div class="pedido-estado">'+l.hoy.cantidad+' ventas</div></div><div class="pedido-monto">'+fmt(l.hoy.total)+"</div></div>";
+    }
+    html+="</div>";
+  });
+  document.getElementById("ventas-content").innerHTML=html;
+}
+
+// Mostrar ventas de Shato o Blanks
+function mostrarVentasMarca(data, periodo){
+  var tx={hoy:"hoy",ayer:"ayer",mes:"este mes",custom:"el periodo"};
+  var pt=tx[periodo]||"el periodo";
+  if(!data||data.error){
+    document.getElementById("ventas-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar ventas</p></div>';
+    return;
+  }
+  var html='<div class="consolidado"><div class="consolidado-label">'+data.marca.toUpperCase()+' - Total vendido '+pt+'</div><div class="consolidado-value">'+fmt(data.total)+"</div></div>";
+  html+='<div class="canales-grid">';
+  var keys=Object.keys(data.tiendas);
+  keys.forEach(function(k){
+    var t=data.tiendas[k];
+    html+='<div class="canal-mini"><div class="canal-mini-nombre">'+t.nombre+'</div><div class="canal-mini-total">'+fmt(t.total)+'</div><div class="canal-mini-cant">'+t.cantidad+" pedidos</div></div>";
+  });
+  html+="</div>";
+  keys.forEach(function(k){
+    var t=data.tiendas[k];
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">'+t.nombre+'</span><span class="canal-badge">'+t.cantidad+' pedidos</span></div><div class="canal-total">'+fmt(t.total)+"</div>";
+    if(t.pedidos&&t.pedidos.length>0){
+      html+='<div class="canal-divider"></div>';
+      t.pedidos.forEach(function(p){ html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+(p.cliente||"Cliente")+'</div><div class="pedido-estado">#'+p.numero+'</div></div><div class="pedido-monto">'+fmt(p.total)+"</div></div>"; });
+    } else html+='<div style="text-align:center;color:#bbb;padding:16px;font-size:13px">Sin ventas '+pt+"</div>";
+    html+="</div>";
+  });
+  document.getElementById("ventas-content").innerHTML=html;
+}
+
+// Mostrar TODAS las marcas (hoy/ayer/custom)
+function mostrarVentasTodasDia(resWoo, dfData, shatoData, blanksData, periodo){
+  var tx={hoy:"hoy",ayer:"ayer",custom:"el periodo"};
+  var pt=tx[periodo]||"el periodo";
+  var totalTussy=(resWoo.total||0)+((dfData&&dfData.dot?dfData.dot.total:0)+(dfData&&dfData.abasto?dfData.abasto.total:0)+(dfData&&dfData.cordoba?dfData.cordoba.total:0));
+  var totalShato=shatoData?shatoData.total:0;
+  var totalBlanks=blanksData?blanksData.total:0;
+  var totalGlobal=totalTussy+totalShato+totalBlanks;
+
+  var html='<div class="consolidado"><div class="consolidado-label">TODAS LAS MARCAS - Total '+pt+'</div><div class="consolidado-value">'+fmt(totalGlobal)+"</div></div>";
+  html+='<div class="canales-grid">';
+  html+='<div class="canal-mini"><div class="canal-mini-nombre">Tussy</div><div class="canal-mini-total">'+fmt(totalTussy)+"</div></div>";
+  html+='<div class="canal-mini"><div class="canal-mini-nombre">Shato</div><div class="canal-mini-total">'+fmt(totalShato)+"</div></div>";
+  html+='<div class="canal-mini"><div class="canal-mini-nombre">Blanks</div><div class="canal-mini-total">'+fmt(totalBlanks)+"</div></div>";
+  html+="</div>";
+
+  // Card Tussy
+  html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">Tussy</span><span class="canal-badge">'+fmt(totalTussy)+'</span></div>';
+  var canalesWoo=["tiendanube","palermo","laplata"], nombresWoo={tiendanube:"Tiendanube",palermo:"Palermo",laplata:"La Plata"};
+  canalesWoo.forEach(function(c){ if(resWoo[c]) html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+nombresWoo[c]+'</div><div class="pedido-estado">'+(resWoo[c].cantidad||0)+' pedidos</div></div><div class="pedido-monto">'+fmt(resWoo[c].total||0)+"</div></div>"; });
+  if(dfData&&!dfData.error){
+    [{key:"dot",nombre:"Dot"},{key:"abasto",nombre:"Abasto"},{key:"cordoba",nombre:"Córdoba"}].forEach(function(c){ if(dfData[c.key]&&dfData[c.key].total>0) html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+c.nombre+'</div><div class="pedido-estado">'+(dfData[c.key].cantidad||0)+' facturas</div></div><div class="pedido-monto">'+fmt(dfData[c.key].total||0)+"</div></div>"; });
+  }
+  html+="</div>";
+
+  // Card Shato
+  if(shatoData&&shatoData.tiendas){
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">Shato</span><span class="canal-badge">'+fmt(totalShato)+'</span></div>';
+    Object.keys(shatoData.tiendas).forEach(function(k){
+      var t=shatoData.tiendas[k];
+      html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+t.nombre+'</div><div class="pedido-estado">'+t.cantidad+' pedidos</div></div><div class="pedido-monto">'+fmt(t.total)+"</div></div>";
+    });
+    html+="</div>";
+  }
+
+  // Card Blanks
+  if(blanksData&&blanksData.tiendas){
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">Blanks</span><span class="canal-badge">'+fmt(totalBlanks)+'</span></div>';
+    Object.keys(blanksData.tiendas).forEach(function(k){
+      var t=blanksData.tiendas[k];
+      html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+t.nombre+'</div><div class="pedido-estado">'+t.cantidad+' pedidos</div></div><div class="pedido-monto">'+fmt(t.total)+"</div></div>";
+    });
+    html+="</div>";
+  }
+  document.getElementById("ventas-content").innerHTML=html;
+}
+
+// Mostrar TODAS las marcas (este mes)
+function mostrarVentasTodas(tussyData, shatoData, blanksData, periodo){
+  var totalTussy=tussyData?tussyData.totalMes:0;
+  var totalShato=shatoData?shatoData.total:0;
+  var totalBlanks=blanksData?blanksData.total:0;
+  var totalGlobal=totalTussy+totalShato+totalBlanks;
+
+  var html='<div class="consolidado"><div class="consolidado-label">TODAS LAS MARCAS - Este mes</div><div class="consolidado-value">'+fmt(totalGlobal)+"</div></div>";
+  html+='<div class="canales-grid">';
+  html+='<div class="canal-mini"><div class="canal-mini-nombre">Tussy</div><div class="canal-mini-total">'+fmt(totalTussy)+"</div></div>";
+  html+='<div class="canal-mini"><div class="canal-mini-nombre">Shato</div><div class="canal-mini-total">'+fmt(totalShato)+"</div></div>";
+  html+='<div class="canal-mini"><div class="canal-mini-nombre">Blanks</div><div class="canal-mini-total">'+fmt(totalBlanks)+"</div></div>";
+  html+="</div>";
+
+  // Card Tussy con locales
+  if(tussyData&&tussyData.locales){
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">Tussy</span><span class="canal-badge">'+fmt(totalTussy)+'</span></div>';
+    tussyData.locales.forEach(function(l){
+      html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+l.nombre+'</div><div class="pedido-estado">'+(l.mes.cantidad||0)+' pedidos</div></div><div class="pedido-monto">'+fmt(l.mes.total)+"</div></div>";
+    });
+    html+="</div>";
+  }
+
+  // Card Shato
+  if(shatoData&&shatoData.tiendas){
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">Shato</span><span class="canal-badge">'+fmt(totalShato)+'</span></div>';
+    Object.keys(shatoData.tiendas).forEach(function(k){
+      var t=shatoData.tiendas[k];
+      html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+t.nombre+'</div><div class="pedido-estado">'+t.cantidad+' pedidos</div></div><div class="pedido-monto">'+fmt(t.total)+"</div></div>";
+    });
+    html+="</div>";
+  }
+
+  // Card Blanks
+  if(blanksData&&blanksData.tiendas){
+    html+='<div class="canal-card"><div class="canal-header"><span class="canal-nombre">Blanks</span><span class="canal-badge">'+fmt(totalBlanks)+'</span></div>';
+    Object.keys(blanksData.tiendas).forEach(function(k){
+      var t=blanksData.tiendas[k];
+      html+='<div class="pedido-item"><div class="pedido-left"><div class="pedido-cliente">'+t.nombre+'</div><div class="pedido-estado">'+t.cantidad+' pedidos</div></div><div class="pedido-monto">'+fmt(t.total)+"</div></div>";
+    });
+    html+="</div>";
+  }
+  document.getElementById("ventas-content").innerHTML=html;
+}
+
+// ══ COMPARACION ══
+var COMP_CACHE_KEY = "tussy_comp_cache";
+var COMP_CACHE_TTL = 5 * 60 * 1000;
+
+async function cargarComparacion(){
+  var el = document.getElementById("comparacion-content");
+  el.innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando todos los locales...</p></div>';
+
+  var cached = getCacheComparacion();
+  if (cached && cached.woo) {
+    mostrarComparacion(cached.woo, null);
+    showToast("\u26a1 Datos desde cach\u00e9","ok");
+    return;
+  }
+
+  // Una sola llamada que trae WooCommerce + Dragonfish unificado
+  fetch("/api/comparacion").then(function(r){return r.json();}).then(function(data){
+    mostrarComparacion(data, null);
+    setCacheComparacion(data, null);
+  }).catch(function(){
+    el.innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar datos</p></div>';
+  });
+}
+
+function getCacheComparacion() {
+  try {
+    var raw = localStorage.getItem(COMP_CACHE_KEY);
+    if (!raw) return null;
+    var data = JSON.parse(raw);
+    if (Date.now() - data.ts > COMP_CACHE_TTL) return null;
+    return data;
+  } catch(e) { return null; }
+}
+
+function setCacheComparacion(woo, df) {
+  try {
+    localStorage.setItem(COMP_CACHE_KEY, JSON.stringify({ woo: woo, df: df, ts: Date.now() }));
+  } catch(e) {}
+}
+
+function mostrarComparacion(data,dataDf){
+  var delta=function(actual,ant){
+    if(!ant||ant===0) return "";
+    var d=((actual-ant)/ant*100).toFixed(1);
+    return '<span class="stat-delta '+(d>=0?"up":"down")+'" style="font-size:12px">'+(d>=0?"\u25b2":"\u25bc")+" "+Math.abs(d)+"% vs mes ant.</span>";
+  };
+  var html="";
+  if(!data){
+    html='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar datos</p></div>';
+    document.getElementById("comparacion-content").innerHTML=html;
+    return;
+  }
+
+  // Total vendido hoy (todos los locales)
+  html+='<div class="saldo-card"><div class="saldo-label">Total vendido hoy</div><div class="saldo-value">'+fmt(data.totalHoy)+"</div></div>";
+
+  // Hoy por local
+  html+='<div class="card"><div class="card-title">Hoy por local</div>';
+  data.locales.forEach(function(l){
+    if(l.hoy.total>0 || l.hoy.cantidad>0) html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">'+l.hoy.cantidad+' ventas</div></div><div class="tx-monto ingreso">'+fmt(l.hoy.total)+"</div></div>";
+  });
+  html+="</div>";
+
+  // Ranking del mes (todos)
+  html+='<div class="card"><div class="card-title">Ranking del mes</div>';
+  var med=["\ud83e\udd47","\ud83e\udd48","\ud83e\udd49","\u0034\ufe0f\u20e3","\u0035\ufe0f\u20e3","\u0036\ufe0f\u20e3"], mM=data.ranking[0]?data.ranking[0].mes.total:1;
+  data.ranking.forEach(function(l,i){
+    var pct=data.totalMes>0?Math.round(l.mes.total/data.totalMes*100):0, w=mM>0?Math.round(l.mes.total/mM*100):0;
+    html+='<div class="cat-item"><div class="cat-row"><span class="cat-name">'+(med[i]||"")+" "+l.nombre+'</span><div class="cat-right"><span class="cat-pct">'+pct+'%</span><span class="cat-monto ingreso">'+fmt(l.mes.total)+'</span></div></div><div class="bar-wrap"><div class="bar" style="width:'+w+'%;background:#27AE60"></div></div></div>';
+  });
+  html+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:700">Total del mes</span><div style="text-align:right"><div style="font-size:18px;font-weight:900">'+fmt(data.totalMes)+"</div>"+delta(data.totalMes,data.totalAnt)+"</div></div>";
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;background:#F0FFF4;padding:10px 12px;border-radius:10px"><span style="font-size:12px;font-weight:700;color:#1E8449">Proyecci\u00f3n del mes</span><span style="font-size:16px;font-weight:900;color:#1E8449">'+fmt(data.proyeccionTotal)+"</span></div>";
+  html+='<div style="font-size:11px;color:#aaa;margin-top:6px;text-align:center">'+data.diaDelMes+" d\u00edas \u2013 Comparado con primeros "+data.diasComparados+" d\u00edas del mes ant.</div></div></div>";
+
+  // Este mes vs anterior
+  html+='<div class="card"><div class="card-title">Este mes vs mes anterior (mismos d\u00edas)</div>';
+  data.locales.forEach(function(l){
+    var d=l.ant.total>0?((l.mes.total-l.ant.total)/l.ant.total*100).toFixed(1):null;
+    html+='<div class="tx-item"><div class="tx-left"><div class="tx-desc">'+l.nombre+'</div><div class="tx-cat">Ant: '+fmt(l.ant.total)+" \u2013 Proy: "+fmt(l.proyeccion)+(d!==null?' <span class="stat-delta '+(d>=0?"up":"down")+'">'+(d>=0?"\u25b2":"\u25bc")+" "+Math.abs(d)+"%</span>":"")+'</div></div><div class="tx-monto ingreso">'+fmt(l.mes.total)+"</div></div>";
+  });
+  html+="</div>";
+
+  document.getElementById("comparacion-content").innerHTML=html;
+}
+
+// ══ REPORTES ══
+function repTab(tab){
+  document.getElementById("rep-tab-ranking").classList.toggle("active",tab==="ranking");
+  document.getElementById("rep-tab-productos").classList.toggle("active",tab==="productos");
+  document.getElementById("rep-ranking").style.display=tab==="ranking"?"":"none";
+  document.getElementById("rep-productos").style.display=tab==="productos"?"":"none";
+  if(tab==="ranking") cargarComparacion();
+}
+
+
+function fmtNum(n){ return Number(n||0).toLocaleString("es-AR"); }
+
+function toggleRepCustom(){ document.getElementById("rep-custom").style.display=document.getElementById("rep-periodo").value==="custom"?"flex":"none"; }
+async function cargarReportes(){
+  var canal=document.getElementById("rep-canal").value, periodo=document.getElementById("rep-periodo").value;
+  document.getElementById("reportes-content").innerHTML='<div class="loading"><div class="spinner"></div><p>Buscando...</p></div>';
+  var ahora=new Date(), argTime=new Date(ahora.getTime()-3*60*60*1000);
+  var pad=function(n){return String(n).padStart(2,"0");};
+  var fd=function(d){return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate());};
+  var desde,hasta;
+  if(periodo==="custom"){ desde=document.getElementById("rep-desde").value; hasta=document.getElementById("rep-hasta").value; if(!desde||!hasta){showToast("Selecciona las fechas","err");return;} }
+  else{ desde=argTime.getUTCFullYear()+"-"+pad(argTime.getUTCMonth()+1)+"-01"; hasta=fd(argTime); }
+  try{
+    var res=await fetch("/api/reportes?desde="+desde+"&hasta="+hasta+"&canal="+canal);
+    var data=await res.json(); mostrarReportes(data,canal);
+  } catch(err){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">\u274c</div><p>Error al cargar</p></div>'; }
+}
+function mostrarReportes(data,canal){
+  if(!data.productos||data.productos.length===0){ document.getElementById("reportes-content").innerHTML='<div class="empty"><div class="e-icon">\ud83d\udce6</div><p>Sin datos para el periodo</p></div>'; return; }
+  var titulo=canal==="online"?"Mas vendidos Online (Tiendanube)":"Mas vendidos Fisico (Locales)";
+  var med=["\ud83e\udd47","\ud83e\udd48","\ud83e\udd49"];
+  var html='<div class="card"><div class="card-title">'+titulo+"</div>";
+  data.productos.forEach(function(p,i){ html+='<div class="ranking-item"><div class="ranking-pos">'+(med[i]||(i+1))+'</div><div class="ranking-info"><div class="ranking-nombre">'+p.nombre+'</div><div class="ranking-detalle">'+p.fuentes+'</div></div><div class="ranking-cant">'+p.cantidad+'<span>unidades</span></div></div>'; });
+  html+="</div>";
+  document.getElementById("reportes-content").innerHTML=html;
+}
+
+
+// ══ FORM FINANZAS ══
+function setTipo(tipo){
+  tipoActual=tipo;
+  document.getElementById("btn-gasto").classList.toggle("active",tipo==="Gasto");
+  document.getElementById("btn-ingreso").classList.toggle("active",tipo==="Ingreso");
+  updateCatSelect();
+}
+function updateCatSelect(){
+  var sel=document.getElementById("f-cat"), cats=tipoActual==="Gasto"?catsGasto:catsIngreso;
+  if(cats&&cats.length>0) sel.innerHTML=cats.map(function(c){return '<option>'+c+'</option>';}).join("");
+}
+async function guardarTransaccion(){
+  var fecha=document.getElementById("f-fecha").value, desc=document.getElementById("f-desc").value.trim();
+  var cat=document.getElementById("f-cat").value, medio=document.getElementById("f-medio").value;
+  var monto=document.getElementById("f-monto").value, notas=document.getElementById("f-notas").value.trim();
+  if(!fecha||!desc||!monto||parseFloat(monto)<=0){showToast("Completa fecha, descripcion y monto","err");return;}
+  var btn=document.getElementById("btn-guardar"); btn.disabled=true; btn.textContent="Guardando...";
+  callScript("agregarTransaccion",{fecha:fecha,descripcion:desc,categoria:cat,tipo:tipoActual,medio:medio,monto:monto,notas:notas},function(resp){
+    btn.disabled=false; btn.textContent="Guardar transaccion";
+    if (resp && resp.error) {
+      showToast("Error: " + resp.error, "err");
+      console.error("Error guardar transaccion:", resp);
+      return;
+    }
+    if (!resp || resp.ok === false) {
+      showToast("Error al guardar - respuesta inválida", "err");
+      console.error("Respuesta inválida:", resp);
+      return;
+    }
+    showToast("Guardado correctamente","ok");
+    document.getElementById("f-desc").value=""; document.getElementById("f-monto").value=""; document.getElementById("f-notas").value="";
+  });
+}
+
+// ══ CACHE INCREMENTAL ══
+var DF_CACHE_KEY = "tussy_df_mes_v3";
+
+function getCache() {
+  try { return JSON.parse(localStorage.getItem(DF_CACHE_KEY) || "{}"); } catch(e) { return {}; }
+}
+function setCache(d) {
+  try { localStorage.setItem(DF_CACHE_KEY, JSON.stringify(d)); } catch(e) {}
+}
+function hoyStr() {
+  var a=new Date(), arg=new Date(a.getTime()-3*60*60*1000);
+  var pad=function(n){return String(n).padStart(2,"0");};
+  return arg.getUTCFullYear()+"-"+pad(arg.getUTCMonth()+1)+"-"+pad(arg.getUTCDate());
+}
+function ayerStr() {
+  var a=new Date(hoyStr()+"T12:00:00Z"); a.setUTCDate(a.getUTCDate()-1);
+  var pad=function(n){return String(n).padStart(2,"0");};
+  return a.getUTCFullYear()+"-"+pad(a.getUTCMonth()+1)+"-"+pad(a.getUTCDate());
+}
+function mesKey(desde) { return desde.substring(0,7); }
+
+function guardarCachePasado(desde, dataDf) {
+  var hoy = hoyStr();
+  var ayer = ayerStr();
+  if (desde > ayer) return;
+  var cache = getCache();
+  var mk = mesKey(desde);
+  cache[mk] = {
+    desde: desde,
+    hasta: ayer,
+    dot:     { total: (dataDf.dot||{}).total||0,     cantidad: (dataDf.dot||{}).cantidad||0 },
+    abasto:  { total: (dataDf.abasto||{}).total||0,  cantidad: (dataDf.abasto||{}).cantidad||0 },
+    cordoba: { total: (dataDf.cordoba||{}).total||0, cantidad: (dataDf.cordoba||{}).cantidad||0 },
+    total:   dataDf.total||0,
+    ts: Date.now()
+  };
+  setCache(cache);
+}
+
+function getCacheMes(desde) {
+  var cache = getCache();
+  var mk = mesKey(desde);
+  var entry = cache[mk];
+  if (!entry || entry.desde !== desde) return null;
+  return entry;
+}
+
+function limpiarCacheViejo() {
+  try {
+    var cache = getCache();
+    var mesActual = hoyStr().substring(0,7);
+    var nuevo = {};
+    Object.keys(cache).forEach(function(k){
+      if (k === mesActual) nuevo[k] = cache[k];
+    });
+    setCache(nuevo);
+  } catch(e) {}
+}
+
+function combinarConCache(cachePasado, dataHoy) {
+  var result = { total: 0 };
+  ["dot","abasto","cordoba"].forEach(function(k){
+    var p = cachePasado[k]||{total:0,cantidad:0};
+    var h = (dataHoy[k])||{total:0,cantidad:0,pedidos:[]};
+    result[k] = {
+      nombre: h.nombre || k,
+      total: (p.total||0) + (h.total||0),
+      cantidad: (p.cantidad||0) + (h.cantidad||0),
+      pedidos: h.pedidos||[]
+    };
+    result.total += result[k].total;
+  });
+  return result;
+}
+
+// ══ REFRESH ══
+function refreshSeccion(seccion) {
+  var icon = document.getElementById("ri-" + seccion);
+  if (icon) { icon.classList.add("spinning"); setTimeout(function(){ icon.classList.remove("spinning"); }, 500); }
+
+  if (seccion === "ventas") {
+    cargarKPI();
+    cargarVentas();
+  } else if (seccion === "comparacion") {
+    // Clear comparacion cache to force refresh
+    try { localStorage.removeItem(COMP_CACHE_KEY); } catch(e) {}
+    cargarComparacion();
+  } else if (seccion === "reportes") {
+    cargarReportes();
+  }
+}
+
+
+// ══ HELPER OPERACIONES ═══════════════════════════════════════════════════════
+async function callOps(action, params, callback) {
+  try {
+    var url = OPS_URL + "?action=" + action + "&params=" + encodeURIComponent(JSON.stringify(params));
+    var res = await fetch(url);
+    var data = await res.json();
+    callback(data);
+  } catch(err) {
+    callback({ error: err.message });
+  }
+}
+
+// POST para payloads grandes (fotos, datos pesados)
+// Manda JSON al proxy Vercel, que reenvia como form-urlencoded al Apps Script
+async function callOpsPost(action, params, callback) {
+  try {
+    var res = await fetch(OPS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: action, params: JSON.stringify(params) }),
+      redirect: "follow"
+    });
+    if (!res.ok) {
+      var txt = "";
+      try { txt = await res.text(); } catch(e) {}
+      callback({ error: "HTTP " + res.status + " " + (txt || res.statusText) });
+      return;
+    }
+    var text = await res.text();
+    var data;
+    try { data = JSON.parse(text); }
+    catch(err) { callback({ error: "Respuesta no JSON: " + text.substring(0,200) }); return; }
+    callback(data);
+  } catch(err) {
+    callback({ error: err.message || String(err) });
+  }
+}
+
+// ══ TOAST ══
+function showToast(msg,tipo){
+  var t=document.getElementById("toast"); t.textContent=msg; t.className="toast "+(tipo||"");
+  t.classList.add("show"); setTimeout(function(){t.classList.remove("show");},3000);
+}
+
+// ══ ASISTENTE IA ══
+var chatHistorial = [];
+var chatAbierto = false;
+
+function initChat() {
+  if (rolActual !== "admin" && rolActual !== "socio") return;
+  var btn = document.getElementById("chat-bubble");
+  if (btn) btn.style.display = "flex";
+}
+
+function toggleChat() {
+  chatAbierto = !chatAbierto;
+  var modal = document.getElementById("chat-modal");
+  modal.style.display = chatAbierto ? "flex" : "none";
+  if (chatAbierto) {
+    document.getElementById("chat-input").focus();
+    var badge = document.getElementById("chat-badge");
+    if (badge) badge.style.display = "none";
+  }
+}
+
+function chatEnviar() {
+  var input = document.getElementById("chat-input");
+  var msg = input.value.trim();
+  if (!msg) return;
+  input.value = "";
+  chatAgregarMensaje("user", msg);
+  chatHistorial.push({ role: "user", content: msg });
+  chatPreguntarIA();
+}
+
+function chatAgregarMensaje(role, texto) {
+  var lista = document.getElementById("chat-lista");
+  var div = document.createElement("div");
+  div.className = "chat-msg chat-msg-" + role;
+  // Renderizar saltos de línea y negrita básica
+  div.innerHTML = texto
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\n/g,"<br>");
+  lista.appendChild(div);
+  lista.scrollTop = lista.scrollHeight;
+}
+
+function chatMostrarTyping(mostrar) {
+  var el = document.getElementById("chat-typing");
+  el.style.display = mostrar ? "flex" : "none";
+  if (mostrar) document.getElementById("chat-lista").scrollTop = 99999;
+}
+
+async function chatPreguntarIA() {
+  chatMostrarTyping(true);
+  document.getElementById("chat-send").disabled = true;
+  try {
+    var r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: chatHistorial, rol: rolActual })
+    });
+    var data = await r.json();
+    chatMostrarTyping(false);
+    if (data.error) {
+      chatAgregarMensaje("error", "Error: " + data.error);
+    } else {
+      chatAgregarMensaje("assistant", data.respuesta);
+      chatHistorial.push({ role: "assistant", content: data.respuesta });
+    }
+  } catch(err) {
+    chatMostrarTyping(false);
+    chatAgregarMensaje("error", "Error de conexión");
+  }
+  document.getElementById("chat-send").disabled = false;
+  document.getElementById("chat-input").focus();
+}
+
+function chatLimpiar() {
+  chatHistorial = [];
+  document.getElementById("chat-lista").innerHTML = "";
+  chatAgregarMensaje("assistant", "Hola! Soy tu asistente de negocio. Podés preguntarme sobre stock, ventas o pedirme consejos. ¿En qué te ayudo?");
+  chatHistorial = [];
+}
+</script>
+
+<!-- BURBUJA CHAT IA -->
+<div id="chat-bubble" onclick="toggleChat()" style="display:none;position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:24px;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(102,126,234,0.5);z-index:9999;transition:transform .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+  🤖
+  <div id="chat-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ff4757;font-size:10px;align-items:center;justify-content:center;"></div>
+</div>
+
+<!-- MODAL CHAT -->
+<div id="chat-modal" style="display:none;position:fixed;bottom:90px;right:24px;width:360px;max-width:calc(100vw - 48px);height:500px;max-height:calc(100vh - 120px);background:#1a1a2e;border-radius:16px;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.4);z-index:9998;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(135deg,#667eea,#764ba2);flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="font-size:20px;">🤖</div>
+      <div>
+        <div style="color:white;font-weight:700;font-size:14px;">Asistente Tussy</div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;">Datos en tiempo real</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="chatLimpiar()" title="Nueva conversación" style="background:rgba(255,255,255,0.15);border:none;color:white;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;">🗑</button>
+      <button onclick="toggleChat()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+  </div>
+  <!-- Lista mensajes -->
+  <div id="chat-lista" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;"></div>
+  <!-- Typing indicator -->
+  <div id="chat-typing" style="display:none;padding:8px 16px;align-items:center;gap:6px;">
+    <div style="display:flex;gap:4px;align-items:center;">
+      <span style="width:7px;height:7px;border-radius:50%;background:#667eea;animation:typingDot 1.2s infinite;"></span>
+      <span style="width:7px;height:7px;border-radius:50%;background:#667eea;animation:typingDot 1.2s infinite .2s;"></span>
+      <span style="width:7px;height:7px;border-radius:50%;background:#667eea;animation:typingDot 1.2s infinite .4s;"></span>
+    </div>
+    <span style="color:rgba(255,255,255,0.4);font-size:12px;">Consultando datos...</span>
+  </div>
+  <!-- Input -->
+  <div style="padding:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:8px;flex-shrink:0;">
+    <input id="chat-input" type="text" placeholder="Preguntá algo..." onkeydown="if(event.key==='Enter')chatEnviar()" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:white;padding:10px 14px;font-size:14px;outline:none;" />
+    <button id="chat-send" onclick="chatEnviar()" style="background:linear-gradient(135deg,#667eea,#764ba2);border:none;color:white;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0;">↑</button>
+  </div>
+</div>
+
+<style>
+.chat-msg { max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word; }
+.chat-msg-user { background:linear-gradient(135deg,#667eea,#764ba2);color:white;align-self:flex-end;border-bottom-right-radius:4px; }
+.chat-msg-assistant { background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9);align-self:flex-start;border-bottom-left-radius:4px; }
+.chat-msg-error { background:rgba(255,71,87,0.2);color:#ff6b7a;align-self:flex-start;border-radius:8px;font-size:12px; }
+@keyframes typingDot { 0%,60%,100%{opacity:.2;transform:translateY(0)} 30%{opacity:1;transform:translateY(-4px)} }
+#chat-input::placeholder { color:rgba(255,255,255,0.3); }
+#chat-lista::-webkit-scrollbar { width:4px; }
+#chat-lista::-webkit-scrollbar-track { background:transparent; }
+#chat-lista::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1);border-radius:2px; }
+</style>
+</body>
+</html>

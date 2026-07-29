@@ -1,6 +1,8 @@
 {
+  "buildCommand": "cd web && npm ci && npm run build",
+  "outputDirectory": "web/dist",
   "rewrites": [
-    { "source": "/((?!api|sw\\.js|manifest\\.json|logo\\.png).*)", "destination": "/index.html" }
+    { "source": "/((?!api|assets|sw\\.js|manifest\\.json|logo\\.png|legacy\\.html).*)", "destination": "/index.html" }
   ],
   "functions": {
     "api/resumen-diario.js": { "maxDuration": 60 },

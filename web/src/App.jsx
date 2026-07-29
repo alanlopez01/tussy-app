@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Ventas from "./pages/Ventas.jsx";
 import Productos from "./pages/Productos.jsx";
 import Pedidos from "./pages/Pedidos.jsx";
 import Finanzas from "./pages/Finanzas.jsx";
+import Login from "./pages/Login.jsx";
 
 const NAV = [
   { to: "/", label: "Inicio", icon: "◧" },
@@ -13,7 +15,15 @@ const NAV = [
   { to: "/finanzas", label: "Finanzas", icon: "◈" },
 ];
 
-function Sidebar() {
+function cerrarSesion() {
+  localStorage.removeItem("tussy_user");
+  localStorage.removeItem("tussy_pass");
+  localStorage.removeItem("tussy_remember");
+  localStorage.removeItem("tussy_sesion");
+  window.location.href = "/";
+}
+
+function Sidebar({ user }) {
   return (
     <aside className="hidden md:flex w-56 shrink-0 flex-col bg-negro text-white min-h-screen sticky top-0 max-h-screen">
       <div className="px-5 py-6 flex items-center gap-3">
@@ -37,8 +47,11 @@ function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="px-5 py-4 text-[10px] uppercase tracking-widest text-white/30 font-semibold">
-        Tussy · Métricas
+      <div className="px-5 py-4 flex items-center justify-between">
+        <span className="text-[11px] text-white/50 font-semibold">{user.nombre}</span>
+        <button onClick={cerrarSesion} className="text-[11px] text-white/40 hover:text-white font-semibold">
+          Salir
+        </button>
       </div>
     </aside>
   );
@@ -67,10 +80,17 @@ function TabBar() {
 }
 
 export default function App() {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("tussy_sesion")) || null; }
+    catch { return null; }
+  });
+
+  if (!user) return <Login onLogin={setUser} />;
+
   return (
     <BrowserRouter>
       <div className="flex min-h-screen">
-        <Sidebar />
+        <Sidebar user={user} />
         <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-24 md:pb-8 max-w-[1200px]">
           <Routes>
             <Route path="/" element={<Home />} />

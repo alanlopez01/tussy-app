@@ -42,7 +42,9 @@ export default function Pedidos() {
   const activar = async () => {
     try {
       setMsgPush("");
-      await activarPush("socio");
+      let nombre = "socio";
+      try { nombre = JSON.parse(localStorage.getItem("tussy_sesion"))?.nombre || "socio"; } catch { /* default */ }
+      await activarPush(nombre);
       setEstadoPush("activo");
     } catch (e) {
       setEstadoPush("error");
