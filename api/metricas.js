@@ -10,6 +10,7 @@
 //   de ventas nuevas + push. Lo dispara cron-job.org.
 // GET /api/metricas?action=sync — (fecha, local) con errores de sincronización
 const { neon } = require("@neondatabase/serverless");
+const { waitUntil } = require("@vercel/functions");
 const webpush = require("web-push");
 const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchDFDia } = require("../lib/fuentes");
 
@@ -154,6 +155,17 @@ async function ingesta(req, res) {
   const secret = process.env.CRON_SECRET || "tussy2026";
   if (req.query.secret !== secret) return res.status(401).json({ error: "secret inválido" });
 
+  // cron-job.org corta a los 30s y la ingesta puede tardar más (6 fuentes, POS lentos).
+  // Respondemos al instante y el trabajo sigue de fondo hasta maxDuration (waitUntil).
+  // Con ?sync=1 corre en línea y devuelve el resultado completo (para debug).
+  if (req.query.sync !== "1") {
+    waitUntil(correrIngesta().catch(e => console.error("[ingesta] error:", e)));
+    return res.status(200).json({ ok: true, encolado: true });
+  }
+  return res.status(200).json(await correrIngesta());
+}
+
+async function correrIngesta() {
   const sql = neon(process.env.DATABASE_URL);
   const hoy = hoyArg();
   const eventos = [];
@@ -222,7 +234,9 @@ async function ingesta(req, res) {
     notificadas = await enviarPush(payloads);
   }
 
-  return res.status(200).json({ ok: true, fecha: hoy, resumen, eventos: eventos.length, notificadas });
+  const salida = { ok: true, fecha: hoy, resumen, eventos: eventos.length, notificadas };
+  console.log("[ingesta]", JSON.stringify(salida));
+  return salida;
 }
 
 // ── Envío de push a todas las suscripciones guardadas ──
