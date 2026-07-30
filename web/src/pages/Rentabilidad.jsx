@@ -969,19 +969,19 @@ function Inventario() {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatTile label="Capital inmovilizado" value={fmtPesosCorto(t.capital)}
+            <StatTile label="Capital inmovilizado (a costo)" value={fmtPesosCorto(t.capital)}
                       sub={`${t.unidades.toLocaleString("es-AR")} u. en ${t.modelos} modelos`} />
+            <StatTile label="Valor a precio de venta" value={fmtPesosCorto(t.valor_venta)}
+                      sub={`${fmtPesosCorto(t.margen_potencial)} de margen si se vende todo`} />
             <StatTile label="Rotación anualizada" value={`${t.rotacion}x`}
-                      sub="veces que se renueva el stock por año" />
-            <StatTile label="GMROI" value={t.gmroi}
-                      sub="pesos de margen por peso invertido" />
+                      sub={`GMROI ${t.gmroi} · margen por peso invertido`} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatTile label="Sin ninguna venta" value={fmtPesosCorto(t.capital_sin_ventas)}
-                      sub={`${t.modelos_sin_ventas} modelos`} />
+                      sub={`${t.modelos_sin_ventas} modelos · ${fmtPesosCorto(t.venta_sin_ventas)} a precio de venta`} />
             <StatTile label="Rotación lenta (+180 días)" value={fmtPesosCorto(t.capital_lento)}
-                      sub={`${t.modelos_lentos} modelos`} />
+                      sub={`${t.modelos_lentos} modelos · ${fmtPesosCorto(t.venta_lento)} a precio de venta`} />
             <StatTile label="Recién lanzados" value={fmtPesosCorto(t.capital_nuevo)}
                       sub={`${t.modelos_nuevos} modelos · aún sin historia`} />
           </div>
@@ -1001,8 +1001,11 @@ function Inventario() {
                       {m.producto}
                       {m.es_nuevo && <span className="ml-1 text-[9px] uppercase text-ok font-bold">nuevo</span>}
                     </span>
-                    <span className="text-[13px] font-bold text-ink tabular-nums shrink-0">
+                    <span className="text-[13px] font-bold text-ink tabular-nums shrink-0 text-right">
                       {fmtPesosCorto(m.capital_inmovilizado || 0)}
+                      {m.valor_venta ? <span className="block text-[10px] font-normal text-ink-3">
+                        {fmtPesosCorto(m.valor_venta)} a p. venta
+                      </span> : null}
                     </span>
                   </div>
                   <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
@@ -1023,6 +1026,7 @@ function Inventario() {
                     <th className="text-right py-2 font-semibold">Stock</th>
                     <th className="text-right py-2 font-semibold">Vendidas 90d</th>
                     <th className="text-right py-2 font-semibold">Capital</th>
+                    <th className="text-right py-2 font-semibold">A p. venta</th>
                     <th className="text-right py-2 font-semibold">Rotación</th>
                     <th className="text-right py-2 font-semibold">Días</th>
                     <th className="text-right py-2 font-semibold">GMROI</th>
@@ -1042,6 +1046,7 @@ function Inventario() {
                       <td className="py-2 text-right tabular-nums text-ink-2">{m.stock}</td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{m.vendidas}</td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.capital_inmovilizado || 0)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">{m.valor_venta ? fmtPesosCorto(m.valor_venta) : "—"}</td>
                       <td className={`py-2 text-right tabular-nums font-bold ${colorRot(m.rotacion)}`}>
                         {m.rotacion != null ? `${m.rotacion}x` : "—"}
                       </td>
@@ -1056,7 +1061,8 @@ function Inventario() {
             </div>
             <Paginacion pagina={pagina} totalPaginas={totalPaginas} onChange={setPagina} />
             <p className="text-[11px] text-ink-3 mt-3">
-              <strong>Rotación</strong>: veces que se renueva el stock en un año, medida sobre los días que el
+              <strong>Capital</strong> es lo que costó la mercadería; <strong>a p. venta</strong>, lo que
+              entraría si se vendiera toda a precio de lista. <strong>Rotación</strong>: veces que se renueva el stock en un año, medida sobre los días que el
               modelo estuvo realmente a la venta (un producto que entró hace una semana no se juzga contra 90 días).
               <strong> GMROI</strong>: pesos de margen bruto que genera cada peso invertido en ese stock —
               por encima de 3 es sano, por debajo de 1 el modelo no paga el capital que ocupa.

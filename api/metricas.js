@@ -436,7 +436,10 @@ async function inventario(req, res) {
 
   const rows = await sql`
     WITH s AS (
-      SELECT producto_norm, SUM(cantidad) AS unidades
+      SELECT producto_norm, SUM(cantidad) AS unidades,
+             -- Valor a precio de lista: lo que entraría si se vendiera todo
+             SUM(cantidad * COALESCE(precio, 0)) AS valor_venta,
+             MAX(precio) AS precio_unitario
       FROM stock
       WHERE fecha = ${fechaStock}
         AND (${localFiltro}::text IS NULL OR local = ${localFiltro})
@@ -468,6 +471,8 @@ async function inventario(req, res) {
     )
     SELECT COALESCE(s.producto_norm, v.producto_norm) AS producto,
            COALESCE(s.unidades, 0)::numeric AS stock,
+           ROUND(COALESCE(s.valor_venta, 0))::bigint AS valor_venta,
+           ROUND(COALESCE(s.precio_unitario, 0))::bigint AS precio_unitario,
            COALESCE(v.vendidas, 0)::numeric AS vendidas,
            ROUND(COALESCE(v.venta, 0))::bigint AS venta,
            ROUND(COALESCE(v.costo, 0))::bigint AS costo_vendido,
@@ -496,10 +501,21 @@ async function inventario(req, res) {
     const factorAnual = 365 / diasEfectivos;
     const ritmoDiario = vendidas / diasEfectivos;
 
+    // Si el snapshot no trajo precio (Dragonfish a veces manda 0), se estima con el
+    // precio promedio al que se vendió el modelo en la ventana
+    const precioUnit = Number(r.precio_unitario) > 0
+      ? Number(r.precio_unitario)
+      : (vendidas > 0 ? Math.round(venta / vendidas) : null);
+    const valorVenta = Number(r.valor_venta) > 0
+      ? Number(r.valor_venta)
+      : (precioUnit != null ? Math.round(stock * precioUnit) : null);
+
     return {
       producto: r.producto, stock, vendidas, venta, margen,
       costo_unitario: costoUnit,
+      precio_unitario: precioUnit,
       capital_inmovilizado: capital,
+      valor_venta: valorVenta,
       dias_desde_lanzamiento: edad,
       dias_medidos: diasEfectivos,
       es_nuevo: esNuevo,
@@ -518,6 +534,7 @@ async function inventario(req, res) {
   const lentos = conStock.filter(m => !m.sin_movimiento && !m.es_nuevo && m.dias_inventario != null && m.dias_inventario > 180);
   const nuevos = conStock.filter(m => m.es_nuevo);
   const capitalTotal = conStock.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0);
+  const valorVentaTotal = conStock.reduce((a, m) => a + (m.valor_venta || 0), 0);
   const margenTotal = modelos.reduce((a, m) => a + m.margen, 0);
 
   const estados = await sql`SELECT local, estado, filas, ROUND(unidades)::int AS unidades, error FROM stock_estado WHERE fecha = ${fechaStock}`;
@@ -528,6 +545,9 @@ async function inventario(req, res) {
       unidades: Math.round(conStock.reduce((a, m) => a + m.stock, 0)),
       modelos: conStock.length,
       capital: capitalTotal,
+      // Lo que entraría si se vendiera todo el stock a precio de lista
+      valor_venta: valorVentaTotal,
+      margen_potencial: valorVentaTotal - capitalTotal,
       gmroi: capitalTotal > 0 ? Math.round(margenTotal * factorVentana / capitalTotal * 100) / 100 : null,
       rotacion: capitalTotal > 0
         ? Math.round(modelos.reduce((a, m) => a + m.vendidas, 0) / conStock.reduce((a, m) => a + m.stock, 0) * factorVentana * 10) / 10
@@ -538,6 +558,9 @@ async function inventario(req, res) {
       modelos_lentos: lentos.length,
       capital_nuevo: nuevos.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
       modelos_nuevos: nuevos.length,
+      // El mismo corte, pero valuado a lo que se dejaría de facturar
+      venta_sin_ventas: sinVentas.reduce((a, m) => a + (m.valor_venta || 0), 0),
+      venta_lento: lentos.reduce((a, m) => a + (m.valor_venta || 0), 0),
     },
     locales_con_stock: localesConStock,
     modelos: modelos.sort((a, b) => (b.capital_inmovilizado || 0) - (a.capital_inmovilizado || 0)),
