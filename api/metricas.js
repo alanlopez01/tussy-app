@@ -472,15 +472,16 @@ async function rentabilidadProducto(req, res) {
   const costoFabrica = Math.round(fab.porUnidad);
   const costoDirecto = costoMerc == null ? null : costoMerc + costoFabrica;
 
-  // Estructura de locales por unidad: fijos de los 5 locales ÷ unidades vendidas en locales
-  const [locU] = await sql`
-    SELECT SUM(cantidad)::int AS unidades FROM ventas
-    WHERE fecha BETWEEN ${desde} AND ${hasta} AND local != 'Tiendanube'
-      AND producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')`;
+  // Estructura de locales como % de la facturación (no por unidad: repartir un monto
+  // fijo por prenda castiga a los accesorios baratos y premia a los caros).
+  const [locV] = await sql`
+    SELECT ROUND(SUM(total))::bigint AS venta FROM ventas
+    WHERE fecha BETWEEN ${desde} AND ${hasta} AND local != 'Tiendanube'`;
   const fijosLocales = Object.entries(fijos)
     .filter(([k]) => !k.startsWith("__"))
     .reduce((a, [, v]) => a + v.total, 0) + (fijos["__compartidos__"]?.total || 0);
-  const estructuraUnidad = locU?.unidades > 0 ? Math.round(fijosLocales / locU.unidades) : 0;
+  const ventaLocales = Number(locV?.venta || 0);
+  const estructuraPct = ventaLocales > 0 ? fijosLocales / ventaLocales : 0;
 
   const escenarios = [
     { key: "efectivo", label: "Efectivo (15% desc.)", ingreso: precioLista * (1 - (cfg.efectivo_desc ?? 0.15)), tasa: null },
@@ -492,11 +493,12 @@ async function rentabilidadProducto(req, res) {
   ].map(e => {
     const ingreso = Math.round(e.ingreso);
     const contribucion = costoDirecto == null ? null : ingreso - costoDirecto;
-    const resultado = contribucion == null ? null : contribucion - estructuraUnidad;
+    const estructura = Math.round(ingreso * estructuraPct);
+    const resultado = contribucion == null ? null : contribucion - estructura;
     return {
       ...e, ingreso,
       costo_financiero: Math.round(precioLista - ingreso),
-      contribucion,
+      contribucion, estructura,
       margen_contribucion: contribucion != null && ingreso > 0 ? Math.round(contribucion / ingreso * 1000) / 10 : null,
       resultado,
       margen_resultado: resultado != null && ingreso > 0 ? Math.round(resultado / ingreso * 1000) / 10 : null,
@@ -510,7 +512,7 @@ async function rentabilidadProducto(req, res) {
     costo_mercaderia: costoMerc,
     costo_fabrica: costoFabrica,
     costo_directo: costoDirecto,
-    estructura_unidad: estructuraUnidad,
+    estructura_pct: Math.round(estructuraPct * 1000) / 10,
     escenarios,
   });
 }

@@ -47,7 +47,7 @@ function DetalleProducto({ producto, mes, onCerrar }) {
               {[["Precio de lista", fmtPesos(d.precio_lista)],
                 ["Costo mercadería", d.costo_mercaderia != null ? fmtPesos(d.costo_mercaderia) : "—"],
                 ["Fábrica / unidad", fmtPesos(d.costo_fabrica)],
-                ["Estructura / unidad", fmtPesos(d.estructura_unidad)]].map(([l, v]) => (
+                ["Estructura local", `${d.estructura_pct}% s/venta`]].map(([l, v]) => (
                 <div key={l} className="bg-surface rounded-md px-3 py-2">
                   <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3">{l}</div>
                   <div className="text-[14px] font-bold text-ink tabular-nums">{v}</div>
