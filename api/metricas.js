@@ -434,7 +434,8 @@ async function evolucion(req, res) {
         resultado: r.total.resultado,
         margen_pct: r.total.margen_pct,
         datos: r.datos,
-        completo: r.datos.fijos && r.datos.mix_pagos,
+        completo: r.datos.fijos,
+        estimado: r.datos.fijos_estimados || !r.datos.mix_pagos,
         // Resultado de cada unidad, para ver quién mejora y quién empeora
         por_unidad: Object.fromEntries(r.unidades.map(u => [u.local, { venta: u.venta, resultado: u.resultado, margen_pct: u.margen_pct }])),
       })),
@@ -446,14 +447,16 @@ async function evolucion(req, res) {
 // Devuelve, para cada local, los conceptos vigentes al mes pedido
 async function leerGastosFijos(sql, mes) {
   const rows = await sql`
-    SELECT DISTINCT ON (local, concepto) local, concepto, monto, vigente_desde
+    SELECT DISTINCT ON (local, concepto) local, concepto, monto, vigente_desde,
+           COALESCE(estimado, false) AS estimado
     FROM gastos_fijos WHERE vigente_desde <= ${mes}
     ORDER BY local, concepto, vigente_desde DESC`;
   const porLocal = {};
   for (const r of rows) {
-    if (!porLocal[r.local]) porLocal[r.local] = { conceptos: {}, vigente_desde: r.vigente_desde, total: 0 };
+    if (!porLocal[r.local]) porLocal[r.local] = { conceptos: {}, vigente_desde: r.vigente_desde, total: 0, estimado: false };
     porLocal[r.local].conceptos[r.concepto] = Number(r.monto);
     porLocal[r.local].total += Number(r.monto);
+    if (r.estimado) porLocal[r.local].estimado = true;
     if (r.vigente_desde > porLocal[r.local].vigente_desde) porLocal[r.local].vigente_desde = r.vigente_desde;
   }
   return porLocal;
@@ -886,6 +889,7 @@ async function calcularNegocio(sql, mes) {
     // margen irreal (no se le restó la estructura) y no es comparable con los demás.
     datos: {
       fijos: Object.keys(fijos).some(k => !k.startsWith("__")),
+      fijos_estimados: Object.values(fijos).some(v => v.estimado),
       mix_pagos: mixPagos.length > 0,
       impuestos_reales: Object.keys(impuestosReales).length > 0,
     },

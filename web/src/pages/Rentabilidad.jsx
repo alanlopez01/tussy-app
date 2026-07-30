@@ -699,6 +699,7 @@ function Evolucion() {
   const ms = data?.meses || [];
   const completos = ms.filter(m => m.completo);
   const incompletos = ms.filter(m => !m.completo);
+  const estimados = ms.filter(m => m.completo && m.estimado);
   const ultimo = completos[completos.length - 1] || ms[ms.length - 1];
   const primero = completos[0] || ms[0];
   const varVenta = primero && ultimo && primero.venta > 0
@@ -719,8 +720,16 @@ function Evolucion() {
             <Card>
               <p className="text-[12px] text-warn font-medium">
                 {incompletos.map(m => nombreMes(m.mes)).join(", ")} {incompletos.length === 1 ? "no tiene" : "no tienen"} cargados
-                los costos fijos ni el mix de pagos, así que su margen aparece más alto de lo real y no es
-                comparable. Las comparativas de arriba usan solo los meses completos.
+                los costos fijos, así que su margen aparece más alto de lo real y no es comparable.
+              </p>
+            </Card>
+          )}
+          {estimados.length > 0 && (
+            <Card>
+              <p className="text-[12px] text-ink-3">
+                {estimados.map(m => nombreMes(m.mes)).join(", ")}: costos fijos estimados deflactando los de
+                junio por el IPC del INDEC (mar 3,4% · abr 2,6% · may 2,1% · jun 1,9%). Sirven para ver la
+                tendencia; cuando cargues los reales en Fijos, se reemplazan.
               </p>
             </Card>
           )}
@@ -742,7 +751,8 @@ function Evolucion() {
                   <div className="flex items-baseline justify-between gap-2 mb-1">
                     <span className="text-[12px] font-semibold text-ink capitalize">
                       {nombreMes(m.mes)}
-                      {!m.completo && <span className="text-warn font-normal"> · datos incompletos</span>}
+                      {!m.completo && <span className="text-warn font-normal"> · sin costos fijos</span>}
+                      {m.completo && m.estimado && <span className="text-ink-3 font-normal"> · estimado</span>}
                     </span>
                     <span className="text-[12px] text-ink-2 tabular-nums">
                       {fmtPesosCorto(m.venta)} · <span className={m.resultado >= 0 ? "text-ok font-semibold" : "text-bad font-semibold"}>
@@ -768,7 +778,7 @@ function Evolucion() {
                     <th className="text-left py-2 font-semibold">Unidad</th>
                     {ms.map(m => (
                       <th key={m.mes} className={`text-right py-2 font-semibold capitalize ${m.completo ? "" : "text-warn"}`}>
-                        {nombreMes(m.mes)}{!m.completo && "*"}
+                        {nombreMes(m.mes)}{!m.completo ? "*" : m.estimado ? "†" : ""}
                       </th>
                     ))}
                   </tr>
@@ -798,8 +808,11 @@ function Evolucion() {
                 </tbody>
               </table>
             </div>
-            {incompletos.length > 0 && (
-              <p className="text-[11px] text-warn mt-3">* mes sin costos fijos cargados: el margen figura más alto de lo real.</p>
+            {(incompletos.length > 0 || estimados.length > 0) && (
+              <p className="text-[11px] text-ink-3 mt-3">
+                {incompletos.length > 0 && <span className="text-warn">* sin costos fijos cargados. </span>}
+                {estimados.length > 0 && "† costos fijos estimados por IPC."}
+              </p>
             )}
           </Card>
         </>
