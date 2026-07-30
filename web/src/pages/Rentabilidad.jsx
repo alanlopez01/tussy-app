@@ -55,7 +55,27 @@ function DetalleProducto({ producto, mes, onCerrar }) {
               ))}
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile: una fila por escenario, en dos líneas */}
+            <div className="sm:hidden divide-y divide-borde">
+              {d.escenarios.map(e => (
+                <div key={e.key} className="py-2.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-[13px] font-semibold text-ink">
+                      {e.label}
+                      {e.tasa != null && <span className="text-ink-3 font-normal"> · {(e.tasa * 100).toFixed(1)}%</span>}
+                    </span>
+                    <span className={`text-[14px] font-bold tabular-nums ${e.resultado >= 0 ? "text-ok" : "text-bad"}`}>
+                      {e.resultado != null ? fmtPesos(e.resultado) : "—"}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
+                    entra {fmtPesos(e.ingreso)} · contribución {e.contribucion != null ? `${fmtPesos(e.contribucion)} (${e.margen_contribucion}%)` : "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-[12px] min-w-[520px]">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
@@ -150,7 +170,33 @@ function Margenes() {
           </div>
 
           <Card title="Margen por modelo">
-            <div className="overflow-x-auto">
+            {/* Mobile: lista compacta en dos líneas por modelo */}
+            <div className="sm:hidden divide-y divide-borde">
+              {paginaModelos.map(m => (
+                <button key={m.producto} onClick={() => setDetalle(m.producto)}
+                        className="w-full text-left py-2.5 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-ink truncate">{m.producto}</div>
+                    <div className="text-[11px] text-ink-3 tabular-nums">
+                      {m.unidades} u. · venta {fmtPesosCorto(m.venta)}
+                      {m.costo != null && ` · costo ${fmtPesosCorto(m.costo)}`}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className={`text-[13px] font-bold tabular-nums ${colorMargen(m.margen_pct)}`}>
+                      {m.margen_pct != null ? `${m.margen_pct}%` : "—"}
+                    </div>
+                    <div className="text-[11px] text-ink-3 tabular-nums">
+                      {m.margen != null ? fmtPesosCorto(m.margen) : "sin costo"}
+                    </div>
+                  </div>
+                  <span className="text-ink-3 text-[12px] shrink-0">›</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Desktop: tabla completa */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-[13px] min-w-[560px]">
                 <thead>
                   <tr className="text-[11px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
@@ -336,7 +382,66 @@ function Negocio() {
           </div>
 
           <Card title="Cascada por unidad de negocio">
-            <div className="overflow-x-auto">
+            {/* Mobile: una tarjeta por unidad — la tabla de 9 columnas no entra */}
+            <div className="sm:hidden space-y-3">
+              {data.unidades.map(u => {
+                const filas = [
+                  ["Mercadería", -u.mercaderia],
+                  ["Costo financiero", -u.financiero],
+                  ...((u.publicidad + u.envios) > 0 ? [["Publicidad y envíos", -(u.publicidad + u.envios)]] : []),
+                  ["Fijos", -u.fijos],
+                  ["Fábrica", -u.fabrica],
+                  ["Impuestos", -(u.impuestos || 0)],
+                ];
+                return (
+                  <div key={u.local} className="border border-borde rounded-lg p-3.5">
+                    <div className="flex items-baseline justify-between gap-2 mb-1">
+                      <span className="text-[14px] font-bold text-ink">
+                        {u.local === "Tiendanube" ? "Online" : u.local}
+                      </span>
+                      <span className="text-[15px] font-bold text-ink tabular-nums">{fmtPesosCorto(u.venta)}</span>
+                    </div>
+                    {u.detalle_financiero?.tipo === "point" && (
+                      <div className="text-[10px] text-ink-3 mb-2">
+                        Point {u.detalle_financiero.share_point}% · costo {u.detalle_financiero.pct_point}%
+                      </div>
+                    )}
+                    {u.detalle_financiero?.tipo === "web" && (
+                      <div className="text-[10px] text-ink-3 mb-2">costo real {u.detalle_financiero.pct_real}%</div>
+                    )}
+                    <dl className="space-y-1 py-2 border-t border-borde">
+                      {filas.map(([label, valor]) => (
+                        <div key={label} className="flex items-center justify-between gap-3">
+                          <dt className="text-[12px] text-ink-3">{label}</dt>
+                          <dd className="text-[12px] text-ink-2 tabular-nums">{fmtPesosCorto(valor)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-borde">
+                      <span className="text-[12px] font-bold text-ink">Resultado</span>
+                      <span className={`text-[15px] font-bold tabular-nums ${u.resultado >= 0 ? "text-ok" : "text-bad"}`}>
+                        {fmtPesosCorto(u.resultado)} <span className="text-[12px]">({u.margen_pct}%)</span>
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="border-2 border-negro rounded-lg p-3.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[14px] font-bold text-ink">TOTAL</span>
+                  <span className="text-[15px] font-bold text-ink tabular-nums">{fmtPesosCorto(t.venta)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-2 mt-2 border-t border-borde">
+                  <span className="text-[12px] font-bold text-ink">Resultado</span>
+                  <span className={`text-[15px] font-bold tabular-nums ${t.resultado >= 0 ? "text-ok" : "text-bad"}`}>
+                    {fmtPesosCorto(t.resultado)} <span className="text-[12px]">({t.margen_pct}%)</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop: tabla completa */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-[12px] min-w-[720px]">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">

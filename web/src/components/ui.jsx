@@ -22,12 +22,14 @@ export function StatTile({ label, value, sub, delta }) {
     <div className="bg-surface-1 rounded-lg border border-borde p-5">
       <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{label}</div>
       <div className="text-[26px] leading-tight font-bold text-ink mt-1.5 tabular-nums">{value}</div>
-      <div className="flex items-center gap-2 mt-1 text-[12px] min-h-[18px]">
-        {delta != null && !isNaN(delta) && (
-          <span className={`font-semibold ${deltaColor}`}>{deltaIcon} {Math.abs(Math.round(delta))}%</span>
-        )}
-        {sub && <span className="text-ink-3">{sub}</span>}
-      </div>
+      {(sub || (delta != null && !isNaN(delta))) && (
+        <div className="flex items-center gap-2 mt-1 text-[12px]">
+          {delta != null && !isNaN(delta) && (
+            <span className={`font-semibold ${deltaColor}`}>{deltaIcon} {Math.abs(Math.round(delta))}%</span>
+          )}
+          {sub && <span className="text-ink-3">{sub}</span>}
+        </div>
+      )}
     </div>
   );
 }
