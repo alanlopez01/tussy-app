@@ -307,6 +307,9 @@ function Costos() {
                   <div className="text-[11px] text-ink-3">
                     {m.unidades_90d} u. en 90 días
                     {m.costo != null && ` · costo actual ${fmtPesos(m.costo)} (desde ${m.vigente_desde.slice(5).split("-").reverse().join("/")})`}
+                    {m.origen?.startsWith("auto:") && (
+                      <span className="text-warn"> · asignado por familia: {m.origen.slice(5)}</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

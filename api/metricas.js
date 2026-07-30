@@ -20,6 +20,7 @@ const KEY_LOCAL = {
 };
 
 const { normalizarProducto } = require("../lib/normalizar");
+const { costear } = require("../lib/costeo");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
 async function ventasLive(req, res) {
@@ -193,9 +194,40 @@ async function correrIngesta() {
     notificadas = await enviarPush(payloads);
   }
 
-  const salida = { ok: true, fecha: hoy, resumen, eventos: eventos.length, notificadas };
+  // 4) Costear modelos nuevos: los costos son por familia, así que una prenda
+  //    que aparece hoy hereda el costo de la suya sin esperar carga manual.
+  const nuevos = await costearModelosNuevos(sql);
+
+  const salida = { ok: true, fecha: hoy, resumen, eventos: eventos.length, notificadas, modelos_costeados: nuevos };
   console.log("[ingesta]", JSON.stringify(salida));
   return salida;
+}
+
+// Asigna costo de familia a los modelos vendidos que todavía no tienen ninguno.
+// Solo crea el costo inicial: si ya existe uno cargado a mano, no lo toca.
+async function costearModelosNuevos(sql) {
+  const sinCosto = await sql`
+    SELECT DISTINCT v.producto_norm AS producto, MIN(v.fecha)::text AS primera_venta
+    FROM ventas v
+    WHERE v.producto_norm IS NOT NULL
+      AND v.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
+      AND NOT EXISTS (SELECT 1 FROM costos_producto cp WHERE cp.producto = v.producto_norm)
+    GROUP BY v.producto_norm`;
+  if (!sinCosto.length) return [];
+
+  const asignados = [];
+  for (const m of sinCosto) {
+    const c = costear(m.producto);
+    if (!c) continue; // sin familia reconocible: queda para carga manual
+    const costo = Math.round(c.prod + c.estampa);
+    await sql`
+      INSERT INTO costos_producto (producto, costo, vigente_desde, origen)
+      VALUES (${m.producto}, ${costo}, ${m.primera_venta}, ${"auto:" + c.familia})
+      ON CONFLICT (producto, vigente_desde) DO NOTHING`;
+    asignados.push({ producto: m.producto, costo, familia: c.familia });
+  }
+  if (asignados.length) console.log("[costeo-auto]", JSON.stringify(asignados));
+  return asignados;
 }
 
 // ── Envío de push a todas las suscripciones guardadas ──
@@ -286,10 +318,10 @@ async function modelosCostos(req, res) {
       GROUP BY producto_norm
     )
     SELECT v.producto_norm AS producto, v.unidades_90d,
-           c.costo::numeric AS costo, c.vigente_desde::text AS vigente_desde
+           c.costo::numeric AS costo, c.vigente_desde::text AS vigente_desde, c.origen
     FROM vendidos v
     LEFT JOIN LATERAL (
-      SELECT costo, vigente_desde FROM costos_producto cp
+      SELECT costo, vigente_desde, origen FROM costos_producto cp
       WHERE cp.producto = v.producto_norm
       ORDER BY vigente_desde DESC LIMIT 1
     ) c ON true
