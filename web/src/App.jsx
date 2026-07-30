@@ -5,6 +5,7 @@ import Ventas from "./pages/Ventas.jsx";
 import Productos from "./pages/Productos.jsx";
 import Pedidos from "./pages/Pedidos.jsx";
 import Finanzas from "./pages/Finanzas.jsx";
+import Rentabilidad from "./pages/Rentabilidad.jsx";
 import Login from "./pages/Login.jsx";
 
 const NAV = [
@@ -13,7 +14,13 @@ const NAV = [
   { to: "/productos", label: "Productos", icon: "▦" },
   { to: "/pedidos", label: "Pedidos", icon: "◷" },
   { to: "/finanzas", label: "Finanzas", icon: "◈" },
+  // Solo admin mientras esté en construcción
+  { to: "/rentabilidad", label: "Rentabilidad", icon: "◎", soloAdmin: true },
 ];
+
+function navPara(user) {
+  return NAV.filter(item => !item.soloAdmin || user.rol === "admin");
+}
 
 function cerrarSesion() {
   localStorage.removeItem("tussy_user");
@@ -31,7 +38,7 @@ function Sidebar({ user }) {
         <div className="text-[11px] uppercase tracking-widest text-white/50 font-semibold">Métricas</div>
       </div>
       <nav className="flex-1 px-3 space-y-1">
-        {NAV.map(item => (
+        {navPara(user).map(item => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -57,10 +64,10 @@ function Sidebar({ user }) {
   );
 }
 
-function TabBar() {
+function TabBar({ user }) {
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-negro text-white flex justify-around pt-2 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))]">
-      {NAV.map(item => (
+      {navPara(user).map(item => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -98,9 +105,10 @@ export default function App() {
             <Route path="/productos" element={<Productos />} />
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/finanzas" element={<Finanzas />} />
+            {user.rol === "admin" && <Route path="/rentabilidad" element={<Rentabilidad />} />}
           </Routes>
         </main>
-        <TabBar />
+        <TabBar user={user} />
       </div>
     </BrowserRouter>
   );

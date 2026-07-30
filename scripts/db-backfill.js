@@ -7,6 +7,7 @@
 const fs = require("fs");
 const path = require("path");
 const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchDFRango, diaSiguiente } = require("../lib/fuentes");
+const { normalizarProducto } = require("../lib/normalizar");
 
 function loadEnv() {
   const envPath = path.join(__dirname, "..", ".env.development.local");
@@ -34,7 +35,7 @@ async function guardarDiaLocal(sql, fecha, local, filas) {
   for (let i = 0; i < filas.length; i += 500) {
     const c = filas.slice(i, i + 500);
     await sql`
-      INSERT INTO ventas (fecha, local, sistema, orden_id, hora, producto, sku, color, talle, cantidad, precio_unit, total)
+      INSERT INTO ventas (fecha, local, sistema, orden_id, hora, producto, producto_norm, sku, color, talle, cantidad, precio_unit, total)
       SELECT * FROM UNNEST(
         ${c.map(f => f.fecha)}::date[],
         ${c.map(f => f.local)}::text[],
@@ -42,6 +43,7 @@ async function guardarDiaLocal(sql, fecha, local, filas) {
         ${c.map(f => f.orden_id || null)}::text[],
         ${c.map(f => f.hora || null)}::text[],
         ${c.map(f => f.producto)}::text[],
+        ${c.map(f => normalizarProducto(f.producto).nombre)}::text[],
         ${c.map(f => f.sku)}::text[],
         ${c.map(f => f.color)}::text[],
         ${c.map(f => f.talle)}::text[],

@@ -19,49 +19,7 @@ const KEY_LOCAL = {
   "Dot": "dot", "Abasto": "abasto", "Córdoba": "cordoba", "Cordoba": "cordoba",
 };
 
-// ── Normalización de productos (portada de Apps Script) ──
-// Unifica "REMERA OVERSIZE ECLIPSE, NEGRO" con "REMERA OVERSIZE ECLIPSE".
-const CATEGORIAS = ["REMERA","REMERON","POLO","POLERA","PANTALON","PANTALONES","BUZO","CAMPERA",
-  "CAMISA","BERMUDA","BERMUDAS","SHORT","SHORTS","VESTIDO","TOP","BOXER","LLAVERO",
-  "MUSCULOSA","SWEATER","JEAN","JEANS","CHALECO","CARDIGAN","CHOMBA","BODY",
-  "CALZA","CALZAS","FALDA","RIÑONERA","GORRA","MEDIAS","SACO"];
-const IGNORAR = new Set([
-  "OVERSIZE","TSSY","TSSYA","BOXY","BAGGY","MUJER","HOMBRE","UNISEX",
-  "REGULAR","CLASSIC","CLASSICO","CLASICO","PREMIUM","LIMITED","EDITION","EDICION",
-  "ALGODON","GABARDINA","TENCEL","LINO","POLIESTER","RUSTICO","RUSTICA","LISO","LISA",
-  "SET","LINE","KIT","PACK","COLECCION","FW","SS","SPRING","SUMMER","FALL","WINTER",
-  "NUEVO","NUEVA","NEW","XL","NARANJA","VIOLETA","BEIGE","GRIS","NEGRO","NEGRA",
-  "BLANCO","BLANCA","AZUL","ROJO","ROJA","VERDE","AMARILLO","CELESTE","HUESO",
-  "MARRON","BORDO","ROSA","LAVANDA","MELANGE","TAUPE","OLIVA","PETROLEO",
-]);
-const CATEGORIAS_SET = new Set(CATEGORIAS);
-
-function normalizarProducto(nombre) {
-  if (!nombre) return { nombre: "", categoria: "" };
-  const n = String(nombre).replace(/\([^)]*\)/g, " ").toUpperCase()
-    .replace(/[ÁÀÄÂ]/g, "A").replace(/[ÉÈËÊ]/g, "E").replace(/[ÍÌÏÎ]/g, "I")
-    .replace(/[ÓÒÖÔ]/g, "O").replace(/[ÚÙÜÛ]/g, "U").replace(/Ñ/g, "N")
-    .replace(/[-_\/.,;:]/g, " ")
-    .replace(/[^\w\s]/g, " ")
-    .replace(/\s+/g, " ").trim();
-
-  const palabras = n.split(" ").filter(Boolean);
-  let categoria = "";
-  for (const p of palabras) {
-    if (CATEGORIAS_SET.has(p)) { categoria = p; break; }
-  }
-  const categoriaSing = categoria.replace(/ES$/, "").replace(/^REMERON$/, "REMERA");
-
-  const modelo = [];
-  for (let p of palabras) {
-    if (CATEGORIAS_SET.has(p) || IGNORAR.has(p) || p.length < 2) continue;
-    if (p.length > 4 && p.endsWith("S") && !p.endsWith("SS") && !p.endsWith("US")) p = p.slice(0, -1);
-    modelo.push(p);
-  }
-  const modeloStr = modelo.join(" ");
-  const nombreNorm = categoriaSing && modeloStr ? `${categoriaSing} ${modeloStr}` : (modeloStr || categoriaSing || n);
-  return { nombre: nombreNorm, categoria: categoriaSing || "OTROS" };
-}
+const { normalizarProducto } = require("../lib/normalizar");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
 async function ventasLive(req, res) {
@@ -123,11 +81,12 @@ async function escribirDiaLocal(sql, fecha, local, filas) {
   for (let i = 0; i < filas.length; i += 500) {
     const c = filas.slice(i, i + 500);
     await sql`
-      INSERT INTO ventas (fecha, local, sistema, orden_id, hora, producto, sku, color, talle, cantidad, precio_unit, total)
+      INSERT INTO ventas (fecha, local, sistema, orden_id, hora, producto, producto_norm, sku, color, talle, cantidad, precio_unit, total)
       SELECT * FROM UNNEST(
         ${c.map(f => f.fecha)}::date[], ${c.map(f => f.local)}::text[], ${c.map(f => f.sistema)}::text[],
         ${c.map(f => f.orden_id || null)}::text[], ${c.map(f => f.hora || null)}::text[],
-        ${c.map(f => f.producto)}::text[], ${c.map(f => f.sku)}::text[], ${c.map(f => f.color)}::text[],
+        ${c.map(f => f.producto)}::text[], ${c.map(f => normalizarProducto(f.producto).nombre)}::text[],
+        ${c.map(f => f.sku)}::text[], ${c.map(f => f.color)}::text[],
         ${c.map(f => f.talle)}::text[], ${c.map(f => f.cantidad)}::numeric[],
         ${c.map(f => f.precio_unit)}::numeric[], ${c.map(f => f.total)}::numeric[]
       )`;
@@ -313,6 +272,95 @@ async function resumenSemanal(req, res) {
   return res.status(200).json({ ok: true, desde, hasta, total, porLocal: rows, notificadas: enviadas });
 }
 
+// ── Rentabilidad: costos por modelo (versionados) y márgenes ──
+
+// Lista de modelos vendidos (últimos 90 días) con su costo vigente, para la pantalla de carga
+async function modelosCostos(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const rows = await sql`
+    WITH vendidos AS (
+      SELECT producto_norm, SUM(cantidad)::int AS unidades_90d
+      FROM ventas
+      WHERE fecha >= CURRENT_DATE - 90 AND producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')
+        AND producto_norm IS NOT NULL
+      GROUP BY producto_norm
+    )
+    SELECT v.producto_norm AS producto, v.unidades_90d,
+           c.costo::numeric AS costo, c.vigente_desde::text AS vigente_desde
+    FROM vendidos v
+    LEFT JOIN LATERAL (
+      SELECT costo, vigente_desde FROM costos_producto cp
+      WHERE cp.producto = v.producto_norm
+      ORDER BY vigente_desde DESC LIMIT 1
+    ) c ON true
+    ORDER BY v.unidades_90d DESC`;
+  return res.status(200).json({
+    modelos: rows.map(r => ({ ...r, costo: r.costo == null ? null : Number(r.costo) })),
+  });
+}
+
+// Guardar un costo con fecha de vigencia (upsert)
+async function guardarCosto(req, res) {
+  const { producto, costo, desde } = req.query;
+  if (!producto || costo == null || isNaN(parseFloat(costo))) {
+    return res.status(400).json({ error: "Faltan producto/costo" });
+  }
+  const vigente = desde || hoyArg();
+  const sql = neon(process.env.DATABASE_URL);
+  await sql`
+    INSERT INTO costos_producto (producto, costo, vigente_desde)
+    VALUES (${producto.toUpperCase().trim()}, ${parseFloat(costo)}, ${vigente})
+    ON CONFLICT (producto, vigente_desde) DO UPDATE SET costo = EXCLUDED.costo, creado_en = now()`;
+  return res.status(200).json({ ok: true, producto, costo: parseFloat(costo), vigente_desde: vigente });
+}
+
+// Margen por modelo: cada venta se cruza contra el costo vigente en SU fecha
+async function rentabilidadProductos(req, res) {
+  const { desde, hasta, local } = req.query;
+  if (!desde || !hasta) return res.status(400).json({ error: "Faltan desde/hasta" });
+  const localFiltro = local || null;
+  const sql = neon(process.env.DATABASE_URL);
+  const rows = await sql`
+    SELECT v.producto_norm AS producto,
+           SUM(v.cantidad)::int AS unidades,
+           ROUND(SUM(v.total))::bigint AS venta,
+           ROUND(SUM(CASE WHEN c.costo IS NOT NULL THEN v.cantidad * c.costo ELSE 0 END))::bigint AS costo_total,
+           SUM(CASE WHEN c.costo IS NULL THEN v.cantidad ELSE 0 END)::int AS unidades_sin_costo
+    FROM ventas v
+    LEFT JOIN LATERAL (
+      SELECT costo FROM costos_producto cp
+      WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
+      ORDER BY cp.vigente_desde DESC LIMIT 1
+    ) c ON true
+    WHERE v.fecha BETWEEN ${desde} AND ${hasta}
+      AND v.producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')
+      AND v.producto_norm IS NOT NULL
+      AND (${localFiltro}::text IS NULL OR v.local = ${localFiltro})
+    GROUP BY v.producto_norm
+    ORDER BY SUM(v.total) DESC`;
+  const modelos = rows.map(r => {
+    const venta = Number(r.venta), costo = Number(r.costo_total);
+    const completo = r.unidades_sin_costo === 0;
+    return {
+      producto: r.producto, unidades: r.unidades, venta,
+      costo: completo ? costo : null,
+      margen: completo ? venta - costo : null,
+      margen_pct: completo && venta > 0 ? Math.round(((venta - costo) / venta) * 1000) / 10 : null,
+      unidades_sin_costo: r.unidades_sin_costo,
+    };
+  });
+  const conCosto = modelos.filter(m => m.margen != null);
+  return res.status(200).json({
+    modelos,
+    totales: {
+      venta: modelos.reduce((a, m) => a + m.venta, 0),
+      venta_con_costo: conCosto.reduce((a, m) => a + m.venta, 0),
+      margen: conCosto.reduce((a, m) => a + m.margen, 0),
+      modelos_sin_costo: modelos.length - conCosto.length,
+    },
+  });
+}
+
 // ── Feed: todas las operaciones de HOY (día argentino), desde la base ──
 async function feed(req, res) {
   const sql = neon(process.env.DATABASE_URL);
@@ -379,6 +427,9 @@ module.exports = async function handler(req, res) {
     if (action === "operaciones") return await operaciones(req, res);
     if (action === "cierre") return await cierreDiario(req, res);
     if (action === "semanal") return await resumenSemanal(req, res);
+    if (action === "modelosCostos") return await modelosCostos(req, res);
+    if (action === "guardarCosto") return await guardarCosto(req, res);
+    if (action === "rentabilidadProductos") return await rentabilidadProductos(req, res);
 
     if (!process.env.DATABASE_URL) {
       return res.status(503).json({ error: "DATABASE_URL no configurada" });
