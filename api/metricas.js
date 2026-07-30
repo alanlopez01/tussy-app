@@ -480,6 +480,7 @@ async function inventario(req, res) {
     WHERE COALESCE(s.unidades, 0) > 0 OR COALESCE(v.vendidas, 0) > 0`;
 
   const DIAS_NUEVO = 30; // por debajo de esto, el modelo todavía no tiene historia
+  const factorVentana = 365 / dias; // para los totales, que sí cubren toda la ventana
   const modelos = rows.map(r => {
     const stock = Number(r.stock), vendidas = Number(r.vendidas);
     const venta = Number(r.venta), costoVendido = Number(r.costo_vendido);
@@ -527,9 +528,9 @@ async function inventario(req, res) {
       unidades: Math.round(conStock.reduce((a, m) => a + m.stock, 0)),
       modelos: conStock.length,
       capital: capitalTotal,
-      gmroi: capitalTotal > 0 ? Math.round(margenTotal * factorAnual / capitalTotal * 100) / 100 : null,
+      gmroi: capitalTotal > 0 ? Math.round(margenTotal * factorVentana / capitalTotal * 100) / 100 : null,
       rotacion: capitalTotal > 0
-        ? Math.round(modelos.reduce((a, m) => a + m.vendidas, 0) / conStock.reduce((a, m) => a + m.stock, 0) * factorAnual * 10) / 10
+        ? Math.round(modelos.reduce((a, m) => a + m.vendidas, 0) / conStock.reduce((a, m) => a + m.stock, 0) * factorVentana * 10) / 10
         : null,
       capital_sin_ventas: sinVentas.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
       modelos_sin_ventas: sinVentas.length,
