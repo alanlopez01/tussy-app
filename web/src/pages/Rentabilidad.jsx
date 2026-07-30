@@ -17,20 +17,103 @@ function colorMargen(pct) {
   return "text-ok";
 }
 
+// ── Detalle de un producto: cuánto deja según cómo lo paguen ──
+function DetalleProducto({ producto, mes, onCerrar }) {
+  const [d, setD] = useState(null);
+
+  useEffect(() => {
+    setD(null);
+    getJSON(`/api/metricas?action=rentabilidadProducto&producto=${encodeURIComponent(producto)}&mes=${mes}`, 25000)
+      .then(setD).catch(() => setD({ error: true }));
+  }, [producto, mes]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <button className="absolute inset-0 bg-black/50" onClick={onCerrar} aria-label="Cerrar" />
+      <div className="relative bg-surface-1 rounded-t-2xl sm:rounded-lg w-full sm:max-w-2xl max-h-[88vh] overflow-y-auto p-5">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-[16px] font-bold text-ink">{producto}</h3>
+            <p className="text-[11px] text-ink-3">Rentabilidad por medio de pago · {mes}</p>
+          </div>
+          <button onClick={onCerrar} className="text-ink-3 text-2xl leading-none px-1">×</button>
+        </div>
+
+        {!d ? <Spinner /> : d.error || d.sin_datos ? (
+          <p className="text-[13px] text-ink-3 py-8 text-center">Sin ventas de este modelo en el mes.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              {[["Precio de lista", fmtPesos(d.precio_lista)],
+                ["Costo mercadería", d.costo_mercaderia != null ? fmtPesos(d.costo_mercaderia) : "—"],
+                ["Fábrica / unidad", fmtPesos(d.costo_fabrica)],
+                ["Estructura / unidad", fmtPesos(d.estructura_unidad)]].map(([l, v]) => (
+                <div key={l} className="bg-surface rounded-md px-3 py-2">
+                  <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3">{l}</div>
+                  <div className="text-[14px] font-bold text-ink tabular-nums">{v}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12px] min-w-[520px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                    <th className="text-left py-2 font-semibold">Forma de pago</th>
+                    <th className="text-right py-2 font-semibold">Entra</th>
+                    <th className="text-right py-2 font-semibold">Costo fin.</th>
+                    <th className="text-right py-2 font-semibold">Contribución</th>
+                    <th className="text-right py-2 font-semibold">Con estructura</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borde">
+                  {d.escenarios.map(e => (
+                    <tr key={e.key}>
+                      <td className="py-2 pr-3 font-medium text-ink">
+                        {e.label}
+                        {e.tasa != null && <span className="text-ink-3 font-normal"> · {(e.tasa * 100).toFixed(1)}%</span>}
+                      </td>
+                      <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesos(e.ingreso)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesos(e.costo_financiero)}</td>
+                      <td className={`py-2 text-right tabular-nums font-semibold ${e.contribucion >= 0 ? "text-ok" : "text-bad"}`}>
+                        {e.contribucion != null ? `${fmtPesos(e.contribucion)} (${e.margen_contribucion}%)` : "—"}
+                      </td>
+                      <td className={`py-2 text-right tabular-nums font-bold ${e.resultado >= 0 ? "text-ok" : "text-bad"}`}>
+                        {e.resultado != null ? fmtPesos(e.resultado) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-ink-3 mt-3">
+              <strong>Contribución</strong> = lo que entra − mercadería − fábrica. <strong>Con estructura</strong> le resta
+              además la parte de alquileres y sueldos de locales que le toca a cada prenda. Si esta última da
+              negativa, esa venta no cubre su costo completo.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Tab: Márgenes por modelo ──
 function Margenes() {
   const [rango, setRango] = useState({ key: "mes", ...rangoDe("mes") });
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [pagina, setPagina] = useState(1);
+  const [conFabrica, setConFabrica] = useState(true);
+  const [detalle, setDetalle] = useState(null);
 
   const cargar = useCallback(() => {
     setCargando(true);
-    getJSON(`/api/metricas?action=rentabilidadProductos&desde=${rango.desde}&hasta=${rango.hasta}`, 30000)
+    getJSON(`/api/metricas?action=rentabilidadProductos&desde=${rango.desde}&hasta=${rango.hasta}&conFabrica=${conFabrica ? 1 : 0}`, 30000)
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setCargando(false));
-  }, [rango]);
+  }, [rango, conFabrica]);
 
   useEffect(() => { setData(null); setPagina(1); cargar(); }, [cargar]);
 
@@ -44,7 +127,16 @@ function Margenes() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Chips opciones={PERIODOS.map(p => ({ value: p.key, label: p.label }))} valor={rango.key}
                onChange={k => setRango({ key: k, ...rangoDe(k) })} />
-        <BotonActualizar onClick={cargar} cargando={cargando} />
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-2">
+            <input type="checkbox" checked={conFabrica} onChange={e => setConFabrica(e.target.checked)} />
+            Incluir fábrica
+            {data?.fabrica_por_unidad > 0 && conFabrica && (
+              <span className="text-ink-3 font-normal">({fmtPesos(data.fabrica_por_unidad)}/u)</span>
+            )}
+          </label>
+          <BotonActualizar onClick={cargar} cargando={cargando} />
+        </div>
       </div>
 
       {!data ? <Spinner /> : (
@@ -72,8 +164,12 @@ function Margenes() {
                 </thead>
                 <tbody className="divide-y divide-borde">
                   {paginaModelos.map(m => (
-                    <tr key={m.producto}>
-                      <td className="py-2 pr-3 font-medium text-ink max-w-[220px] truncate">{m.producto}</td>
+                    <tr key={m.producto} onClick={() => setDetalle(m.producto)}
+                        className="cursor-pointer hover:bg-surface/60 transition-colors">
+                      <td className="py-2 pr-3 font-medium text-ink max-w-[220px] truncate">
+                        {m.producto}
+                        <span className="text-ink-3 font-normal"> ›</span>
+                      </td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{m.unidades}</td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.venta)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-2">
@@ -91,8 +187,13 @@ function Margenes() {
               </table>
             </div>
             <Paginacion pagina={pagina} totalPaginas={totalPaginas} onChange={setPagina} />
+            <p className="text-[11px] text-ink-3 mt-3">Tocá cualquier modelo para ver cuánto deja según cómo lo paguen.</p>
           </Card>
         </>
+      )}
+
+      {detalle && (
+        <DetalleProducto producto={detalle} mes={rango.desde.slice(0, 7)} onCerrar={() => setDetalle(null)} />
       )}
     </div>
   );

@@ -319,7 +319,10 @@ async function rentabilidadProductos(req, res) {
   const { desde, hasta, local } = req.query;
   if (!desde || !hasta) return res.status(400).json({ error: "Faltan desde/hasta" });
   const localFiltro = local || null;
+  // conFabrica=1 suma la fábrica prorrateada por unidad al costo de cada modelo
+  const conFabrica = req.query.conFabrica === "1";
   const sql = neon(process.env.DATABASE_URL);
+  const fab = conFabrica ? await fabricaPorUnidad(sql, desde.slice(0, 7)) : { porUnidad: 0 };
   const rows = await sql`
     SELECT v.producto_norm AS producto,
            SUM(v.cantidad)::int AS unidades,
@@ -340,11 +343,12 @@ async function rentabilidadProductos(req, res) {
     GROUP BY v.producto_norm
     ORDER BY SUM(v.total) DESC`;
   const modelos = rows.map(r => {
-    const venta = Number(r.venta), costo = Number(r.costo_total);
+    const venta = Number(r.venta);
+    const costo = Number(r.costo_total) + Math.round(fab.porUnidad * r.unidades);
     const completo = r.unidades_sin_costo === 0;
     return {
       producto: r.producto, unidades: r.unidades, venta,
-      costo_unitario: r.costo_unitario == null ? null : Number(r.costo_unitario),
+      costo_unitario: r.costo_unitario == null ? null : Number(r.costo_unitario) + Math.round(fab.porUnidad),
       precio_promedio: r.unidades > 0 ? Math.round(venta / r.unidades) : null,
       costo: completo ? costo : null,
       margen: completo ? venta - costo : null,
@@ -355,6 +359,8 @@ async function rentabilidadProductos(req, res) {
   const conCosto = modelos.filter(m => m.margen != null);
   return res.status(200).json({
     modelos,
+    con_fabrica: conFabrica,
+    fabrica_por_unidad: Math.round(fab.porUnidad),
     totales: {
       venta: modelos.reduce((a, m) => a + m.venta, 0),
       venta_con_costo: conCosto.reduce((a, m) => a + m.venta, 0),
@@ -411,6 +417,102 @@ async function guardarGastoLocal(req, res) {
       DO UPDATE SET monto = EXCLUDED.monto, actualizado_en = now()`;
   }
   return res.status(200).json({ ok: true, local, mes, conceptos: Object.keys(parsed).length });
+}
+
+// ── Costo de fábrica por unidad de un mes (fijo mensual ÷ unidades vendidas) ──
+async function fabricaPorUnidad(sql, mes) {
+  const desde = `${mes}-01`;
+  const [y, m] = mes.split("-").map(Number);
+  const hasta = `${mes}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
+  const [[u], fijos] = await Promise.all([
+    sql`SELECT SUM(cantidad)::int AS unidades FROM ventas
+        WHERE fecha BETWEEN ${desde} AND ${hasta}
+          AND producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')`,
+    leerGastosFijos(sql, mes),
+  ]);
+  const fabricaMes = fijos["__fabrica__"]?.total || 0;
+  const unidades = u?.unidades || 0;
+  return { fabricaMes, unidades, porUnidad: unidades > 0 ? fabricaMes / unidades : 0 };
+}
+
+// ── Rentabilidad de UN producto según cómo lo paguen ──
+// Para cada medio de pago: cuánto entra, cuánto queda después de mercadería,
+// fábrica y costo financiero. Responde "¿este producto deja plata?"
+async function rentabilidadProducto(req, res) {
+  const producto = req.query.producto;
+  if (!producto) return res.status(400).json({ error: "Falta producto" });
+  const mes = req.query.mes || hoyArg().slice(0, 7);
+  const desde = `${mes}-01`;
+  const [y, m] = mes.split("-").map(Number);
+  const hasta = `${mes}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
+  const sql = neon(process.env.DATABASE_URL);
+
+  const [datos, cfgRows, fab, fijos] = await Promise.all([
+    sql`SELECT SUM(v.cantidad)::int AS unidades,
+               ROUND(SUM(v.precio_unit * v.cantidad) / NULLIF(SUM(v.cantidad),0))::bigint AS precio_lista,
+               ROUND(SUM(v.total) / NULLIF(SUM(v.cantidad),0))::bigint AS precio_cobrado,
+               ROUND(MAX(c.costo))::bigint AS costo
+        FROM ventas v
+        LEFT JOIN LATERAL (
+          SELECT costo FROM costos_producto cp
+          WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
+          ORDER BY cp.vigente_desde DESC LIMIT 1) c ON true
+        WHERE v.fecha BETWEEN ${desde} AND ${hasta} AND v.producto_norm = ${producto}`,
+    sql`SELECT clave, valor FROM config_negocio`,
+    fabricaPorUnidad(sql, mes),
+    leerGastosFijos(sql, mes),
+  ]);
+
+  const d = datos[0];
+  if (!d || !d.unidades) return res.status(200).json({ producto, mes, sin_datos: true });
+  const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
+
+  const precioLista = Number(d.precio_lista);
+  const costoMerc = d.costo == null ? null : Number(d.costo);
+  const costoFabrica = Math.round(fab.porUnidad);
+  const costoDirecto = costoMerc == null ? null : costoMerc + costoFabrica;
+
+  // Estructura de locales por unidad: fijos de los 5 locales ÷ unidades vendidas en locales
+  const [locU] = await sql`
+    SELECT SUM(cantidad)::int AS unidades FROM ventas
+    WHERE fecha BETWEEN ${desde} AND ${hasta} AND local != 'Tiendanube'
+      AND producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')`;
+  const fijosLocales = Object.entries(fijos)
+    .filter(([k]) => !k.startsWith("__"))
+    .reduce((a, [, v]) => a + v.total, 0) + (fijos["__compartidos__"]?.total || 0);
+  const estructuraUnidad = locU?.unidades > 0 ? Math.round(fijosLocales / locU.unidades) : 0;
+
+  const escenarios = [
+    { key: "efectivo", label: "Efectivo (15% desc.)", ingreso: precioLista * (1 - (cfg.efectivo_desc ?? 0.15)), tasa: null },
+    { key: "debito",   label: "Débito",              ingreso: precioLista * (1 - (cfg.tasa_debito ?? 0)),      tasa: cfg.tasa_debito },
+    { key: "credito1", label: "Crédito 1 cuota",     ingreso: precioLista * (1 - (cfg.tasa_credito_1 ?? 0)),   tasa: cfg.tasa_credito_1 },
+    { key: "credito2", label: "Crédito 2 cuotas",    ingreso: precioLista * (1 - (cfg.tasa_credito_2 ?? 0)),   tasa: cfg.tasa_credito_2 },
+    { key: "credito3", label: "Crédito 3 cuotas",    ingreso: precioLista * (1 - (cfg.tasa_credito_3 ?? 0)),   tasa: cfg.tasa_credito_3 },
+    { key: "credito6", label: "Crédito 6 cuotas",    ingreso: precioLista * (1 - (cfg.tasa_credito_6 ?? 0)),   tasa: cfg.tasa_credito_6 },
+  ].map(e => {
+    const ingreso = Math.round(e.ingreso);
+    const contribucion = costoDirecto == null ? null : ingreso - costoDirecto;
+    const resultado = contribucion == null ? null : contribucion - estructuraUnidad;
+    return {
+      ...e, ingreso,
+      costo_financiero: Math.round(precioLista - ingreso),
+      contribucion,
+      margen_contribucion: contribucion != null && ingreso > 0 ? Math.round(contribucion / ingreso * 1000) / 10 : null,
+      resultado,
+      margen_resultado: resultado != null && ingreso > 0 ? Math.round(resultado / ingreso * 1000) / 10 : null,
+    };
+  });
+
+  return res.status(200).json({
+    producto, mes, unidades: d.unidades,
+    precio_lista: precioLista,
+    precio_cobrado_promedio: Number(d.precio_cobrado),
+    costo_mercaderia: costoMerc,
+    costo_fabrica: costoFabrica,
+    costo_directo: costoDirecto,
+    estructura_unidad: estructuraUnidad,
+    escenarios,
+  });
 }
 
 // ── Rentabilidad por unidad de negocio (mes cerrado o en curso) ──
@@ -620,6 +722,7 @@ module.exports = async function handler(req, res) {
     if (action === "guardarCosto") return await guardarCosto(req, res);
     if (action === "rentabilidadProductos") return await rentabilidadProductos(req, res);
     if (action === "rentabilidadNegocio") return await rentabilidadNegocio(req, res);
+    if (action === "rentabilidadProducto") return await rentabilidadProducto(req, res);
     if (action === "gastosLocales") return await gastosLocales(req, res);
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
 
