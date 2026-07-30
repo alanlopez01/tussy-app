@@ -329,15 +329,15 @@ function Fijos() {
 
   const val = (l, campo) => {
     const k = `${l.local}|${campo}`;
-    return edicion[k] !== undefined ? edicion[k] : l[campo];
+    return edicion[k] !== undefined ? edicion[k] : (l.conceptos[campo] ?? 0);
   };
   const setVal = (local, campo, v) => setEdicion(e => ({ ...e, [`${local}|${campo}`]: v }));
 
   const guardar = async (l) => {
+    const conceptos = {};
+    for (const c of Object.keys(l.conceptos)) conceptos[c] = parseFloat(val(l, c)) || 0;
     const qs = new URLSearchParams({
-      action: "guardarGastoLocal", local: l.local, mes,
-      empleados: val(l, "empleados"), alquiler: val(l, "alquiler"), flete: val(l, "flete"),
-      libreria: val(l, "libreria"), bolsas: val(l, "bolsas"),
+      action: "guardarGastoLocal", local: l.local, mes, conceptos: JSON.stringify(conceptos),
     });
     await getJSON(`/api/metricas?${qs}`, 15000);
     setGuardado(l.local);
@@ -351,7 +351,12 @@ function Fijos() {
     meses.push(d.toISOString().slice(0, 7));
   }
   const nombreMes = m => new Date(m + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "long", year: "numeric" });
-  const CAMPOS = [["empleados", "Empleados"], ["alquiler", "Alquiler"], ["flete", "Flete"], ["libreria", "Librería"], ["bolsas", "Bolsas"]];
+  const ETIQUETAS = {
+    alquiler: "Alquiler", sueldos: "Sueldos", franqueros: "Franqueros",
+    impuestos_varios: "Impuestos y varios", empleados: "Empleados", servicios: "Servicios",
+    limpieza: "Limpieza", flete: "Flete", supervisor: "Supervisor",
+  };
+  const TITULOS = { __compartidos__: "Compartidos (se reparten entre locales)", __fabrica__: "Fábrica de estampado (se reparte entre todos los canales)" };
   const inp = "rounded-md border border-borde bg-surface-1 px-2 py-1 text-[12px] text-ink w-full tabular-nums";
 
   return (
@@ -372,15 +377,17 @@ function Fijos() {
         {!locales ? <Spinner /> : (
           <div className="space-y-4">
             {locales.map(l => {
-              const total = CAMPOS.reduce((a, [c]) => a + (parseFloat(val(l, c)) || 0), 0);
-              const cambiado = CAMPOS.some(([c]) => edicion[`${l.local}|${c}`] !== undefined);
+              const campos = Object.keys(l.conceptos);
+              const total = campos.reduce((a, c) => a + (parseFloat(val(l, c)) || 0), 0);
+              const cambiado = campos.some(c => edicion[`${l.local}|${c}`] !== undefined);
+              const especial = l.local.startsWith("__");
               return (
-                <div key={l.local} className="border border-borde rounded-lg p-4">
+                <div key={l.local} className={`border rounded-lg p-4 ${especial ? "border-borde bg-surface/60" : "border-borde"}`}>
                   <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                     <div>
-                      <span className="text-[14px] font-bold text-ink">{l.local}</span>
+                      <span className="text-[14px] font-bold text-ink">{TITULOS[l.local] || l.local}</span>
                       <span className="text-[11px] text-ink-3 ml-2">
-                        vigente desde {l.vigente_desde} · total {fmtPesos(total)}
+                        desde {l.vigente_desde} · total {fmtPesos(total)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -391,10 +398,12 @@ function Fijos() {
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {CAMPOS.map(([campo, label]) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {campos.map(campo => (
                       <label key={campo} className="block">
-                        <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">{label}</span>
+                        <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">
+                          {ETIQUETAS[campo] || campo}
+                        </span>
                         <input type="number" inputMode="numeric" className={inp}
                                value={val(l, campo)}
                                onChange={e => setVal(l.local, campo, e.target.value)} />

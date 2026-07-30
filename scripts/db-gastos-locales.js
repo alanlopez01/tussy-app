@@ -1,5 +1,8 @@
-// Crea la tabla gastos_local y carga los fijos mensuales de la planilla (Config A57:F65).
-// Versionado por mes de vigencia: cuando cambien, se carga un mes nuevo y el histórico queda intacto.
+// Gastos fijos mensuales por local y de la fábrica.
+// Esquema clave-valor: (local, vigente_desde, concepto, monto) — permite agregar
+// conceptos nuevos sin migrar la tabla. Versionado por mes: al cargar un mes nuevo,
+// los meses anteriores conservan sus valores y el histórico no se altera.
+//
 // Uso: node scripts/db-gastos-locales.js [--aplicar]
 const fs = require("fs");
 const path = require("path");
@@ -12,85 +15,82 @@ function loadEnv() {
   }
 }
 
-const VIGENTE_DESDE = "2026-03";
+// Costos vigentes informados por Alan (30/07/2026). Sin cambios entre junio y julio.
+const VIGENTE_DESDE = "2026-06";
 
-// Config A57:F65 de Costos-Tussy.xlsx
-const GASTOS = [
-  { local: "Abasto",   empleados: 6733320, alquiler: 17500000, flete: 200000, libreria: 150000, bolsas: 1715076 },
-  { local: "Dot",      empleados: 6733320, alquiler: 11250000, flete: 200000, libreria: 150000, bolsas: 1069320 },
-  { local: "Palermo",  empleados: 8400000, alquiler:  5300000, flete: 200000, libreria: 150000, bolsas: 1756740 },
-  { local: "La Plata", empleados: 3960000, alquiler:  1200000, flete:      0, libreria: 150000, bolsas: 1290822 },
-  { local: "Córdoba",  empleados: 4800000, alquiler:  3100000, flete: 450000, libreria: 150000, bolsas: 1708366 },
-];
+const GASTOS = {
+  "Palermo": { alquiler: 6285405, sueldos: 4895309, franqueros: 500000, impuestos_varios: 1200000 },
+  // La Plata paga el alquiler en dos partes: efectivo $681.000 + transferencia $865.218
+  "La Plata": { alquiler: 681000 + 865218, sueldos: 1171177, franqueros: 1600000, impuestos_varios: 1100000 },
+  "Dot": { alquiler: 13442560, sueldos: 4224409 },
+  "Abasto": { alquiler: 19067304, sueldos: 5068466 },
+  "Córdoba": { alquiler: 3716949, sueldos: 4520000 },
+};
 
-// Fábrica de estampado: fijo mensual que sirve a TODOS los canales.
-// Se prorratea por % de venta de cada canal en el mes (no se congela por prenda).
-const FABRICA = 24142645;
-const PLAN_TIENDANUBE = 700000;   // Config B31
-const PACKAGING_UNIDAD = 800;     // Config B32
+// Gastos de la red de locales: se prorratean entre los 5 según su venta del mes
+const COMPARTIDOS = { supervisor: 2000000, limpieza: 200000 };
+
+// Fábrica de estampado: fijo mensual, se prorratea entre TODOS los canales por venta
+const FABRICA = { empleados: 20083000, alquiler: 3200000, servicios: 280000, limpieza: 150000, flete: 2000000 };
+
+const ETIQUETAS = {
+  alquiler: "Alquiler", sueldos: "Sueldos", franqueros: "Franqueros",
+  impuestos_varios: "Impuestos y varios", empleados: "Empleados", servicios: "Servicios",
+  limpieza: "Limpieza", flete: "Flete", supervisor: "Supervisor",
+};
 
 async function main() {
   loadEnv();
   const aplicar = process.argv.includes("--aplicar");
   const { neon } = require("@neondatabase/serverless");
   const sql = neon(process.env.DATABASE_URL);
+  const fmt = n => "$" + Math.round(n).toLocaleString("es-AR");
 
-  console.log(`Gastos fijos mensuales por local (vigencia desde ${VIGENTE_DESDE}):\n`);
-  let total = 0;
-  for (const g of GASTOS) {
-    const t = g.empleados + g.alquiler + g.flete + g.libreria + g.bolsas;
-    total += t;
-    console.log(`  ${g.local.padEnd(10)} $${t.toLocaleString("es-AR").padStart(11)}   (empleados $${g.empleados.toLocaleString("es-AR")} · alquiler $${g.alquiler.toLocaleString("es-AR")})`);
+  console.log(`Gastos fijos vigentes desde ${VIGENTE_DESDE}:\n`);
+  let totalLocales = 0;
+  for (const [local, conceptos] of Object.entries(GASTOS)) {
+    const t = Object.values(conceptos).reduce((a, v) => a + v, 0);
+    totalLocales += t;
+    const detalle = Object.entries(conceptos).map(([k, v]) => `${ETIQUETAS[k]} ${fmt(v)}`).join(" · ");
+    console.log(`  ${local.padEnd(10)} ${fmt(t).padStart(13)}   ${detalle}`);
   }
-  console.log(`  ${"TOTAL".padEnd(10)} $${total.toLocaleString("es-AR").padStart(11)}`);
-  console.log(`\n  Fábrica de estampado (todos los canales): $${FABRICA.toLocaleString("es-AR")}/mes`);
-  console.log(`  Plan Tiendanube: $${PLAN_TIENDANUBE.toLocaleString("es-AR")}/mes · Packaging web: $${PACKAGING_UNIDAD}/unidad`);
+  const compartidos = Object.values(COMPARTIDOS).reduce((a, v) => a + v, 0);
+  const fabrica = Object.values(FABRICA).reduce((a, v) => a + v, 0);
+  console.log(`  ${"".padEnd(10)} ${"".padStart(13)}`);
+  console.log(`  Subtotal locales:     ${fmt(totalLocales)}`);
+  console.log(`  Compartidos (supervisor + limpieza, prorrateado entre locales): ${fmt(compartidos)}`);
+  console.log(`  Fábrica (prorrateada entre todos los canales): ${fmt(fabrica)}`);
+  console.log(`  TOTAL ESTRUCTURA:     ${fmt(totalLocales + compartidos + fabrica)}`);
 
   if (!aplicar) { console.log("\n(dry-run: corré con --aplicar)"); return; }
 
   await sql`
-    CREATE TABLE IF NOT EXISTS gastos_local (
+    CREATE TABLE IF NOT EXISTS gastos_fijos (
       local TEXT NOT NULL,
       vigente_desde TEXT NOT NULL,
-      empleados NUMERIC NOT NULL DEFAULT 0,
-      alquiler NUMERIC NOT NULL DEFAULT 0,
-      flete NUMERIC NOT NULL DEFAULT 0,
-      libreria NUMERIC NOT NULL DEFAULT 0,
-      bolsas NUMERIC NOT NULL DEFAULT 0,
+      concepto TEXT NOT NULL,
+      monto NUMERIC NOT NULL,
       actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
-      PRIMARY KEY (local, vigente_desde)
-    )`;
-  await sql`
-    CREATE TABLE IF NOT EXISTS config_negocio (
-      clave TEXT PRIMARY KEY,
-      valor NUMERIC NOT NULL,
-      descripcion TEXT,
-      actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+      PRIMARY KEY (local, vigente_desde, concepto)
     )`;
 
-  for (const g of GASTOS) {
-    await sql`
-      INSERT INTO gastos_local (local, vigente_desde, empleados, alquiler, flete, libreria, bolsas)
-      VALUES (${g.local}, ${VIGENTE_DESDE}, ${g.empleados}, ${g.alquiler}, ${g.flete}, ${g.libreria}, ${g.bolsas})
-      ON CONFLICT (local, vigente_desde) DO UPDATE SET
-        empleados = EXCLUDED.empleados, alquiler = EXCLUDED.alquiler, flete = EXCLUDED.flete,
-        libreria = EXCLUDED.libreria, bolsas = EXCLUDED.bolsas, actualizado_en = now()`;
-  }
+  const escribir = async (local, conceptos) => {
+    for (const [concepto, monto] of Object.entries(conceptos)) {
+      await sql`
+        INSERT INTO gastos_fijos (local, vigente_desde, concepto, monto)
+        VALUES (${local}, ${VIGENTE_DESDE}, ${concepto}, ${monto})
+        ON CONFLICT (local, vigente_desde, concepto)
+        DO UPDATE SET monto = EXCLUDED.monto, actualizado_en = now()`;
+    }
+  };
+  for (const [local, conceptos] of Object.entries(GASTOS)) await escribir(local, conceptos);
+  await escribir("__compartidos__", COMPARTIDOS);
+  await escribir("__fabrica__", FABRICA);
 
-  const cfg = [
-    ["fabrica_mensual", FABRICA, "Fábrica de estampado: fijo mensual, se prorratea por % de venta de cada canal"],
-    ["plan_tiendanube", PLAN_TIENDANUBE, "Suscripción mensual de Tiendanube"],
-    ["packaging_unidad", PACKAGING_UNIDAD, "Packaging por unidad vendida en web"],
-    ["tn_costo_pct", 0.064009, "PagoNube 1 pago c/IVA (fallback si no hay mix del mes)"],
-    ["tn_transf_pct", 0.01295, "Transferencias: comisión TN 0.605% + IIBB 0.09% + créd/déb 0.6%"],
-    ["iva_neto_pct", 0.04, "IVA neto sobre ventas declaradas"],
-  ];
-  for (const [clave, valor, desc] of cfg) {
-    await sql`
-      INSERT INTO config_negocio (clave, valor, descripcion) VALUES (${clave}, ${valor}, ${desc})
-      ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, descripcion = EXCLUDED.descripcion, actualizado_en = now()`;
-  }
-  console.log(`\n✅ ${GASTOS.length} locales y ${cfg.length} parámetros cargados`);
+  // La estructura vieja (columnas fijas) queda obsoleta
+  await sql`DROP TABLE IF EXISTS gastos_local`;
+
+  console.log(`\n✅ ${Object.keys(GASTOS).length} locales + compartidos + fábrica cargados con vigencia ${VIGENTE_DESDE}`);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

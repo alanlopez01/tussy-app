@@ -364,37 +364,53 @@ async function rentabilidadProductos(req, res) {
   });
 }
 
-// ── Gastos fijos por local: listar y editar desde la app ──
+// ── Gastos fijos: listar y editar desde la app (esquema clave-valor, versionado) ──
+
+// Devuelve, para cada local, los conceptos vigentes al mes pedido
+async function leerGastosFijos(sql, mes) {
+  const rows = await sql`
+    SELECT DISTINCT ON (local, concepto) local, concepto, monto, vigente_desde
+    FROM gastos_fijos WHERE vigente_desde <= ${mes}
+    ORDER BY local, concepto, vigente_desde DESC`;
+  const porLocal = {};
+  for (const r of rows) {
+    if (!porLocal[r.local]) porLocal[r.local] = { conceptos: {}, vigente_desde: r.vigente_desde, total: 0 };
+    porLocal[r.local].conceptos[r.concepto] = Number(r.monto);
+    porLocal[r.local].total += Number(r.monto);
+    if (r.vigente_desde > porLocal[r.local].vigente_desde) porLocal[r.local].vigente_desde = r.vigente_desde;
+  }
+  return porLocal;
+}
+
 async function gastosLocales(req, res) {
   const sql = neon(process.env.DATABASE_URL);
   const mes = req.query.mes || hoyArg().slice(0, 7);
-  const rows = await sql`
-    SELECT DISTINCT ON (local) local, vigente_desde, empleados, alquiler, flete, libreria, bolsas
-    FROM gastos_local WHERE vigente_desde <= ${mes}
-    ORDER BY local, vigente_desde DESC`;
+  const porLocal = await leerGastosFijos(sql, mes);
   return res.status(200).json({
     mes,
-    locales: rows.map(r => ({
-      local: r.local, vigente_desde: r.vigente_desde,
-      empleados: Number(r.empleados), alquiler: Number(r.alquiler), flete: Number(r.flete),
-      libreria: Number(r.libreria), bolsas: Number(r.bolsas),
-      total: Number(r.empleados) + Number(r.alquiler) + Number(r.flete) + Number(r.libreria) + Number(r.bolsas),
-    })),
+    locales: Object.entries(porLocal).map(([local, d]) => ({ local, ...d }))
+      .sort((a, b) => a.local.localeCompare(b.local)),
   });
 }
 
+// Guarda todos los conceptos de un local con vigencia en el mes elegido.
+// conceptos llega como JSON: {"alquiler":6285405,"sueldos":4895309,...}
 async function guardarGastoLocal(req, res) {
-  const { local, mes } = req.query;
-  if (!local || !mes) return res.status(400).json({ error: "Faltan local/mes" });
-  const n = k => { const v = parseFloat(req.query[k]); return isNaN(v) ? 0 : v; };
+  const { local, mes, conceptos } = req.query;
+  if (!local || !mes || !conceptos) return res.status(400).json({ error: "Faltan local/mes/conceptos" });
+  let parsed;
+  try { parsed = JSON.parse(conceptos); } catch { return res.status(400).json({ error: "conceptos inválido" }); }
   const sql = neon(process.env.DATABASE_URL);
-  await sql`
-    INSERT INTO gastos_local (local, vigente_desde, empleados, alquiler, flete, libreria, bolsas)
-    VALUES (${local}, ${mes}, ${n("empleados")}, ${n("alquiler")}, ${n("flete")}, ${n("libreria")}, ${n("bolsas")})
-    ON CONFLICT (local, vigente_desde) DO UPDATE SET
-      empleados = EXCLUDED.empleados, alquiler = EXCLUDED.alquiler, flete = EXCLUDED.flete,
-      libreria = EXCLUDED.libreria, bolsas = EXCLUDED.bolsas, actualizado_en = now()`;
-  return res.status(200).json({ ok: true, local, mes });
+  for (const [concepto, monto] of Object.entries(parsed)) {
+    const v = parseFloat(monto);
+    if (isNaN(v)) continue;
+    await sql`
+      INSERT INTO gastos_fijos (local, vigente_desde, concepto, monto)
+      VALUES (${local}, ${mes}, ${concepto}, ${v})
+      ON CONFLICT (local, vigente_desde, concepto)
+      DO UPDATE SET monto = EXCLUDED.monto, actualizado_en = now()`;
+  }
+  return res.status(200).json({ ok: true, local, mes, conceptos: Object.keys(parsed).length });
 }
 
 // ── Rentabilidad por unidad de negocio (mes cerrado o en curso) ──
@@ -427,16 +443,18 @@ async function rentabilidadNegocio(req, res) {
     WHERE v.fecha BETWEEN ${desde} AND ${hasta}
     GROUP BY v.local`;
 
-  const [mixPagos, gastos, cfgRows, gastosMes] = await Promise.all([
+  const [mixPagos, fijos, cfgRows, gastosMes] = await Promise.all([
     sql`SELECT local, bruto, neto, costo_pct, mix FROM mix_pagos WHERE mes = ${mes}`,
-    sql`SELECT DISTINCT ON (local) local, empleados, alquiler, flete, libreria, bolsas
-        FROM gastos_local WHERE vigente_desde <= ${mes} ORDER BY local, vigente_desde DESC`,
+    leerGastosFijos(sql, mes),
     sql`SELECT clave, valor FROM config_negocio`,
     sql`SELECT local, concepto, monto FROM gastos_mes WHERE mes = ${mes}`,
   ]);
   const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
   const mixPorLocal = Object.fromEntries(mixPagos.map(r => [r.local, r]));
-  const gastosPorLocal = Object.fromEntries(gastos.map(r => [r.local, r]));
+  // Fijos propios de cada local + bolsas de gastos compartidos y fábrica
+  const fijosPropios = local => (fijos[local]?.total || 0);
+  const compartidosTotal = fijos["__compartidos__"]?.total || 0;
+  const fabricaMesReal = fijos["__fabrica__"]?.total || cfg.fabrica_mensual || 0;
   // Gastos variables cargados por mes (publicidad, envíos): { local: { concepto: monto } }
   const varPorLocal = {};
   for (const g of gastosMes) {
@@ -445,7 +463,8 @@ async function rentabilidadNegocio(req, res) {
   }
 
   const ventaTotal = ventas.reduce((a, v) => a + Number(v.venta), 0);
-  const fabricaMes = cfg.fabrica_mensual || 0;
+  // Los compartidos (supervisor, limpieza) se reparten solo entre los locales físicos
+  const ventaLocales = ventas.filter(v => v.local !== "Tiendanube").reduce((a, v) => a + Number(v.venta), 0);
 
   const unidades = ventas.map(v => {
     const local = v.local;
@@ -480,9 +499,10 @@ async function rentabilidadNegocio(req, res) {
       }
     }
 
-    // Fijos del local
-    const g = gastosPorLocal[local];
-    const fijos = g ? Number(g.empleados) + Number(g.alquiler) + Number(g.flete) + Number(g.libreria) + Number(g.bolsas) : 0;
+    // Fijos propios + parte de los compartidos de la red de locales
+    const propios = fijosPropios(local);
+    const compartidos = esWeb || ventaLocales === 0 ? 0 : Math.round(compartidosTotal * (venta / ventaLocales));
+    const fijosLocal = propios + compartidos;
 
     // Web suma su plan y packaging; más los gastos variables cargados del mes
     const extrasWeb = esWeb ? (cfg.plan_tiendanube || 0) + (cfg.packaging_unidad || 0) * v.unidades : 0;
@@ -492,18 +512,20 @@ async function rentabilidadNegocio(req, res) {
 
     // Fábrica prorrateada por participación en la venta del mes
     const share = ventaTotal > 0 ? venta / ventaTotal : 0;
-    const fabrica = Math.round(fabricaMes * share);
+    const fabrica = Math.round(fabricaMesReal * share);
 
     const margenBruto = venta - mercaderia;
     const contribucion = margenBruto - financiero - publicidad - envios;
-    const resultado = contribucion - fijos - extrasWeb - fabrica;
+    const resultado = contribucion - fijosLocal - extrasWeb - fabrica;
 
     return {
       local, venta, unidades: v.unidades, unidades_sin_costo: v.unidades_sin_costo,
       mercaderia, margen_bruto: margenBruto,
       financiero, detalle_financiero: detalleFin,
       publicidad, envios,
-      contribucion, fijos: Math.round(fijos + extrasWeb), fabrica,
+      contribucion, fijos: Math.round(fijosLocal + extrasWeb),
+      detalle_fijos: { propios, compartidos, extras_web: extrasWeb, conceptos: fijos[local]?.conceptos || {} },
+      fabrica,
       resultado,
       margen_pct: venta > 0 ? Math.round(resultado / venta * 1000) / 10 : null,
       share_venta: Math.round(share * 1000) / 10,
