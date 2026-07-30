@@ -828,6 +828,148 @@ function Evolucion() {
   );
 }
 
+// ── Tab: Inventario ──
+function Inventario() {
+  const [data, setData] = useState(null);
+  const [cargando, setCargando] = useState(false);
+  const [local, setLocal] = useState("");
+  const [orden, setOrden] = useState("capital");
+  const [pagina, setPagina] = useState(1);
+
+  const cargar = useCallback(() => {
+    setCargando(true);
+    const l = local ? `&local=${encodeURIComponent(local)}` : "";
+    getJSON(`/api/metricas?action=inventario&dias=90${l}`, 45000)
+      .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
+  }, [local]);
+  useEffect(() => { setData(null); setPagina(1); cargar(); }, [cargar]);
+
+  const ordenados = useMemo(() => {
+    const m = [...(data?.modelos || [])].filter(x => x.stock > 0);
+    if (orden === "capital") return m.sort((a, b) => (b.capital_inmovilizado || 0) - (a.capital_inmovilizado || 0));
+    if (orden === "gmroi") return m.sort((a, b) => (a.gmroi ?? 999) - (b.gmroi ?? 999));
+    return m.sort((a, b) => (a.rotacion ?? 999) - (b.rotacion ?? 999));
+  }, [data, orden]);
+
+  const totalPaginas = Math.ceil(ordenados.length / POR_PAGINA);
+  const pag = ordenados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+  const t = data?.total;
+  const conStock = data?.locales_con_stock || [];
+
+  const colorRot = r => r == null ? "text-ink-3" : r >= 4 ? "text-ok" : r >= 2 ? "text-warn" : "text-bad";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <Chips
+          opciones={[{ value: "", label: "Todos" },
+                     ...conStock.map(l => ({ value: l, label: l === "Tiendanube" ? "Online" : l }))]}
+          valor={local} onChange={setLocal}
+        />
+        <BotonActualizar onClick={cargar} cargando={cargando} />
+      </div>
+
+      {!data ? <Spinner texto="Leyendo inventario…" /> : data.sin_datos ? (
+        <Card><p className="text-[13px] text-ink-3 py-6 text-center">Todavía no hay ninguna foto de stock.</p></Card>
+      ) : (
+        <>
+          {data.locales_sin_stock?.length > 0 && (
+            <Card>
+              <p className="text-[12px] text-warn font-medium">
+                {data.locales_sin_stock.join(" y ")} no informan cantidades de stock: en WooCommerce casi
+                ningún producto tiene activada la gestión de inventario. Todo lo de abajo cubre{" "}
+                {conStock.map(l => l === "Tiendanube" ? "Online" : l).join(", ")}.
+              </p>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatTile label="Capital inmovilizado" value={fmtPesosCorto(t.capital)}
+                      sub={`${t.unidades.toLocaleString("es-AR")} u. en ${t.modelos} modelos`} />
+            <StatTile label="Rotación anualizada" value={`${t.rotacion}x`}
+                      sub="veces que se renueva el stock por año" />
+            <StatTile label="GMROI" value={t.gmroi}
+                      sub="pesos de margen por peso invertido" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <StatTile label="Sin ninguna venta en 90 días" value={fmtPesosCorto(t.capital_sin_ventas)}
+                      sub={`${t.modelos_sin_ventas} modelos`} />
+            <StatTile label="Rotación lenta (+180 días)" value={fmtPesosCorto(t.capital_lento)}
+                      sub={`${t.modelos_lentos} modelos`} />
+          </div>
+
+          <Card title="Inventario por modelo" right={
+            <Chips opciones={[{ value: "capital", label: "Más capital" },
+                              { value: "rotacion", label: "Menor rotación" },
+                              { value: "gmroi", label: "Peor GMROI" }]}
+                   valor={orden} onChange={setOrden} />
+          }>
+            {/* Mobile */}
+            <div className="sm:hidden divide-y divide-borde">
+              {pag.map(m => (
+                <div key={m.producto} className="py-2.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-[13px] font-medium text-ink truncate">{m.producto}</span>
+                    <span className="text-[13px] font-bold text-ink tabular-nums shrink-0">
+                      {fmtPesosCorto(m.capital_inmovilizado || 0)}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
+                    {m.stock} u. en stock · {m.vendidas} vendidas ·{" "}
+                    <span className={colorRot(m.rotacion)}>{m.rotacion != null ? `${m.rotacion}x` : "sin rotar"}</span>
+                    {m.dias_inventario != null && ` · ${m.dias_inventario} días`}
+                    {m.gmroi != null && ` · GMROI ${m.gmroi}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Desktop */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-[12px] min-w-[600px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                    <th className="text-left py-2 font-semibold">Modelo</th>
+                    <th className="text-right py-2 font-semibold">Stock</th>
+                    <th className="text-right py-2 font-semibold">Vendidas 90d</th>
+                    <th className="text-right py-2 font-semibold">Capital</th>
+                    <th className="text-right py-2 font-semibold">Rotación</th>
+                    <th className="text-right py-2 font-semibold">Días</th>
+                    <th className="text-right py-2 font-semibold">GMROI</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borde">
+                  {pag.map(m => (
+                    <tr key={m.producto}>
+                      <td className="py-2 pr-3 font-medium text-ink max-w-[220px] truncate">{m.producto}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-2">{m.stock}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-2">{m.vendidas}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.capital_inmovilizado || 0)}</td>
+                      <td className={`py-2 text-right tabular-nums font-bold ${colorRot(m.rotacion)}`}>
+                        {m.rotacion != null ? `${m.rotacion}x` : "—"}
+                      </td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">{m.dias_inventario ?? "—"}</td>
+                      <td className={`py-2 text-right tabular-nums font-semibold ${m.gmroi == null ? "text-ink-3" : m.gmroi >= 3 ? "text-ok" : m.gmroi >= 1 ? "text-warn" : "text-bad"}`}>
+                        {m.gmroi ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Paginacion pagina={pagina} totalPaginas={totalPaginas} onChange={setPagina} />
+            <p className="text-[11px] text-ink-3 mt-3">
+              <strong>Rotación</strong>: veces que se renueva el stock en un año al ritmo de los últimos 90 días.
+              <strong> GMROI</strong>: pesos de margen bruto que genera cada peso invertido en ese stock —
+              por encima de 3 es sano, por debajo de 1 el modelo no paga el capital que ocupa.
+            </p>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Rentabilidad() {
   const [tab, setTab] = useState("negocio");
   return (
@@ -838,12 +980,13 @@ export default function Rentabilidad() {
           <p className="text-[12px] text-ink-3">Solo visible para vos (en construcción)</p>
         </div>
         <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "evolucion", label: "Evolución" },
-                          { value: "margenes", label: "Productos" },
+                          { value: "margenes", label: "Productos" }, { value: "inventario", label: "Inventario" },
                           { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" }]}
                valor={tab} onChange={setTab} />
       </header>
       {tab === "negocio" ? <Negocio /> : tab === "evolucion" ? <Evolucion />
-        : tab === "margenes" ? <Margenes /> : tab === "costos" ? <Costos /> : <Fijos />}
+        : tab === "margenes" ? <Margenes /> : tab === "inventario" ? <Inventario />
+        : tab === "costos" ? <Costos /> : <Fijos />}
     </div>
   );
 }
