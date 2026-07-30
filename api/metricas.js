@@ -579,16 +579,21 @@ async function rentabilidadNegocio(req, res) {
   // peso de los sueldos de cada local en la nómina total.
   const iibbPct = cfg.iibb_pct || 0;
   const ivaMes = impuestosReales.iva != null ? impuestosReales.iva : ventaTotal * (cfg.iva_pct || 0);
-  const sueldosDe = local => (fijos[local]?.conceptos?.sueldos || fijos[local]?.conceptos?.empleados || 0);
-  const sueldosLocales = ventas.filter(v => v.local !== "Tiendanube").reduce((a, v) => a + sueldosDe(v.local), 0);
-  const sueldosFabrica = fijos["__fabrica__"]?.conceptos?.empleados || 0;
-  const nominaTotal = sueldosLocales + sueldosFabrica;
+
+  // Base de cargas: sueldos que efectivamente tributan. Se descuentan los montos
+  // marcados como sin cargas; franqueros y fábrica no tributan (la fábrica no tiene F931).
+  const baseCargasDe = local => {
+    const c = fijos[local]?.conceptos || {};
+    return Math.max(0, (c.sueldos || 0) - (c.sueldos_sin_cargas || 0));
+  };
+  const cCompartidos = fijos["__compartidos__"]?.conceptos || {};
+  const baseCompartidos = Math.max(0, (cCompartidos.supervisor || 0) - (cCompartidos.supervisor_sin_cargas || 0));
+  const baseLocales = ventas.filter(v => v.local !== "Tiendanube").reduce((a, v) => a + baseCargasDe(v.local), 0);
+  const baseCargasTotal = baseLocales + baseCompartidos;
   const cargasMes = impuestosReales.cargas_sociales != null
     ? impuestosReales.cargas_sociales
-    : nominaTotal * (cfg.cargas_pct || 0);
-  // La parte de la fábrica se prorratea con la fábrica; la de locales, por local
-  const cargasFabrica = nominaTotal > 0 ? cargasMes * (sueldosFabrica / nominaTotal) : 0;
-  const cargasLocales = cargasMes - cargasFabrica;
+    : baseCargasTotal * (cfg.cargas_pct || 0);
+  const cargasFabrica = 0; // la fábrica no tiene F931: el monto informado ya es final
 
   const unidades = ventas.map(v => {
     const local = v.local;
@@ -641,9 +646,11 @@ async function rentabilidadNegocio(req, res) {
     // Impuestos de esta unidad
     const iibb = Math.round(venta * iibbPct);
     const iva = Math.round(ivaMes * share);
-    const cargas = esWeb || sueldosLocales === 0
-      ? 0
-      : Math.round(cargasLocales * (sueldosDe(local) / sueldosLocales));
+    // Cada local carga lo suyo más su parte del supervisor (repartido por venta)
+    const cargas = esWeb || baseCargasTotal === 0 ? 0 : Math.round(
+      cargasMes * (
+        (baseCargasDe(local) + (ventaLocales > 0 ? baseCompartidos * (venta / ventaLocales) : 0)) / baseCargasTotal
+      ));
     const impuestos = iibb + iva + cargas;
 
     const margenBruto = venta - mercaderia;
