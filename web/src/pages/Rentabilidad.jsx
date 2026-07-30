@@ -347,6 +347,7 @@ function Negocio() {
                     <th className="text-right py-2 font-semibold">Publi+envíos</th>
                     <th className="text-right py-2 font-semibold">Fijos</th>
                     <th className="text-right py-2 font-semibold">Fábrica</th>
+                    <th className="text-right py-2 font-semibold">Impuestos</th>
                     <th className="text-right py-2 font-semibold">Resultado</th>
                     <th className="text-right py-2 font-semibold">%</th>
                   </tr>
@@ -375,6 +376,11 @@ function Negocio() {
                       </td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fijos)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fabrica)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3" title={u.detalle_impuestos
+                        ? `IIBB ${fmtPesos(u.detalle_impuestos.iibb)} · IVA ${fmtPesos(u.detalle_impuestos.iva)} · cargas ${fmtPesos(u.detalle_impuestos.cargas_sociales)}`
+                        : ""}>
+                        −{fmtPesosCorto(u.impuestos || 0)}
+                      </td>
                       <td className={`py-2 text-right tabular-nums font-bold ${u.resultado >= 0 ? "text-ok" : "text-bad"}`}>
                         {fmtPesosCorto(u.resultado)}
                       </td>
@@ -391,6 +397,7 @@ function Negocio() {
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.publicidad + t.envios)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fijos)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fabrica)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.impuestos || 0)}</td>
                     <td className={`py-2 text-right tabular-nums ${t.resultado >= 0 ? "text-ok" : "text-bad"}`}>
                       {fmtPesosCorto(t.resultado)}
                     </td>
@@ -399,10 +406,14 @@ function Negocio() {
                 </tbody>
               </table>
             </div>
-            <p className="text-[11px] text-ink-3 mt-3">
-              Fábrica de estampado prorrateada por participación en la venta del mes. La fila de cada local
-              muestra qué parte cobra por Point y a qué costo real.
-            </p>
+            {t.detalle_impuestos && (
+              <p className="text-[11px] text-ink-3 mt-3">
+                Impuestos del mes: IIBB {fmtPesosCorto(t.detalle_impuestos.iibb)} ·
+                IVA neto {fmtPesosCorto(t.detalle_impuestos.iva)} ·
+                cargas sociales {fmtPesosCorto(t.detalle_impuestos.cargas_sociales)}.
+                Fábrica prorrateada por participación en la venta.
+              </p>
+            )}
           </Card>
         </>
       )}

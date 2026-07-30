@@ -547,12 +547,14 @@ async function rentabilidadNegocio(req, res) {
     WHERE v.fecha BETWEEN ${desde} AND ${hasta}
     GROUP BY v.local`;
 
-  const [mixPagos, fijos, cfgRows, gastosMes] = await Promise.all([
+  const [mixPagos, fijos, cfgRows, gastosMes, impuestosRows] = await Promise.all([
     sql`SELECT local, bruto, neto, costo_pct, mix FROM mix_pagos WHERE mes = ${mes}`,
     leerGastosFijos(sql, mes),
     sql`SELECT clave, valor FROM config_negocio`,
     sql`SELECT local, concepto, monto FROM gastos_mes WHERE mes = ${mes}`,
+    sql`SELECT concepto, monto FROM impuestos_mes WHERE mes = ${mes}`,
   ]);
+  const impuestosReales = Object.fromEntries(impuestosRows.map(r => [r.concepto, Number(r.monto)]));
   const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
   const mixPorLocal = Object.fromEntries(mixPagos.map(r => [r.local, r]));
   // Fijos propios de cada local + bolsas de gastos compartidos y fábrica
@@ -569,6 +571,24 @@ async function rentabilidadNegocio(req, res) {
   const ventaTotal = ventas.reduce((a, v) => a + Number(v.venta), 0);
   // Los compartidos (supervisor, limpieza) se reparten solo entre los locales físicos
   const ventaLocales = ventas.filter(v => v.local !== "Tiendanube").reduce((a, v) => a + Number(v.venta), 0);
+
+  // ── Impuestos ──
+  // IIBB: alícuota efectiva sobre la venta de cada unidad (directamente atribuible).
+  // IVA: monto neto declarado del mes (o % de fallback), prorrateado por venta.
+  // Cargas sociales: monto real del F931 (o % sobre sueldos), repartido según el
+  // peso de los sueldos de cada local en la nómina total.
+  const iibbPct = cfg.iibb_pct || 0;
+  const ivaMes = impuestosReales.iva != null ? impuestosReales.iva : ventaTotal * (cfg.iva_pct || 0);
+  const sueldosDe = local => (fijos[local]?.conceptos?.sueldos || fijos[local]?.conceptos?.empleados || 0);
+  const sueldosLocales = ventas.filter(v => v.local !== "Tiendanube").reduce((a, v) => a + sueldosDe(v.local), 0);
+  const sueldosFabrica = fijos["__fabrica__"]?.conceptos?.empleados || 0;
+  const nominaTotal = sueldosLocales + sueldosFabrica;
+  const cargasMes = impuestosReales.cargas_sociales != null
+    ? impuestosReales.cargas_sociales
+    : nominaTotal * (cfg.cargas_pct || 0);
+  // La parte de la fábrica se prorratea con la fábrica; la de locales, por local
+  const cargasFabrica = nominaTotal > 0 ? cargasMes * (sueldosFabrica / nominaTotal) : 0;
+  const cargasLocales = cargasMes - cargasFabrica;
 
   const unidades = ventas.map(v => {
     const local = v.local;
@@ -614,13 +634,21 @@ async function rentabilidadNegocio(req, res) {
     const publicidad = gv.publicidad || 0;
     const envios = gv.envios || 0;
 
-    // Fábrica prorrateada por participación en la venta del mes
+    // Fábrica prorrateada por participación en la venta del mes (incluye sus cargas sociales)
     const share = ventaTotal > 0 ? venta / ventaTotal : 0;
-    const fabrica = Math.round(fabricaMesReal * share);
+    const fabrica = Math.round((fabricaMesReal + cargasFabrica) * share);
+
+    // Impuestos de esta unidad
+    const iibb = Math.round(venta * iibbPct);
+    const iva = Math.round(ivaMes * share);
+    const cargas = esWeb || sueldosLocales === 0
+      ? 0
+      : Math.round(cargasLocales * (sueldosDe(local) / sueldosLocales));
+    const impuestos = iibb + iva + cargas;
 
     const margenBruto = venta - mercaderia;
     const contribucion = margenBruto - financiero - publicidad - envios;
-    const resultado = contribucion - fijosLocal - extrasWeb - fabrica;
+    const resultado = contribucion - fijosLocal - extrasWeb - fabrica - impuestos;
 
     return {
       local, venta, unidades: v.unidades, unidades_sin_costo: v.unidades_sin_costo,
@@ -630,6 +658,7 @@ async function rentabilidadNegocio(req, res) {
       contribucion, fijos: Math.round(fijosLocal + extrasWeb),
       detalle_fijos: { propios, compartidos, extras_web: extrasWeb, conceptos: fijos[local]?.conceptos || {} },
       fabrica,
+      impuestos, detalle_impuestos: { iibb, iva, cargas_sociales: cargas },
       resultado,
       margen_pct: venta > 0 ? Math.round(resultado / venta * 1000) / 10 : null,
       share_venta: Math.round(share * 1000) / 10,
@@ -644,7 +673,14 @@ async function rentabilidadNegocio(req, res) {
       venta: ventaTotal, mercaderia: suma("mercaderia"), margen_bruto: suma("margen_bruto"),
       financiero: suma("financiero"), publicidad: suma("publicidad"), envios: suma("envios"),
       contribucion: suma("contribucion"),
-      fijos: suma("fijos"), fabrica: suma("fabrica"), resultado: suma("resultado"),
+      fijos: suma("fijos"), fabrica: suma("fabrica"),
+      impuestos: suma("impuestos"),
+      detalle_impuestos: {
+        iibb: unidades.reduce((a, u) => a + u.detalle_impuestos.iibb, 0),
+        iva: unidades.reduce((a, u) => a + u.detalle_impuestos.iva, 0),
+        cargas_sociales: unidades.reduce((a, u) => a + u.detalle_impuestos.cargas_sociales, 0),
+      },
+      resultado: suma("resultado"),
       margen_pct: ventaTotal > 0 ? Math.round(suma("resultado") / ventaTotal * 1000) / 10 : null,
     },
     faltan_datos: {
