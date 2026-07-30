@@ -697,7 +697,10 @@ function Evolucion() {
     .toLocaleDateString("es-AR", { month: "short", year: "2-digit" });
 
   const ms = data?.meses || [];
-  const ultimo = ms[ms.length - 1], primero = ms[0];
+  const completos = ms.filter(m => m.completo);
+  const incompletos = ms.filter(m => !m.completo);
+  const ultimo = completos[completos.length - 1] || ms[ms.length - 1];
+  const primero = completos[0] || ms[0];
   const varVenta = primero && ultimo && primero.venta > 0
     ? ((ultimo.venta - primero.venta) / primero.venta) * 100 : null;
   const varMargen = primero && ultimo ? ultimo.margen_pct - primero.margen_pct : null;
@@ -712,6 +715,16 @@ function Evolucion() {
         <Card><p className="text-[13px] text-ink-3 py-6 text-center">Sin datos</p></Card>
       ) : (
         <>
+          {incompletos.length > 0 && (
+            <Card>
+              <p className="text-[12px] text-warn font-medium">
+                {incompletos.map(m => nombreMes(m.mes)).join(", ")} {incompletos.length === 1 ? "no tiene" : "no tienen"} cargados
+                los costos fijos ni el mix de pagos, así que su margen aparece más alto de lo real y no es
+                comparable. Las comparativas de arriba usan solo los meses completos.
+              </p>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatTile label="Venta último mes" value={fmtPesosCorto(ultimo.venta)}
                       delta={varVenta} sub={`vs. ${nombreMes(primero.mes)}`} />
@@ -727,7 +740,10 @@ function Evolucion() {
               {ms.map(m => (
                 <div key={m.mes}>
                   <div className="flex items-baseline justify-between gap-2 mb-1">
-                    <span className="text-[12px] font-semibold text-ink capitalize">{nombreMes(m.mes)}</span>
+                    <span className="text-[12px] font-semibold text-ink capitalize">
+                      {nombreMes(m.mes)}
+                      {!m.completo && <span className="text-warn font-normal"> · datos incompletos</span>}
+                    </span>
                     <span className="text-[12px] text-ink-2 tabular-nums">
                       {fmtPesosCorto(m.venta)} · <span className={m.resultado >= 0 ? "text-ok font-semibold" : "text-bad font-semibold"}>
                         {fmtPesosCorto(m.resultado)} ({m.margen_pct}%)
@@ -750,7 +766,11 @@ function Evolucion() {
                 <thead>
                   <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
                     <th className="text-left py-2 font-semibold">Unidad</th>
-                    {ms.map(m => <th key={m.mes} className="text-right py-2 font-semibold capitalize">{nombreMes(m.mes)}</th>)}
+                    {ms.map(m => (
+                      <th key={m.mes} className={`text-right py-2 font-semibold capitalize ${m.completo ? "" : "text-warn"}`}>
+                        {nombreMes(m.mes)}{!m.completo && "*"}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borde">
@@ -778,6 +798,9 @@ function Evolucion() {
                 </tbody>
               </table>
             </div>
+            {incompletos.length > 0 && (
+              <p className="text-[11px] text-warn mt-3">* mes sin costos fijos cargados: el margen figura más alto de lo real.</p>
+            )}
           </Card>
         </>
       )}

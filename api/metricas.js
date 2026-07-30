@@ -433,6 +433,8 @@ async function evolucion(req, res) {
         impuestos: r.total.impuestos,
         resultado: r.total.resultado,
         margen_pct: r.total.margen_pct,
+        datos: r.datos,
+        completo: r.datos.fijos && r.datos.mix_pagos,
         // Resultado de cada unidad, para ver quién mejora y quién empeora
         por_unidad: Object.fromEntries(r.unidades.map(u => [u.local, { venta: u.venta, resultado: u.resultado, margen_pct: u.margen_pct }])),
       })),
@@ -879,6 +881,13 @@ async function calcularNegocio(sql, mes) {
     faltan_datos: {
       mix_pagos: unidades.filter(u => u.local !== "Tiendanube" && !u.detalle_financiero).map(u => u.local),
       unidades_sin_costo: suma("unidades_sin_costo"),
+    },
+    // Qué información real tiene este mes. Un mes sin fijos cargados muestra un
+    // margen irreal (no se le restó la estructura) y no es comparable con los demás.
+    datos: {
+      fijos: Object.keys(fijos).some(k => !k.startsWith("__")),
+      mix_pagos: mixPagos.length > 0,
+      impuestos_reales: Object.keys(impuestosReales).length > 0,
     },
   };
 }
