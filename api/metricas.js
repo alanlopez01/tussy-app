@@ -388,6 +388,11 @@ async function rentabilidadProductos(req, res) {
       unidades_sin_costo: r.unidades_sin_costo,
     };
   });
+  // Orden: por facturación (default) o por contribución total — el que más plata aporta
+  if (req.query.orden === "margen") {
+    modelos.sort((a, b) => (b.margen ?? -Infinity) - (a.margen ?? -Infinity));
+  }
+
   const conCosto = modelos.filter(m => m.margen != null);
   return res.status(200).json({
     modelos,
@@ -399,6 +404,38 @@ async function rentabilidadProductos(req, res) {
       margen: conCosto.reduce((a, m) => a + m.margen, 0),
       modelos_sin_costo: modelos.length - conCosto.length,
     },
+  });
+}
+
+// ── Evolución mensual: la misma cascada, mes a mes ──
+async function evolucion(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const n = Math.min(parseInt(req.query.meses || 6), 12);
+  const hoy = hoyArg();
+  const [y, m] = hoy.slice(0, 7).split("-").map(Number);
+  const meses = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(y, m - 1 - i, 1));
+    meses.push(d.toISOString().slice(0, 7));
+  }
+  const resultados = await Promise.all(meses.map(mes => calcularNegocio(sql, mes)));
+  return res.status(200).json({
+    meses: resultados
+      .filter(r => r.total.venta > 0)
+      .map(r => ({
+        mes: r.mes,
+        venta: r.total.venta,
+        mercaderia: r.total.mercaderia,
+        margen_bruto: r.total.margen_bruto,
+        margen_bruto_pct: r.total.venta > 0 ? Math.round(r.total.margen_bruto / r.total.venta * 1000) / 10 : null,
+        financiero: r.total.financiero,
+        fijos: r.total.fijos,
+        impuestos: r.total.impuestos,
+        resultado: r.total.resultado,
+        margen_pct: r.total.margen_pct,
+        // Resultado de cada unidad, para ver quién mejora y quién empeora
+        por_unidad: Object.fromEntries(r.unidades.map(u => [u.local, { venta: u.venta, resultado: u.resultado, margen_pct: u.margen_pct }])),
+      })),
   });
 }
 
@@ -647,11 +684,15 @@ async function rentabilidadProducto(req, res) {
 // unidad estampada, no como un gasto de estructura del local.
 async function rentabilidadNegocio(req, res) {
   const mes = req.query.mes || hoyArg().slice(0, 7);
+  return res.status(200).json(await calcularNegocio(neon(process.env.DATABASE_URL), mes));
+}
+
+// Cascada completa de un mes. La usan el endpoint mensual y la vista de evolución.
+async function calcularNegocio(sql, mes) {
   const desde = `${mes}-01`;
   const [y, m] = mes.split("-").map(Number);
   const ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const hasta = `${mes}-${String(ultimo).padStart(2, "0")}`;
-  const sql = neon(process.env.DATABASE_URL);
 
   // Venta y costo de mercadería por local (costo vigente a la fecha de cada venta).
   // La VENTA suma todas las líneas —incluidas ENVIO/DESCUENTO/AJUSTE, que son parte
@@ -794,6 +835,20 @@ async function rentabilidadNegocio(req, res) {
       margen_bruto: margenBruto,
       financiero, detalle_financiero: detalleFin,
       publicidad, envios,
+      // Punto de equilibrio: cuánto necesita vender para cubrir sus fijos.
+      // Los fijos NO se restan de la contribución; se comparan contra ella.
+      equilibrio: (() => {
+        const fijosTotales = Math.round(fijosLocal + extrasWeb);
+        if (contribucion <= 0 || fijosTotales <= 0) return null;
+        const cobertura = contribucion / fijosTotales;            // veces que los cubre
+        const contribUnidad = v.unidades > 0 ? contribucion / v.unidades : 0;
+        return {
+          unidades: contribUnidad > 0 ? Math.ceil(fijosTotales / contribUnidad) : null,
+          venta: Math.round(venta / cobertura),                    // facturación de equilibrio
+          cobertura: Math.round(cobertura * 100) / 100,
+          margen_seguridad: Math.round((1 - 1 / cobertura) * 1000) / 10, // % que puede caer
+        };
+      })(),
       contribucion, fijos: Math.round(fijosLocal + extrasWeb),
       detalle_fijos: { propios, compartidos, extras_web: extrasWeb, conceptos: fijos[local]?.conceptos || {} },
       impuestos, detalle_impuestos: { iibb, iva, cargas_sociales: cargas },
@@ -804,7 +859,7 @@ async function rentabilidadNegocio(req, res) {
   }).sort((a, b) => b.venta - a.venta);
 
   const suma = k => unidades.reduce((a, u) => a + u[k], 0);
-  return res.status(200).json({
+  return {
     mes, desde, hasta,
     unidades,
     total: {
@@ -825,7 +880,7 @@ async function rentabilidadNegocio(req, res) {
       mix_pagos: unidades.filter(u => u.local !== "Tiendanube" && !u.detalle_financiero).map(u => u.local),
       unidades_sin_costo: suma("unidades_sin_costo"),
     },
-  });
+  };
 }
 
 // ── Feed: todas las operaciones de HOY (día argentino), desde la base ──
@@ -899,6 +954,7 @@ module.exports = async function handler(req, res) {
     if (action === "rentabilidadProductos") return await rentabilidadProductos(req, res);
     if (action === "rentabilidadNegocio") return await rentabilidadNegocio(req, res);
     if (action === "rentabilidadProducto") return await rentabilidadProducto(req, res);
+    if (action === "evolucion") return await evolucion(req, res);
     if (action === "gastosLocales") return await gastosLocales(req, res);
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
 
