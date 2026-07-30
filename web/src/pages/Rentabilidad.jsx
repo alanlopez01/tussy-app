@@ -829,7 +829,80 @@ function Evolucion() {
 }
 
 // ── Tab: Inventario ──
+function Traslados() {
+  const [data, setData] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  const cargar = useCallback(() => {
+    setCargando(true);
+    getJSON("/api/metricas?action=traslados&dias=60", 45000)
+      .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
+  }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  const nom = l => l === "Tiendanube" ? "Online" : l;
+  const t = data?.total;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end"><BotonActualizar onClick={cargar} cargando={cargando} /></div>
+
+      {!data ? <Spinner texto="Buscando oportunidades…" /> : data.sin_datos ? (
+        <Card><p className="text-[13px] text-ink-3 py-6 text-center">Todavía no hay foto de stock.</p></Card>
+      ) : !data.sugerencias.length ? (
+        <Card><p className="text-[13px] text-ink-3 py-6 text-center">No hay traslados que valgan la pena hoy.</p></Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatTile label="Movimientos sugeridos" value={t.movimientos} />
+            <StatTile label="Unidades a mover" value={t.unidades.toLocaleString("es-AR")} />
+            <StatTile label="Capital que se reubica" value={fmtPesosCorto(t.capital)}
+                      sub="mercadería parada que pasaría a rotar" />
+          </div>
+
+          <Card title="Mover de donde no sale a donde se vende">
+            <div className="divide-y divide-borde">
+              {data.sugerencias.map(s => (
+                <div key={`${s.producto}-${s.desde}-${s.hacia}`} className="py-3">
+                  <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                    <span className="text-[13px] font-semibold text-ink">{s.producto}</span>
+                    <span className="text-[13px] font-bold text-ink tabular-nums">
+                      {s.mover} u. · {fmtPesosCorto(s.capital_liberado)}
+                    </span>
+                  </div>
+                  <div className="text-[12px] text-ink-2 mt-1 flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="text-bad font-semibold">{nom(s.desde)}</span>
+                      <span className="text-ink-3">
+                        {s.stock_origen} u. paradas
+                        {s.dias_inventario_origen ? ` (${s.dias_inventario_origen} días de stock)` : " (sin ventas)"}
+                      </span>
+                    </span>
+                    <span className="text-ink-3">→</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="text-ok font-semibold">{nom(s.hacia)}</span>
+                      <span className="text-ink-3">
+                        vendió {s.vendidas_destino} en {data.dias} días
+                        {s.stock_destino != null ? ` · le quedan ${s.stock_destino}` : " · stock no visible"}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-ink-3 mt-3">
+              Se sugiere mover cuando un local tiene más de 120 días de stock de un modelo y otro lo vende
+              con menos de 45. La cantidad cubre 60 días del ritmo del destino sin dejar corto al origen.
+            </p>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Inventario() {
+  const [sub, setSub] = useState("stock");
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [local, setLocal] = useState("");
@@ -858,8 +931,20 @@ function Inventario() {
 
   const colorRot = r => r == null ? "text-ink-3" : r >= 4 ? "text-ok" : r >= 2 ? "text-warn" : "text-bad";
 
+  if (sub === "traslados") {
+    return (
+      <div className="space-y-4">
+        <Chips opciones={[{ value: "stock", label: "Stock" }, { value: "traslados", label: "Traslados" }]}
+               valor={sub} onChange={setSub} />
+        <Traslados />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      <Chips opciones={[{ value: "stock", label: "Stock" }, { value: "traslados", label: "Traslados" }]}
+             valor={sub} onChange={setSub} />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Chips
           opciones={[{ value: "", label: "Todos" },
@@ -876,9 +961,9 @@ function Inventario() {
           {data.locales_sin_stock?.length > 0 && (
             <Card>
               <p className="text-[12px] text-warn font-medium">
-                {data.locales_sin_stock.join(" y ")} no informan cantidades de stock: en WooCommerce casi
-                ningún producto tiene activada la gestión de inventario. Todo lo de abajo cubre{" "}
-                {conStock.map(l => l === "Tiendanube" ? "Online" : l).join(", ")}.
+                Sin inventario real: {data.locales_sin_stock.map(l =>
+                  `${l === "Tiendanube" ? "Online" : l} (${data.motivo_sin_stock?.[l] || "sin datos"})`
+                ).join(" · ")}. Todo lo de abajo cubre {conStock.join(", ")}.
               </p>
             </Card>
           )}
