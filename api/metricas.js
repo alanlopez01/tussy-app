@@ -361,6 +361,117 @@ async function rentabilidadProductos(req, res) {
   });
 }
 
+// ── Rentabilidad por unidad de negocio (mes cerrado o en curso) ──
+// Cascada por local: venta − mercadería − costo financiero − fijos − fábrica prorrateada
+async function rentabilidadNegocio(req, res) {
+  const mes = req.query.mes || hoyArg().slice(0, 7);
+  const desde = `${mes}-01`;
+  const [y, m] = mes.split("-").map(Number);
+  const ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const hasta = `${mes}-${String(ultimo).padStart(2, "0")}`;
+  const sql = neon(process.env.DATABASE_URL);
+
+  // Venta y costo de mercadería por local (costo vigente a la fecha de cada venta)
+  const ventas = await sql`
+    SELECT v.local,
+           ROUND(SUM(v.total))::bigint AS venta,
+           SUM(v.cantidad)::int AS unidades,
+           ROUND(SUM(CASE WHEN c.costo IS NOT NULL THEN v.cantidad * c.costo ELSE 0 END))::bigint AS mercaderia,
+           SUM(CASE WHEN c.costo IS NULL THEN v.cantidad ELSE 0 END)::int AS unidades_sin_costo
+    FROM ventas v
+    LEFT JOIN LATERAL (
+      SELECT costo FROM costos_producto cp
+      WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
+      ORDER BY cp.vigente_desde DESC LIMIT 1
+    ) c ON true
+    WHERE v.fecha BETWEEN ${desde} AND ${hasta}
+      AND v.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
+    GROUP BY v.local`;
+
+  const [mixPagos, gastos, cfgRows] = await Promise.all([
+    sql`SELECT local, bruto, neto, costo_pct, mix FROM mix_pagos WHERE mes = ${mes}`,
+    sql`SELECT DISTINCT ON (local) local, empleados, alquiler, flete, libreria, bolsas
+        FROM gastos_local WHERE vigente_desde <= ${mes} ORDER BY local, vigente_desde DESC`,
+    sql`SELECT clave, valor FROM config_negocio`,
+  ]);
+  const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
+  const mixPorLocal = Object.fromEntries(mixPagos.map(r => [r.local, r]));
+  const gastosPorLocal = Object.fromEntries(gastos.map(r => [r.local, r]));
+
+  const ventaTotal = ventas.reduce((a, v) => a + Number(v.venta), 0);
+  const fabricaMes = cfg.fabrica_mensual || 0;
+
+  const unidades = ventas.map(v => {
+    const local = v.local;
+    const venta = Number(v.venta);
+    const mercaderia = Number(v.mercaderia);
+    const esWeb = local === "Tiendanube";
+
+    // Costo financiero
+    let financiero = 0, detalleFin = null;
+    if (esWeb) {
+      // Web: PagoNube/transferencias — se aplica la tasa configurada sobre toda la venta
+      financiero = Math.round(venta * ((cfg.tn_costo_pct || 0) + (cfg.iva_neto_pct || 0)));
+      detalleFin = { tipo: "web", pct: (cfg.tn_costo_pct || 0) + (cfg.iva_neto_pct || 0) };
+    } else {
+      // Locales: solo la parte cobrada por MP Point tiene costo.
+      // El resto (efectivo/transferencia) ya viene neto del descuento en el precio registrado.
+      const mp = mixPorLocal[local];
+      if (mp) {
+        const brutoPoint = Math.min(Number(mp.bruto), venta);
+        financiero = Math.round(brutoPoint * Number(mp.costo_pct));
+        detalleFin = {
+          tipo: "point", bruto_point: Math.round(brutoPoint),
+          pct_point: Math.round(Number(mp.costo_pct) * 10000) / 100,
+          share_point: venta > 0 ? Math.round(brutoPoint / venta * 1000) / 10 : 0,
+          mix: mp.mix,
+        };
+      }
+    }
+
+    // Fijos del local
+    const g = gastosPorLocal[local];
+    const fijos = g ? Number(g.empleados) + Number(g.alquiler) + Number(g.flete) + Number(g.libreria) + Number(g.bolsas) : 0;
+
+    // Web suma su plan y packaging
+    const extrasWeb = esWeb ? (cfg.plan_tiendanube || 0) + (cfg.packaging_unidad || 0) * v.unidades : 0;
+
+    // Fábrica prorrateada por participación en la venta del mes
+    const share = ventaTotal > 0 ? venta / ventaTotal : 0;
+    const fabrica = Math.round(fabricaMes * share);
+
+    const margenBruto = venta - mercaderia;
+    const contribucion = margenBruto - financiero;
+    const resultado = contribucion - fijos - extrasWeb - fabrica;
+
+    return {
+      local, venta, unidades: v.unidades, unidades_sin_costo: v.unidades_sin_costo,
+      mercaderia, margen_bruto: margenBruto,
+      financiero, detalle_financiero: detalleFin,
+      contribucion, fijos: Math.round(fijos + extrasWeb), fabrica,
+      resultado,
+      margen_pct: venta > 0 ? Math.round(resultado / venta * 1000) / 10 : null,
+      share_venta: Math.round(share * 1000) / 10,
+    };
+  }).sort((a, b) => b.venta - a.venta);
+
+  const suma = k => unidades.reduce((a, u) => a + u[k], 0);
+  return res.status(200).json({
+    mes, desde, hasta,
+    unidades,
+    total: {
+      venta: ventaTotal, mercaderia: suma("mercaderia"), margen_bruto: suma("margen_bruto"),
+      financiero: suma("financiero"), contribucion: suma("contribucion"),
+      fijos: suma("fijos"), fabrica: suma("fabrica"), resultado: suma("resultado"),
+      margen_pct: ventaTotal > 0 ? Math.round(suma("resultado") / ventaTotal * 1000) / 10 : null,
+    },
+    faltan_datos: {
+      mix_pagos: unidades.filter(u => u.local !== "Tiendanube" && !u.detalle_financiero).map(u => u.local),
+      unidades_sin_costo: suma("unidades_sin_costo"),
+    },
+  });
+}
+
 // ── Feed: todas las operaciones de HOY (día argentino), desde la base ──
 async function feed(req, res) {
   const sql = neon(process.env.DATABASE_URL);
@@ -430,6 +541,7 @@ module.exports = async function handler(req, res) {
     if (action === "modelosCostos") return await modelosCostos(req, res);
     if (action === "guardarCosto") return await guardarCosto(req, res);
     if (action === "rentabilidadProductos") return await rentabilidadProductos(req, res);
+    if (action === "rentabilidadNegocio") return await rentabilidadNegocio(req, res);
 
     if (!process.env.DATABASE_URL) {
       return res.status(503).json({ error: "DATABASE_URL no configurada" });
