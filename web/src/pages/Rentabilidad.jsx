@@ -977,11 +977,13 @@ function Inventario() {
                       sub="pesos de margen por peso invertido" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <StatTile label="Sin ninguna venta en 90 días" value={fmtPesosCorto(t.capital_sin_ventas)}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatTile label="Sin ninguna venta" value={fmtPesosCorto(t.capital_sin_ventas)}
                       sub={`${t.modelos_sin_ventas} modelos`} />
             <StatTile label="Rotación lenta (+180 días)" value={fmtPesosCorto(t.capital_lento)}
                       sub={`${t.modelos_lentos} modelos`} />
+            <StatTile label="Recién lanzados" value={fmtPesosCorto(t.capital_nuevo)}
+                      sub={`${t.modelos_nuevos} modelos · aún sin historia`} />
           </div>
 
           <Card title="Inventario por modelo" right={
@@ -995,13 +997,16 @@ function Inventario() {
               {pag.map(m => (
                 <div key={m.producto} className="py-2.5">
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-[13px] font-medium text-ink truncate">{m.producto}</span>
+                    <span className="text-[13px] font-medium text-ink truncate">
+                      {m.producto}
+                      {m.es_nuevo && <span className="ml-1 text-[9px] uppercase text-ok font-bold">nuevo</span>}
+                    </span>
                     <span className="text-[13px] font-bold text-ink tabular-nums shrink-0">
                       {fmtPesosCorto(m.capital_inmovilizado || 0)}
                     </span>
                   </div>
                   <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
-                    {m.stock} u. en stock · {m.vendidas} vendidas ·{" "}
+                    {m.stock} u. · {m.vendidas} vendidas en {m.dias_medidos} d. ·{" "}
                     <span className={colorRot(m.rotacion)}>{m.rotacion != null ? `${m.rotacion}x` : "sin rotar"}</span>
                     {m.dias_inventario != null && ` · ${m.dias_inventario} días`}
                     {m.gmroi != null && ` · GMROI ${m.gmroi}`}
@@ -1026,7 +1031,14 @@ function Inventario() {
                 <tbody className="divide-y divide-borde">
                   {pag.map(m => (
                     <tr key={m.producto}>
-                      <td className="py-2 pr-3 font-medium text-ink max-w-[220px] truncate">{m.producto}</td>
+                      <td className="py-2 pr-3 font-medium text-ink max-w-[220px] truncate">
+                        {m.producto}
+                        {m.es_nuevo && (
+                          <span className="ml-1.5 text-[9px] uppercase tracking-wide text-ok font-bold">
+                            nuevo · {m.dias_desde_lanzamiento}d
+                          </span>
+                        )}
+                      </td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{m.stock}</td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{m.vendidas}</td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.capital_inmovilizado || 0)}</td>
@@ -1044,7 +1056,8 @@ function Inventario() {
             </div>
             <Paginacion pagina={pagina} totalPaginas={totalPaginas} onChange={setPagina} />
             <p className="text-[11px] text-ink-3 mt-3">
-              <strong>Rotación</strong>: veces que se renueva el stock en un año al ritmo de los últimos 90 días.
+              <strong>Rotación</strong>: veces que se renueva el stock en un año, medida sobre los días que el
+              modelo estuvo realmente a la venta (un producto que entró hace una semana no se juzga contra 90 días).
               <strong> GMROI</strong>: pesos de margen bruto que genera cada peso invertido en ese stock —
               por encima de 3 es sano, por debajo de 1 el modelo no paga el capital que ocupa.
             </p>
