@@ -565,7 +565,7 @@ async function inventario(req, res) {
     locales_con_stock: localesConStock,
     modelos: modelos.sort((a, b) => (b.capital_inmovilizado || 0) - (a.capital_inmovilizado || 0)),
     fuentes: estados,
-    locales_sin_stock: LOCALES_SIN_STOCK.concat("Tiendanube"),
+    locales_sin_stock: LOCALES_SIN_STOCK,
     motivo_sin_stock: MOTIVO_SIN_STOCK,
   });
 }
