@@ -243,6 +243,7 @@ function Negocio() {
                     <th className="text-right py-2 font-semibold">Venta</th>
                     <th className="text-right py-2 font-semibold">Mercadería</th>
                     <th className="text-right py-2 font-semibold">Financiero</th>
+                    <th className="text-right py-2 font-semibold">Publi+envíos</th>
                     <th className="text-right py-2 font-semibold">Fijos</th>
                     <th className="text-right py-2 font-semibold">Fábrica</th>
                     <th className="text-right py-2 font-semibold">Resultado</th>
@@ -259,10 +260,18 @@ function Negocio() {
                             Point {u.detalle_financiero.share_point}% · costo {u.detalle_financiero.pct_point}%
                           </span>
                         )}
+                        {u.detalle_financiero?.tipo === "web" && (
+                          <span className="block text-[10px] font-normal text-ink-3">
+                            costo real {u.detalle_financiero.pct_real}%
+                          </span>
+                        )}
                       </td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(u.venta)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.mercaderia)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.financiero)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">
+                        {(u.publicidad + u.envios) > 0 ? `−${fmtPesosCorto(u.publicidad + u.envios)}` : "—"}
+                      </td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fijos)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fabrica)}</td>
                       <td className={`py-2 text-right tabular-nums font-bold ${u.resultado >= 0 ? "text-ok" : "text-bad"}`}>
@@ -278,6 +287,7 @@ function Negocio() {
                     <td className="py-2 text-right tabular-nums text-ink">{fmtPesosCorto(t.venta)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.mercaderia)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.financiero)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.publicidad + t.envios)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fijos)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fabrica)}</td>
                     <td className={`py-2 text-right tabular-nums ${t.resultado >= 0 ? "text-ok" : "text-bad"}`}>
@@ -289,7 +299,8 @@ function Negocio() {
               </table>
             </div>
             <p className="text-[11px] text-ink-3 mt-3">
-              Online todavía no incluye publicidad ni envíos pagados por la tienda: su resultado está sobrestimado.
+              Fábrica de estampado prorrateada por participación en la venta del mes. La fila de cada local
+              muestra qué parte cobra por Point y a qué costo real.
             </p>
           </Card>
         </>

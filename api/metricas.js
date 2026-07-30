@@ -391,15 +391,22 @@ async function rentabilidadNegocio(req, res) {
     WHERE v.fecha BETWEEN ${desde} AND ${hasta}
     GROUP BY v.local`;
 
-  const [mixPagos, gastos, cfgRows] = await Promise.all([
+  const [mixPagos, gastos, cfgRows, gastosMes] = await Promise.all([
     sql`SELECT local, bruto, neto, costo_pct, mix FROM mix_pagos WHERE mes = ${mes}`,
     sql`SELECT DISTINCT ON (local) local, empleados, alquiler, flete, libreria, bolsas
         FROM gastos_local WHERE vigente_desde <= ${mes} ORDER BY local, vigente_desde DESC`,
     sql`SELECT clave, valor FROM config_negocio`,
+    sql`SELECT local, concepto, monto FROM gastos_mes WHERE mes = ${mes}`,
   ]);
   const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
   const mixPorLocal = Object.fromEntries(mixPagos.map(r => [r.local, r]));
   const gastosPorLocal = Object.fromEntries(gastos.map(r => [r.local, r]));
+  // Gastos variables cargados por mes (publicidad, envíos): { local: { concepto: monto } }
+  const varPorLocal = {};
+  for (const g of gastosMes) {
+    if (!varPorLocal[g.local]) varPorLocal[g.local] = {};
+    varPorLocal[g.local][g.concepto] = Number(g.monto);
+  }
 
   const ventaTotal = ventas.reduce((a, v) => a + Number(v.venta), 0);
   const fabricaMes = cfg.fabrica_mensual || 0;
@@ -412,10 +419,15 @@ async function rentabilidadNegocio(req, res) {
 
     // Costo financiero
     let financiero = 0, detalleFin = null;
-    if (esWeb) {
-      // Web: PagoNube/transferencias — se aplica la tasa configurada sobre toda la venta
+    const mpWeb = mixPorLocal["Tiendanube"];
+    if (esWeb && mpWeb) {
+      // Web con reporte cargado: mix real de cuotas de PagoNube + transferencias
+      financiero = Math.round(venta * Number(mpWeb.costo_pct));
+      detalleFin = { tipo: "web", pct_real: Math.round(Number(mpWeb.costo_pct) * 10000) / 100, mix: mpWeb.mix };
+    } else if (esWeb) {
+      // Sin reporte del mes: tasa configurada como aproximación
       financiero = Math.round(venta * ((cfg.tn_costo_pct || 0) + (cfg.iva_neto_pct || 0)));
-      detalleFin = { tipo: "web", pct: (cfg.tn_costo_pct || 0) + (cfg.iva_neto_pct || 0) };
+      detalleFin = { tipo: "web_estimado", pct: (cfg.tn_costo_pct || 0) + (cfg.iva_neto_pct || 0) };
     } else {
       // Locales: solo la parte cobrada por MP Point tiene costo.
       // El resto (efectivo/transferencia) ya viene neto del descuento en el precio registrado.
@@ -436,21 +448,25 @@ async function rentabilidadNegocio(req, res) {
     const g = gastosPorLocal[local];
     const fijos = g ? Number(g.empleados) + Number(g.alquiler) + Number(g.flete) + Number(g.libreria) + Number(g.bolsas) : 0;
 
-    // Web suma su plan y packaging
+    // Web suma su plan y packaging; más los gastos variables cargados del mes
     const extrasWeb = esWeb ? (cfg.plan_tiendanube || 0) + (cfg.packaging_unidad || 0) * v.unidades : 0;
+    const gv = varPorLocal[local] || {};
+    const publicidad = gv.publicidad || 0;
+    const envios = gv.envios || 0;
 
     // Fábrica prorrateada por participación en la venta del mes
     const share = ventaTotal > 0 ? venta / ventaTotal : 0;
     const fabrica = Math.round(fabricaMes * share);
 
     const margenBruto = venta - mercaderia;
-    const contribucion = margenBruto - financiero;
+    const contribucion = margenBruto - financiero - publicidad - envios;
     const resultado = contribucion - fijos - extrasWeb - fabrica;
 
     return {
       local, venta, unidades: v.unidades, unidades_sin_costo: v.unidades_sin_costo,
       mercaderia, margen_bruto: margenBruto,
       financiero, detalle_financiero: detalleFin,
+      publicidad, envios,
       contribucion, fijos: Math.round(fijos + extrasWeb), fabrica,
       resultado,
       margen_pct: venta > 0 ? Math.round(resultado / venta * 1000) / 10 : null,
@@ -464,7 +480,8 @@ async function rentabilidadNegocio(req, res) {
     unidades,
     total: {
       venta: ventaTotal, mercaderia: suma("mercaderia"), margen_bruto: suma("margen_bruto"),
-      financiero: suma("financiero"), contribucion: suma("contribucion"),
+      financiero: suma("financiero"), publicidad: suma("publicidad"), envios: suma("envios"),
+      contribucion: suma("contribucion"),
       fijos: suma("fijos"), fabrica: suma("fabrica"), resultado: suma("resultado"),
       margen_pct: ventaTotal > 0 ? Math.round(suma("resultado") / ventaTotal * 1000) / 10 : null,
     },
