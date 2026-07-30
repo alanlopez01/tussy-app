@@ -20,7 +20,7 @@ function colorMargen(pct) {
 // ── Detalle de un producto: cuánto deja según cómo lo paguen ──
 function DetalleProducto({ producto, mes, onCerrar }) {
   const [d, setD] = useState(null);
-  const [local, setLocal] = useState("");
+  const [local, setLocal] = useState("Tiendanube");
 
   useEffect(() => {
     setD(null);
@@ -44,8 +44,7 @@ function DetalleProducto({ producto, mes, onCerrar }) {
         {/* Punto de venta: cada local tiene su propia estructura y formas de cobro */}
         <div className="mb-4">
           <Chips
-            opciones={[{ value: "", label: "Todos los locales" },
-                       ...LOCALES.map(l => ({ value: l.db, label: l.nombre, color: l.color }))]}
+            opciones={LOCALES.map(l => ({ value: l.db, label: l.nombre, color: l.color }))}
             valor={local}
             onChange={setLocal}
           />
@@ -57,13 +56,14 @@ function DetalleProducto({ producto, mes, onCerrar }) {
           </p>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
               {[["Precio de lista", fmtPesos(d.precio_lista),
                  d.descuento_efectivo_pct > 0 ? `real ${fmtPesos(d.precio_promedio)} (−${d.descuento_efectivo_pct}%)` : null],
                 ["Costo mercadería", d.costo_mercaderia != null ? fmtPesos(d.costo_mercaderia) : "—", null],
                 ["Fábrica / unidad", d.lleva_estampa ? fmtPesos(d.costo_fabrica) : "—",
                  d.lleva_estampa ? null : "no lleva estampa"],
-                ["Estructura", `${d.estructura_pct}% s/venta`, d.estructura_detalle]].map(([l, v, extra]) => (
+                ["Costo impositivo", fmtPesos(d.impuesto_monto), `${d.impuesto_pct}% de la venta`],
+                ["Estructura", fmtPesos(d.estructura_monto), d.estructura_detalle]].map(([l, v, extra]) => (
                 <div key={l} className="bg-surface rounded-md px-3 py-2">
                   <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3">{l}</div>
                   <div className="text-[14px] font-bold text-ink tabular-nums">{v}</div>
@@ -86,7 +86,8 @@ function DetalleProducto({ producto, mes, onCerrar }) {
                     </span>
                   </div>
                   <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
-                    entra {fmtPesos(e.ingreso)} · contribución {e.contribucion != null ? `${fmtPesos(e.contribucion)} (${e.margen_contribucion}%)` : "—"}
+                    entra {fmtPesos(e.ingreso)} · contribución {e.contribucion != null ? fmtPesos(e.contribucion) : "—"}
+                    {" · "}impuestos −{fmtPesos(e.impuestos)} · estructura −{fmtPesos(e.estructura)}
                   </div>
                 </div>
               ))}
@@ -100,7 +101,9 @@ function DetalleProducto({ producto, mes, onCerrar }) {
                     <th className="text-right py-2 font-semibold">Entra</th>
                     <th className="text-right py-2 font-semibold">Costo fin.</th>
                     <th className="text-right py-2 font-semibold">Contribución</th>
-                    <th className="text-right py-2 font-semibold">Con estructura</th>
+                    <th className="text-right py-2 font-semibold">Impuestos</th>
+                    <th className="text-right py-2 font-semibold">Estructura</th>
+                    <th className="text-right py-2 font-semibold">Neto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borde">
@@ -115,6 +118,8 @@ function DetalleProducto({ producto, mes, onCerrar }) {
                       <td className={`py-2 text-right tabular-nums font-semibold ${e.contribucion >= 0 ? "text-ok" : "text-bad"}`}>
                         {e.contribucion != null ? `${fmtPesos(e.contribucion)} (${e.margen_contribucion}%)` : "—"}
                       </td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesos(e.impuestos)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesos(e.estructura)}</td>
                       <td className={`py-2 text-right tabular-nums font-bold ${e.resultado >= 0 ? "text-ok" : "text-bad"}`}>
                         {e.resultado != null ? fmtPesos(e.resultado) : "—"}
                       </td>
@@ -124,9 +129,9 @@ function DetalleProducto({ producto, mes, onCerrar }) {
               </table>
             </div>
             <p className="text-[11px] text-ink-3 mt-3">
-              <strong>Contribución</strong> = lo que entra − mercadería − fábrica. <strong>Con estructura</strong> le resta
-              además la parte de alquileres y sueldos de locales que le toca a cada prenda. Si esta última da
-              negativa, esa venta no cubre su costo completo.
+              <strong>Contribución</strong> = lo que entra − mercadería − fábrica. Al <strong>neto</strong> se le restan
+              además impuestos y la parte de estructura que le toca a esa venta. Si el neto da negativo, esa
+              venta no cubre su costo completo.
             </p>
           </>
         )}

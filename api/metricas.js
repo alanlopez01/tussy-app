@@ -568,6 +568,8 @@ async function rentabilidadProducto(req, res) {
     estructuraDetalle = "promedio de los locales físicos";
   }
 
+  const impuestoPct = cfg.impuesto_producto_pct ?? 0.105;
+
   // Online no cobra en efectivo: su descuento equivalente es el 10% por transferencia
   const escenariosBase = esOnline
     ? [
@@ -591,12 +593,13 @@ async function rentabilidadProducto(req, res) {
   })).map(e => {
     const ingreso = Math.round(e.ingreso);
     const contribucion = costoDirecto == null ? null : ingreso - costoDirecto;
+    const impuestos = Math.round(ingreso * impuestoPct);
     const estructura = Math.round(ingreso * estructuraPct);
-    const resultado = contribucion == null ? null : contribucion - estructura;
+    const resultado = contribucion == null ? null : contribucion - impuestos - estructura;
     return {
       ...e, ingreso,
       costo_financiero: Math.round(precioLista - ingreso),
-      contribucion, estructura,
+      contribucion, impuestos, estructura,
       margen_contribucion: contribucion != null && ingreso > 0 ? Math.round(contribucion / ingreso * 1000) / 10 : null,
       resultado,
       margen_resultado: resultado != null && ingreso > 0 ? Math.round(resultado / ingreso * 1000) / 10 : null,
@@ -617,7 +620,11 @@ async function rentabilidadProducto(req, res) {
     costo_directo: costoDirecto,
     local: localFiltro,
     estructura_pct: Math.round(estructuraPct * 1000) / 10,
+    // Monto que representa la estructura sobre el precio de lista (más claro que el %)
+    estructura_monto: Math.round(precioLista * estructuraPct),
     estructura_detalle: estructuraDetalle,
+    impuesto_pct: Math.round(impuestoPct * 1000) / 10,
+    impuesto_monto: Math.round(precioLista * impuestoPct),
     escenarios,
   });
 }
