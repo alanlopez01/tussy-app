@@ -571,9 +571,12 @@ async function traslados(req, res) {
       .sort((a, b) => b.diasInv - a.diasInv);
     if (!origenes.length) continue;
 
-    // Destino: lo vende bien. Los locales sin inventario cargado también sirven como
-    // destino (sabemos que venden, aunque no sepamos cuánto stock tienen).
+    // Destino: un local FÍSICO que lo vende bien. Online queda afuera: despacha
+    // desde depósito, no es un punto de venta que reciba mercadería.
+    // Palermo y La Plata sí cuentan como destino aunque no veamos su stock:
+    // sabemos que venden el modelo, que es lo que importa para decidir el envío.
     const destinos = Object.entries(porLocal)
+      .filter(([l]) => l !== "Tiendanube")
       .map(([l, x]) => ({
         local: l,
         stock: localesConStock.includes(l) ? x.stock : null,
