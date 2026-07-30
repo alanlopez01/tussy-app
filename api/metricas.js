@@ -448,16 +448,26 @@ async function rentabilidadProducto(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   const [datos, cfgRows, fab, fijos] = await Promise.all([
-    sql`SELECT SUM(v.cantidad)::int AS unidades,
-               ROUND(SUM(v.precio_unit * v.cantidad) / NULLIF(SUM(v.cantidad),0))::bigint AS precio_lista,
+    // El precio de lista es el precio al que más unidades se vendieron (moda), no el
+    // promedio: el promedio lo arrastran hacia abajo las ventas con descuento y los canjes.
+    sql`WITH v AS (
+          SELECT * FROM ventas
+          WHERE fecha BETWEEN ${desde} AND ${hasta} AND producto_norm = ${producto}
+        ),
+        moda AS (
+          SELECT precio_unit FROM v WHERE precio_unit > 0
+          GROUP BY precio_unit ORDER BY SUM(cantidad) DESC, precio_unit DESC LIMIT 1
+        )
+        SELECT SUM(v.cantidad)::int AS unidades,
+               (SELECT ROUND(precio_unit)::bigint FROM moda) AS precio_lista,
+               ROUND(SUM(v.precio_unit * v.cantidad) / NULLIF(SUM(v.cantidad),0))::bigint AS precio_promedio,
                ROUND(SUM(v.total) / NULLIF(SUM(v.cantidad),0))::bigint AS precio_cobrado,
                ROUND(MAX(c.costo))::bigint AS costo
-        FROM ventas v
+        FROM v
         LEFT JOIN LATERAL (
           SELECT costo FROM costos_producto cp
           WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
-          ORDER BY cp.vigente_desde DESC LIMIT 1) c ON true
-        WHERE v.fecha BETWEEN ${desde} AND ${hasta} AND v.producto_norm = ${producto}`,
+          ORDER BY cp.vigente_desde DESC LIMIT 1) c ON true`,
     sql`SELECT clave, valor FROM config_negocio`,
     fabricaPorUnidad(sql, mes),
     leerGastosFijos(sql, mes),
@@ -467,7 +477,8 @@ async function rentabilidadProducto(req, res) {
   if (!d || !d.unidades) return res.status(200).json({ producto, mes, sin_datos: true });
   const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
 
-  const precioLista = Number(d.precio_lista);
+  const precioLista = Number(d.precio_lista || d.precio_promedio);
+  const precioPromedio = Number(d.precio_promedio);
   const costoMerc = d.costo == null ? null : Number(d.costo);
   const costoFabrica = Math.round(fab.porUnidad);
   const costoDirecto = costoMerc == null ? null : costoMerc + costoFabrica;
@@ -508,6 +519,10 @@ async function rentabilidadProducto(req, res) {
   return res.status(200).json({
     producto, mes, unidades: d.unidades,
     precio_lista: precioLista,
+    precio_promedio: precioPromedio,
+    // Cuánto se está resignando por promos y descuentos frente al precio de lista
+    descuento_efectivo_pct: precioLista > 0
+      ? Math.round((1 - precioPromedio / precioLista) * 1000) / 10 : 0,
     precio_cobrado_promedio: Number(d.precio_cobrado),
     costo_mercaderia: costoMerc,
     costo_fabrica: costoFabrica,

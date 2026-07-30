@@ -44,13 +44,15 @@ function DetalleProducto({ producto, mes, onCerrar }) {
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-              {[["Precio de lista", fmtPesos(d.precio_lista)],
-                ["Costo mercadería", d.costo_mercaderia != null ? fmtPesos(d.costo_mercaderia) : "—"],
-                ["Fábrica / unidad", fmtPesos(d.costo_fabrica)],
-                ["Estructura local", `${d.estructura_pct}% s/venta`]].map(([l, v]) => (
+              {[["Precio de lista", fmtPesos(d.precio_lista),
+                 d.descuento_efectivo_pct > 0 ? `real ${fmtPesos(d.precio_promedio)} (−${d.descuento_efectivo_pct}%)` : null],
+                ["Costo mercadería", d.costo_mercaderia != null ? fmtPesos(d.costo_mercaderia) : "—", null],
+                ["Fábrica / unidad", fmtPesos(d.costo_fabrica), null],
+                ["Estructura local", `${d.estructura_pct}% s/venta`, null]].map(([l, v, extra]) => (
                 <div key={l} className="bg-surface rounded-md px-3 py-2">
                   <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3">{l}</div>
                   <div className="text-[14px] font-bold text-ink tabular-nums">{v}</div>
+                  {extra && <div className="text-[10px] text-ink-3 tabular-nums">{extra}</div>}
                 </div>
               ))}
             </div>
