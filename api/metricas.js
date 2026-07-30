@@ -21,6 +21,8 @@ const KEY_LOCAL = {
 
 const { normalizarProducto } = require("../lib/normalizar");
 const { costear } = require("../lib/costeo");
+const { LOCALES_SIN_STOCK } = require("../lib/stock");
+const { snapshotStock } = require("../scripts/db-snapshot-stock");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
 async function ventasLive(req, res) {
@@ -280,6 +282,13 @@ async function cierreDiario(req, res) {
     body: desglose || "Sin ventas registradas",
     url: "/",
   }]);
+  // Aprovechamos el cierre para dejar la foto de inventario del día. El histórico
+  // de fotos es lo que después permite calcular rotación sobre stock promedio.
+  waitUntil(
+    snapshotStock(sql, hoyArg())
+      .then(r => console.log("[stock]", JSON.stringify(r)))
+      .catch(e => console.error("[stock] error:", e))
+  );
   return res.status(200).json({ ok: true, fecha: ayer, total, porLocal: rows, notificadas: enviadas });
 }
 
@@ -404,6 +413,101 @@ async function rentabilidadProductos(req, res) {
       margen: conCosto.reduce((a, m) => a + m.margen, 0),
       modelos_sin_costo: modelos.length - conCosto.length,
     },
+  });
+}
+
+// ── Inventario: rotación, GMROI y capital inmovilizado ──
+// Rotación anualizada = unidades vendidas en el período ÷ stock actual × (365/días).
+// GMROI = margen bruto generado ÷ capital invertido en ese stock. Dice cuántos pesos
+// de ganancia produce cada peso puesto en mercadería: es LA métrica de retail.
+async function inventario(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const dias = Math.min(parseInt(req.query.dias || 90), 365);
+  const localFiltro = req.query.local || null;
+
+  const [ultima] = await sql`SELECT MAX(fecha)::text AS fecha FROM stock`;
+  if (!ultima?.fecha) return res.status(200).json({ sin_datos: true });
+  const fechaStock = ultima.fecha;
+
+  const rows = await sql`
+    WITH s AS (
+      SELECT producto_norm, SUM(cantidad) AS unidades,
+             SUM(cantidad * COALESCE(precio, 0)) AS valor_venta
+      FROM stock
+      WHERE fecha = ${fechaStock}
+        AND (${localFiltro}::text IS NULL OR local = ${localFiltro})
+      GROUP BY producto_norm
+    ),
+    v AS (
+      SELECT ve.producto_norm,
+             SUM(ve.cantidad) AS vendidas,
+             SUM(ve.total) AS venta,
+             SUM(ve.cantidad * COALESCE(c.costo, 0)) AS costo
+      FROM ventas ve
+      LEFT JOIN LATERAL (
+        SELECT costo FROM costos_producto cp
+        WHERE cp.producto = ve.producto_norm AND cp.vigente_desde <= ve.fecha
+        ORDER BY cp.vigente_desde DESC LIMIT 1) c ON true
+      WHERE ve.fecha >= ${fechaStock}::date - ${dias}
+        AND ve.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
+        AND (${localFiltro}::text IS NULL OR ve.local = ${localFiltro})
+      GROUP BY ve.producto_norm
+    )
+    SELECT COALESCE(s.producto_norm, v.producto_norm) AS producto,
+           COALESCE(s.unidades, 0)::numeric AS stock,
+           COALESCE(v.vendidas, 0)::numeric AS vendidas,
+           ROUND(COALESCE(v.venta, 0))::bigint AS venta,
+           ROUND(COALESCE(v.costo, 0))::bigint AS costo_vendido,
+           (SELECT ROUND(costo)::bigint FROM costos_producto cp
+            WHERE cp.producto = COALESCE(s.producto_norm, v.producto_norm)
+            ORDER BY vigente_desde DESC LIMIT 1) AS costo_unitario
+    FROM s FULL OUTER JOIN v ON v.producto_norm = s.producto_norm
+    WHERE COALESCE(s.unidades, 0) > 0 OR COALESCE(v.vendidas, 0) > 0`;
+
+  const factorAnual = 365 / dias;
+  const modelos = rows.map(r => {
+    const stock = Number(r.stock), vendidas = Number(r.vendidas);
+    const venta = Number(r.venta), costoVendido = Number(r.costo_vendido);
+    const costoUnit = r.costo_unitario == null ? null : Number(r.costo_unitario);
+    const capital = costoUnit != null ? Math.round(stock * costoUnit) : null;
+    const margen = venta - costoVendido;
+    return {
+      producto: r.producto, stock, vendidas, venta, margen,
+      costo_unitario: costoUnit,
+      capital_inmovilizado: capital,
+      // Veces que se renueva el stock en un año al ritmo del período
+      rotacion: stock > 0 ? Math.round(vendidas / stock * factorAnual * 10) / 10 : null,
+      // Días que tardaría en venderse el stock actual
+      dias_inventario: vendidas > 0 ? Math.round(stock / (vendidas / dias)) : null,
+      // Ganancia bruta por cada peso invertido en ese stock
+      gmroi: capital > 0 ? Math.round(margen * factorAnual / capital * 100) / 100 : null,
+      sin_movimiento: vendidas === 0 && stock > 0,
+    };
+  });
+
+  const conStock = modelos.filter(m => m.stock > 0);
+  const muertos = conStock.filter(m => m.sin_movimiento || (m.dias_inventario != null && m.dias_inventario > 180));
+  const capitalTotal = conStock.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0);
+  const margenTotal = modelos.reduce((a, m) => a + m.margen, 0);
+
+  const estados = await sql`SELECT local, estado, filas, ROUND(unidades)::int AS unidades, error FROM stock_estado WHERE fecha = ${fechaStock}`;
+
+  return res.status(200).json({
+    fecha_stock: fechaStock, dias, local: localFiltro,
+    total: {
+      unidades: Math.round(conStock.reduce((a, m) => a + m.stock, 0)),
+      modelos: conStock.length,
+      capital: capitalTotal,
+      gmroi: capitalTotal > 0 ? Math.round(margenTotal * factorAnual / capitalTotal * 100) / 100 : null,
+      rotacion: capitalTotal > 0
+        ? Math.round(modelos.reduce((a, m) => a + m.vendidas, 0) / conStock.reduce((a, m) => a + m.stock, 0) * factorAnual * 10) / 10
+        : null,
+      capital_muerto: muertos.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
+      modelos_muertos: muertos.length,
+    },
+    modelos: modelos.sort((a, b) => (b.capital_inmovilizado || 0) - (a.capital_inmovilizado || 0)),
+    fuentes: estados,
+    locales_sin_stock: LOCALES_SIN_STOCK,
   });
 }
 
@@ -968,6 +1072,7 @@ module.exports = async function handler(req, res) {
     if (action === "rentabilidadNegocio") return await rentabilidadNegocio(req, res);
     if (action === "rentabilidadProducto") return await rentabilidadProducto(req, res);
     if (action === "evolucion") return await evolucion(req, res);
+    if (action === "inventario") return await inventario(req, res);
     if (action === "gastosLocales") return await gastosLocales(req, res);
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
 
