@@ -451,12 +451,14 @@ function Negocio() {
                       </span>
                     </div>
                     {u.equilibrio && (
-                      <div className="text-[11px] text-ink-3 pt-1.5 tabular-nums">
-                        Equilibrio: {u.equilibrio.unidades.toLocaleString("es-AR")} u. ·{" "}
-                        {fmtPesosCorto(u.equilibrio.venta)} · puede caer{" "}
-                        <span className={u.equilibrio.margen_seguridad >= 40 ? "text-ok" : "text-warn"}>
-                          {u.equilibrio.margen_seguridad}%
-                        </span>{" "}antes de perder
+                      <div className="flex items-center justify-between gap-3 pt-1.5 tabular-nums">
+                        <span className="text-[11px] text-ink-3">
+                          Equilibrio · {u.equilibrio.unidades.toLocaleString("es-AR")} u. · puede caer{" "}
+                          <span className={u.equilibrio.margen_seguridad >= 40 ? "text-ok" : "text-warn"}>
+                            {u.equilibrio.margen_seguridad}%
+                          </span>
+                        </span>
+                        <span className="text-[12px] font-semibold text-ink-2">{fmtPesosCorto(u.equilibrio.venta)}</span>
                       </div>
                     )}
                   </div>
@@ -527,12 +529,15 @@ function Negocio() {
                       <td className={`py-2 text-right tabular-nums font-bold ${colorMargen(u.margen_pct)}`}>
                         {u.margen_pct}%
                       </td>
-                      <td className="py-2 text-right tabular-nums text-ink-3"
-                          title={u.equilibrio ? `Necesita vender ${u.equilibrio.unidades} u. (${fmtPesosCorto(u.equilibrio.venta)}) para cubrir sus fijos` : ""}>
+                      <td className="py-2 text-right tabular-nums"
+                          title={u.equilibrio ? `Necesita vender ${u.equilibrio.unidades} u. para cubrir sus fijos` : ""}>
                         {u.equilibrio ? (
-                          <span className={u.equilibrio.margen_seguridad >= 40 ? "text-ok" : "text-warn"}>
-                            −{u.equilibrio.margen_seguridad}%
-                          </span>
+                          <>
+                            <div className="text-ink-2 font-semibold">{fmtPesosCorto(u.equilibrio.venta)}</div>
+                            <div className={`text-[10px] ${u.equilibrio.margen_seguridad >= 40 ? "text-ok" : "text-warn"}`}>
+                              {u.equilibrio.unidades.toLocaleString("es-AR")} u. · −{u.equilibrio.margen_seguridad}%
+                            </div>
+                          </>
                         ) : "—"}
                       </td>
                     </tr>
@@ -549,7 +554,9 @@ function Negocio() {
                       {fmtPesosCorto(t.resultado)}
                     </td>
                     <td className={`py-2 text-right tabular-nums ${colorMargen(t.margen_pct)}`}>{t.margen_pct}%</td>
-                    <td className="py-2"></td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">
+                      {fmtPesosCorto(data.unidades.reduce((a, u) => a + (u.equilibrio?.venta || 0), 0))}
+                    </td>
                   </tr>
                 </tbody>
               </table>
