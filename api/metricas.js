@@ -528,8 +528,11 @@ async function rentabilidadProducto(req, res) {
   const costoFabrica = llevaEstampa ? Math.round(fab.porUnidad) : 0;
   const costoDirecto = costoMerc == null ? null : costoMerc + costoFabrica;
 
-  // Estructura como % de la facturación del punto de venta elegido (cada local
-  // tiene su propia relación fijos/venta; online tiene sus propios costos).
+  // Estructura del punto de venta. OJO: se usa solo como REFERENCIA, no se resta del
+  // producto. Los fijos no cambian si vendés una prenda más o una menos; restarlos por
+  // producto genera el "death spiral": el producto parece perder plata, lo sacás, los
+  // fijos se reparten entre menos unidades y el siguiente producto parece perder, etc.
+  // La decisión correcta se toma sobre la CONTRIBUCIÓN (lo que deja para pagar fijos).
   const esOnline = localFiltro === "Tiendanube";
   const [ventasPorLocal, gastosMesRows] = await Promise.all([
     sql`SELECT local, ROUND(SUM(total))::bigint AS venta, SUM(cantidad)::int AS unidades
@@ -541,7 +544,7 @@ async function rentabilidadProducto(req, res) {
     .reduce((a, v) => a + Number(v.venta), 0);
   const compartidos = fijos["__compartidos__"]?.total || 0;
 
-  let estructuraPct = 0, estructuraDetalle = "";
+  let estructuraPct = 0, estructuraDetalle = "", estructuraUnidad = 0, unidadesPV = 0;
   if (esOnline) {
     // Online: publicidad, envíos, plan y packaging sobre su propia venta
     const gv = {};
@@ -551,6 +554,8 @@ async function rentabilidadProducto(req, res) {
       + (cfg.plan_tiendanube || 0) + (cfg.packaging_unidad || 0) * uOnline;
     const vOnline = ventaDe("Tiendanube");
     estructuraPct = vOnline > 0 ? costoOnline / vOnline : 0;
+    unidadesPV = uOnline;
+    estructuraUnidad = uOnline > 0 ? Math.round(costoOnline / uOnline) : 0;
     estructuraDetalle = "publicidad, envíos, plan y packaging";
   } else if (localFiltro) {
     // Un local puntual: sus fijos propios + su parte de los compartidos
@@ -558,6 +563,8 @@ async function rentabilidadProducto(req, res) {
     const vLocal = ventaDe(localFiltro);
     const suCompartido = ventaLocales > 0 ? compartidos * (vLocal / ventaLocales) : 0;
     estructuraPct = vLocal > 0 ? (propios + suCompartido) / vLocal : 0;
+    unidadesPV = ventasPorLocal.find(v => v.local === localFiltro)?.unidades || 0;
+    estructuraUnidad = unidadesPV > 0 ? Math.round((propios + suCompartido) / unidadesPV) : 0;
     estructuraDetalle = "alquiler, sueldos y compartidos del local";
   } else {
     // Todos los locales físicos juntos
@@ -565,6 +572,8 @@ async function rentabilidadProducto(req, res) {
       .filter(([k]) => !k.startsWith("__"))
       .reduce((a, [, v]) => a + v.total, 0) + compartidos;
     estructuraPct = ventaLocales > 0 ? fijosLocales / ventaLocales : 0;
+    unidadesPV = ventasPorLocal.filter(v => v.local !== "Tiendanube").reduce((a, v) => a + v.unidades, 0);
+    estructuraUnidad = unidadesPV > 0 ? Math.round(fijosLocales / unidadesPV) : 0;
     estructuraDetalle = "promedio de los locales físicos";
   }
 
@@ -592,17 +601,19 @@ async function rentabilidadProducto(req, res) {
     ingreso: precioLista * (1 - (e.desc ?? e.tasa ?? 0)),
   })).map(e => {
     const ingreso = Math.round(e.ingreso);
-    const contribucion = costoDirecto == null ? null : ingreso - costoDirecto;
     const impuestos = Math.round(ingreso * impuestoPct);
-    const estructura = Math.round(ingreso * estructuraPct);
-    const resultado = contribucion == null ? null : contribucion - impuestos - estructura;
+    // CONTRIBUCIÓN = lo que esta venta deja para pagar la estructura y generar ganancia.
+    // Es la métrica de decisión: mientras sea positiva, vender conviene.
+    const contribucion = costoDirecto == null ? null : ingreso - costoDirecto - impuestos;
+    // Referencia (no se resta como si fuera un costo del producto): lo que en promedio
+    // aporta cada prenda vendida en este punto de venta para cubrir sus fijos.
+    const excedente = contribucion == null ? null : contribucion - estructuraUnidad;
     return {
       ...e, ingreso,
       costo_financiero: Math.round(precioLista - ingreso),
-      contribucion, impuestos, estructura,
+      impuestos, contribucion,
       margen_contribucion: contribucion != null && ingreso > 0 ? Math.round(contribucion / ingreso * 1000) / 10 : null,
-      resultado,
-      margen_resultado: resultado != null && ingreso > 0 ? Math.round(resultado / ingreso * 1000) / 10 : null,
+      excedente,
     };
   });
 
@@ -620,8 +631,9 @@ async function rentabilidadProducto(req, res) {
     costo_directo: costoDirecto,
     local: localFiltro,
     estructura_pct: Math.round(estructuraPct * 1000) / 10,
-    // Monto que representa la estructura sobre el precio de lista (más claro que el %)
-    estructura_monto: Math.round(precioLista * estructuraPct),
+    // Referencia: lo que necesita aportar en promedio cada prenda de este punto de venta
+    estructura_unidad: estructuraUnidad,
+    unidades_punto_venta: unidadesPV,
     estructura_detalle: estructuraDetalle,
     impuesto_pct: Math.round(impuestoPct * 1000) / 10,
     impuesto_monto: Math.round(precioLista * impuestoPct),
