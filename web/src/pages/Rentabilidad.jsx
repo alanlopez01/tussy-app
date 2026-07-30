@@ -309,6 +309,108 @@ function Negocio() {
   );
 }
 
+// ── Tab: Gastos fijos por local (editables, versionados por mes) ──
+function Fijos() {
+  const [mes, setMes] = useState(hoyISO().slice(0, 7));
+  const [locales, setLocales] = useState(null);
+  const [cargando, setCargando] = useState(false);
+  const [edicion, setEdicion] = useState({});
+  const [guardado, setGuardado] = useState(null);
+
+  const cargar = useCallback(() => {
+    setCargando(true);
+    getJSON(`/api/metricas?action=gastosLocales&mes=${mes}`, 20000)
+      .then(d => { setLocales(d.locales); setEdicion({}); })
+      .catch(() => setLocales([]))
+      .finally(() => setCargando(false));
+  }, [mes]);
+
+  useEffect(() => { setLocales(null); cargar(); }, [cargar]);
+
+  const val = (l, campo) => {
+    const k = `${l.local}|${campo}`;
+    return edicion[k] !== undefined ? edicion[k] : l[campo];
+  };
+  const setVal = (local, campo, v) => setEdicion(e => ({ ...e, [`${local}|${campo}`]: v }));
+
+  const guardar = async (l) => {
+    const qs = new URLSearchParams({
+      action: "guardarGastoLocal", local: l.local, mes,
+      empleados: val(l, "empleados"), alquiler: val(l, "alquiler"), flete: val(l, "flete"),
+      libreria: val(l, "libreria"), bolsas: val(l, "bolsas"),
+    });
+    await getJSON(`/api/metricas?${qs}`, 15000);
+    setGuardado(l.local);
+    setTimeout(() => setGuardado(null), 2500);
+    cargar();
+  };
+
+  const meses = [];
+  for (let i = -1; i < 5; i++) {
+    const d = new Date(Date.UTC(2026, new Date().getUTCMonth() - i, 1));
+    meses.push(d.toISOString().slice(0, 7));
+  }
+  const nombreMes = m => new Date(m + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  const CAMPOS = [["empleados", "Empleados"], ["alquiler", "Alquiler"], ["flete", "Flete"], ["libreria", "Librería"], ["bolsas", "Bolsas"]];
+  const inp = "rounded-md border border-borde bg-surface-1 px-2 py-1 text-[12px] text-ink w-full tabular-nums";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <select value={mes} onChange={e => setMes(e.target.value)}
+                className="rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[12px] font-semibold text-ink-2 capitalize">
+          {meses.map(m => <option key={m} value={m}>{nombreMes(m)}</option>)}
+        </select>
+        <BotonActualizar onClick={cargar} cargando={cargando} />
+      </div>
+
+      <Card title={`Gastos fijos mensuales · vigencia desde ${nombreMes(mes)}`}>
+        <p className="text-[11px] text-ink-3 mb-4">
+          Al guardar, los valores rigen desde el mes elegido en adelante. Los meses anteriores conservan
+          los suyos, así el histórico no se altera.
+        </p>
+        {!locales ? <Spinner /> : (
+          <div className="space-y-4">
+            {locales.map(l => {
+              const total = CAMPOS.reduce((a, [c]) => a + (parseFloat(val(l, c)) || 0), 0);
+              const cambiado = CAMPOS.some(([c]) => edicion[`${l.local}|${c}`] !== undefined);
+              return (
+                <div key={l.local} className="border border-borde rounded-lg p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <div>
+                      <span className="text-[14px] font-bold text-ink">{l.local}</span>
+                      <span className="text-[11px] text-ink-3 ml-2">
+                        vigente desde {l.vigente_desde} · total {fmtPesos(total)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {guardado === l.local && <span className="text-[11px] text-ok font-semibold">Guardado ✓</span>}
+                      <button onClick={() => guardar(l)} disabled={!cambiado}
+                              className="rounded-md bg-negro text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {CAMPOS.map(([campo, label]) => (
+                      <label key={campo} className="block">
+                        <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">{label}</span>
+                        <input type="number" inputMode="numeric" className={inp}
+                               value={val(l, campo)}
+                               onChange={e => setVal(l.local, campo, e.target.value)} />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export default function Rentabilidad() {
   const [tab, setTab] = useState("negocio");
   return (
@@ -318,10 +420,12 @@ export default function Rentabilidad() {
           <h1 className="text-[20px] font-bold text-ink">Rentabilidad</h1>
           <p className="text-[12px] text-ink-3">Solo visible para vos (en construcción)</p>
         </div>
-        <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "margenes", label: "Productos" }, { value: "costos", label: "Costos" }]}
+        <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "margenes", label: "Productos" },
+                          { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" }]}
                valor={tab} onChange={setTab} />
       </header>
-      {tab === "negocio" ? <Negocio /> : tab === "margenes" ? <Margenes /> : <Costos />}
+      {tab === "negocio" ? <Negocio /> : tab === "margenes" ? <Margenes />
+        : tab === "costos" ? <Costos /> : <Fijos />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, NavLink, useLocation } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Ventas from "./pages/Ventas.jsx";
 import Productos from "./pages/Productos.jsx";
@@ -64,25 +64,62 @@ function Sidebar({ user }) {
   );
 }
 
-function TabBar({ user }) {
+// Mobile: barra superior con hamburguesa + panel deslizante
+function MenuMobile({ user }) {
+  const [abierto, setAbierto] = useState(false);
+  const location = useLocation();
+  const items = navPara(user);
+  const actual = items.find(i => i.to === location.pathname) || items[0];
+
+  // Cerrar al navegar y bloquear el scroll del fondo mientras está abierto
+  useEffect(() => { setAbierto(false); }, [location.pathname]);
+  useEffect(() => {
+    document.body.style.overflow = abierto ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [abierto]);
+
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-negro text-white flex justify-around pt-2 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))]">
-      {navPara(user).map(item => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === "/"}
-          className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[10px] font-semibold ${
-              isActive ? "text-white" : "text-white/50"
-            }`
-          }
-        >
-          <span className="text-lg leading-none">{item.icon}</span>
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
+    <>
+      <header className="md:hidden sticky top-0 z-40 bg-negro text-white flex items-center gap-3 px-4 py-3 pt-[max(12px,env(safe-area-inset-top))]">
+        <button onClick={() => setAbierto(true)} aria-label="Abrir menú"
+                className="flex flex-col justify-center gap-[5px] w-8 h-8 shrink-0">
+          <span className="block h-[2px] w-6 bg-white rounded-full" />
+          <span className="block h-[2px] w-6 bg-white rounded-full" />
+          <span className="block h-[2px] w-6 bg-white rounded-full" />
+        </button>
+        <img src="/logo.png" alt="Tussy" className="h-6 w-auto brightness-0 invert" />
+        <span className="text-[13px] font-semibold text-white/60 ml-auto">{actual?.label}</span>
+      </header>
+
+      {abierto && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <nav className="w-64 max-w-[80%] bg-negro text-white flex flex-col pt-[max(20px,env(safe-area-inset-top))]">
+            <div className="px-5 pb-6 flex items-center justify-between">
+              <img src="/logo.png" alt="Tussy" className="h-7 w-auto brightness-0 invert" />
+              <button onClick={() => setAbierto(false)} aria-label="Cerrar menú"
+                      className="text-white/60 text-2xl leading-none px-2">×</button>
+            </div>
+            <div className="flex-1 px-3 space-y-1 overflow-y-auto">
+              {items.map(item => (
+                <NavLink key={item.to} to={item.to} end={item.to === "/"}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold ${
+                      isActive ? "bg-white/10 text-white" : "text-white/55"
+                    }`}>
+                  <span className="text-base w-5 text-center">{item.icon}</span>
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+            <div className="px-5 py-5 pb-[max(20px,env(safe-area-inset-bottom))] flex items-center justify-between border-t border-white/10">
+              <span className="text-[12px] text-white/50 font-semibold">{user.nombre}</span>
+              <button onClick={cerrarSesion} className="text-[12px] text-white/40 font-semibold">Salir</button>
+            </div>
+          </nav>
+          <button className="flex-1 bg-black/50" onClick={() => setAbierto(false)} aria-label="Cerrar menú" />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -96,9 +133,10 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen">
+      <div className="md:flex min-h-screen">
         <Sidebar user={user} />
-        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-24 md:pb-8 max-w-[1200px]">
+        <MenuMobile user={user} />
+        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 md:py-6 max-w-[1200px]">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/ventas" element={<Ventas />} />
@@ -108,7 +146,6 @@ export default function App() {
             {user.rol === "admin" && <Route path="/rentabilidad" element={<Rentabilidad />} />}
           </Routes>
         </main>
-        <TabBar user={user} />
       </div>
     </BrowserRouter>
   );

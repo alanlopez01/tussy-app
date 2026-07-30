@@ -325,7 +325,8 @@ async function rentabilidadProductos(req, res) {
            SUM(v.cantidad)::int AS unidades,
            ROUND(SUM(v.total))::bigint AS venta,
            ROUND(SUM(CASE WHEN c.costo IS NOT NULL THEN v.cantidad * c.costo ELSE 0 END))::bigint AS costo_total,
-           SUM(CASE WHEN c.costo IS NULL THEN v.cantidad ELSE 0 END)::int AS unidades_sin_costo
+           SUM(CASE WHEN c.costo IS NULL THEN v.cantidad ELSE 0 END)::int AS unidades_sin_costo,
+           ROUND(MAX(c.costo))::bigint AS costo_unitario
     FROM ventas v
     LEFT JOIN LATERAL (
       SELECT costo FROM costos_producto cp
@@ -343,6 +344,8 @@ async function rentabilidadProductos(req, res) {
     const completo = r.unidades_sin_costo === 0;
     return {
       producto: r.producto, unidades: r.unidades, venta,
+      costo_unitario: r.costo_unitario == null ? null : Number(r.costo_unitario),
+      precio_promedio: r.unidades > 0 ? Math.round(venta / r.unidades) : null,
       costo: completo ? costo : null,
       margen: completo ? venta - costo : null,
       margen_pct: completo && venta > 0 ? Math.round(((venta - costo) / venta) * 1000) / 10 : null,
@@ -359,6 +362,39 @@ async function rentabilidadProductos(req, res) {
       modelos_sin_costo: modelos.length - conCosto.length,
     },
   });
+}
+
+// ── Gastos fijos por local: listar y editar desde la app ──
+async function gastosLocales(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const mes = req.query.mes || hoyArg().slice(0, 7);
+  const rows = await sql`
+    SELECT DISTINCT ON (local) local, vigente_desde, empleados, alquiler, flete, libreria, bolsas
+    FROM gastos_local WHERE vigente_desde <= ${mes}
+    ORDER BY local, vigente_desde DESC`;
+  return res.status(200).json({
+    mes,
+    locales: rows.map(r => ({
+      local: r.local, vigente_desde: r.vigente_desde,
+      empleados: Number(r.empleados), alquiler: Number(r.alquiler), flete: Number(r.flete),
+      libreria: Number(r.libreria), bolsas: Number(r.bolsas),
+      total: Number(r.empleados) + Number(r.alquiler) + Number(r.flete) + Number(r.libreria) + Number(r.bolsas),
+    })),
+  });
+}
+
+async function guardarGastoLocal(req, res) {
+  const { local, mes } = req.query;
+  if (!local || !mes) return res.status(400).json({ error: "Faltan local/mes" });
+  const n = k => { const v = parseFloat(req.query[k]); return isNaN(v) ? 0 : v; };
+  const sql = neon(process.env.DATABASE_URL);
+  await sql`
+    INSERT INTO gastos_local (local, vigente_desde, empleados, alquiler, flete, libreria, bolsas)
+    VALUES (${local}, ${mes}, ${n("empleados")}, ${n("alquiler")}, ${n("flete")}, ${n("libreria")}, ${n("bolsas")})
+    ON CONFLICT (local, vigente_desde) DO UPDATE SET
+      empleados = EXCLUDED.empleados, alquiler = EXCLUDED.alquiler, flete = EXCLUDED.flete,
+      libreria = EXCLUDED.libreria, bolsas = EXCLUDED.bolsas, actualizado_en = now()`;
+  return res.status(200).json({ ok: true, local, mes });
 }
 
 // ── Rentabilidad por unidad de negocio (mes cerrado o en curso) ──
@@ -562,6 +598,8 @@ module.exports = async function handler(req, res) {
     if (action === "guardarCosto") return await guardarCosto(req, res);
     if (action === "rentabilidadProductos") return await rentabilidadProductos(req, res);
     if (action === "rentabilidadNegocio") return await rentabilidadNegocio(req, res);
+    if (action === "gastosLocales") return await gastosLocales(req, res);
+    if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
 
     if (!process.env.DATABASE_URL) {
       return res.status(503).json({ error: "DATABASE_URL no configurada" });

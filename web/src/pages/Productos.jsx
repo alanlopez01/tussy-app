@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getTopProductos, getCategorias, getVariantes, rangoDe, fmtPesosCorto, LOCALES } from "../lib/api.js";
+import { getTopProductos, getCategorias, getVariantes, rangoDe, fmtPesos, fmtPesosCorto, LOCALES } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar, BarraH, Paginacion } from "../components/ui.jsx";
 
 const POR_PAGINA = 10;
@@ -30,7 +30,8 @@ export default function Productos() {
     setCargando(true);
     setError(null);
     Promise.allSettled([
-      getTopProductos(desde, hasta, { local: dbLocal, orden, limite: 50 }).then(d => setTop(d.productos)),
+      getTopProductos(desde, hasta, { local: dbLocal, orden, limite: 50 })
+        .then(d => setTop(d.productos.map(p => ({ ...p, precio_promedio: p.unidades > 0 ? Math.round(p.venta / p.unidades) : 0 })))),
       getCategorias(desde, hasta, dbLocal).then(d => setCats(d.categorias)),
       getVariantes(desde, hasta, dbLocal).then(d => setVars(d)),
     ]).then(rs => {
@@ -95,6 +96,11 @@ export default function Productos() {
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-medium text-ink truncate">{p.producto}</div>
+                      <div className="text-[10px] text-ink-3 tabular-nums">
+                        {p.costo_unitario != null
+                          ? `costo ${fmtPesos(p.costo_unitario)} · precio prom. ${fmtPesos(p.precio_promedio)}`
+                          : `precio prom. ${fmtPesos(p.precio_promedio)} · sin costo cargado`}
+                      </div>
                       <div className="mt-1 h-[5px] rounded-[3px] bg-surface overflow-hidden">
                         <div className="h-full rounded-[3px] bg-negro" style={{ width: `${(p[orden] / maxTop) * 100}%` }} />
                       </div>
