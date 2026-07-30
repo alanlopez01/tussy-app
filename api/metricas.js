@@ -429,6 +429,11 @@ async function inventario(req, res) {
   if (!ultima?.fecha) return res.status(200).json({ sin_datos: true });
   const fechaStock = ultima.fecha;
 
+  // Las ventas se limitan a los locales que tienen inventario cargado: comparar
+  // ventas de seis locales contra el stock de cuatro infla la rotación y el GMROI.
+  const conStockRows = await sql`SELECT DISTINCT local FROM stock WHERE fecha = ${fechaStock}`;
+  const localesConStock = conStockRows.map(r => r.local);
+
   const rows = await sql`
     WITH s AS (
       SELECT producto_norm, SUM(cantidad) AS unidades,
@@ -450,6 +455,7 @@ async function inventario(req, res) {
         ORDER BY cp.vigente_desde DESC LIMIT 1) c ON true
       WHERE ve.fecha >= ${fechaStock}::date - ${dias}::int
         AND ve.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
+        AND ve.local = ANY(${localesConStock}::text[])
         AND (${localFiltro}::text IS NULL OR ve.local = ${localFiltro})
       GROUP BY ve.producto_norm
     )
@@ -486,7 +492,9 @@ async function inventario(req, res) {
   });
 
   const conStock = modelos.filter(m => m.stock > 0);
-  const muertos = conStock.filter(m => m.sin_movimiento || (m.dias_inventario != null && m.dias_inventario > 180));
+  // Dos problemas distintos: lo que no se vendió nunca, y lo que se vende muy lento
+  const sinVentas = conStock.filter(m => m.sin_movimiento);
+  const lentos = conStock.filter(m => !m.sin_movimiento && m.dias_inventario != null && m.dias_inventario > 180);
   const capitalTotal = conStock.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0);
   const margenTotal = modelos.reduce((a, m) => a + m.margen, 0);
 
@@ -502,9 +510,12 @@ async function inventario(req, res) {
       rotacion: capitalTotal > 0
         ? Math.round(modelos.reduce((a, m) => a + m.vendidas, 0) / conStock.reduce((a, m) => a + m.stock, 0) * factorAnual * 10) / 10
         : null,
-      capital_muerto: muertos.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
-      modelos_muertos: muertos.length,
+      capital_sin_ventas: sinVentas.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
+      modelos_sin_ventas: sinVentas.length,
+      capital_lento: lentos.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
+      modelos_lentos: lentos.length,
     },
+    locales_con_stock: localesConStock,
     modelos: modelos.sort((a, b) => (b.capital_inmovilizado || 0) - (a.capital_inmovilizado || 0)),
     fuentes: estados,
     locales_sin_stock: LOCALES_SIN_STOCK,
