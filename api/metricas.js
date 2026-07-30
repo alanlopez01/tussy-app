@@ -371,13 +371,17 @@ async function rentabilidadNegocio(req, res) {
   const hasta = `${mes}-${String(ultimo).padStart(2, "0")}`;
   const sql = neon(process.env.DATABASE_URL);
 
-  // Venta y costo de mercadería por local (costo vigente a la fecha de cada venta)
+  // Venta y costo de mercadería por local (costo vigente a la fecha de cada venta).
+  // La VENTA suma todas las líneas —incluidas ENVIO/DESCUENTO/AJUSTE, que son parte
+  // de lo que efectivamente pagó el cliente—; las unidades y la mercadería cuentan
+  // solo productos reales.
+  const ES_PRODUCTO = sql`v.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')`;
   const ventas = await sql`
     SELECT v.local,
            ROUND(SUM(v.total))::bigint AS venta,
-           SUM(v.cantidad)::int AS unidades,
-           ROUND(SUM(CASE WHEN c.costo IS NOT NULL THEN v.cantidad * c.costo ELSE 0 END))::bigint AS mercaderia,
-           SUM(CASE WHEN c.costo IS NULL THEN v.cantidad ELSE 0 END)::int AS unidades_sin_costo
+           SUM(CASE WHEN ${ES_PRODUCTO} THEN v.cantidad ELSE 0 END)::int AS unidades,
+           ROUND(SUM(CASE WHEN ${ES_PRODUCTO} AND c.costo IS NOT NULL THEN v.cantidad * c.costo ELSE 0 END))::bigint AS mercaderia,
+           SUM(CASE WHEN ${ES_PRODUCTO} AND c.costo IS NULL THEN v.cantidad ELSE 0 END)::int AS unidades_sin_costo
     FROM ventas v
     LEFT JOIN LATERAL (
       SELECT costo FROM costos_producto cp
@@ -385,7 +389,6 @@ async function rentabilidadNegocio(req, res) {
       ORDER BY cp.vigente_desde DESC LIMIT 1
     ) c ON true
     WHERE v.fecha BETWEEN ${desde} AND ${hasta}
-      AND v.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
     GROUP BY v.local`;
 
   const [mixPagos, gastos, cfgRows] = await Promise.all([
