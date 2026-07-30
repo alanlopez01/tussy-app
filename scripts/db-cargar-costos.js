@@ -26,6 +26,7 @@ const PROD = {
   POLO: 8355.865, POLO_MUJER: 7287.97, CAMISA: 8164.53, CHOMBA: 9315.71,
   JEAN: 28000, SWEATER: 40000, BOXER: 3000, PIN: 2500, LLAVERO: 3500,
   MEDIAS: 2650, REMERA_MUJER: 4250, PACK_REMERA: 15864.74,
+  GORRA: 8500, PERFUMINA: 5200, TOTE_BAG: 3500, PANUELO: 3500,
   BUZO_KAYNE: 17684.8, BUZO_ICE_PEARLS: 17684.8,
   PANTALON_LOTUS: 23750, CAMPERA_LOTUS: 23750,
   CAMPERA_PROM: 17765.783333333333, // promedio camperas (planilla fila 67)
@@ -55,6 +56,13 @@ const REGLAS = [
   { test: n => n.includes("REMERA") && n.includes("MUJER"), prod: PROD.REMERA_MUJER, familia: "Remera Mujer" },
   { test: n => n.includes("POLO") && n.includes("MUJER"), prod: PROD.POLO_MUJER, familia: "Polo Mujer" },
   { test: n => n.includes("PACK") && n.includes("REMERA"), prod: PROD.PACK_REMERA, estampa: 0, familia: "Pack Remera x2" },
+  // Accesorios: costo ya final, la estampa/bordado está incluida
+  { test: n => n.includes("GORRA") || n.includes("PILUSO"), prod: PROD.GORRA, estampa: 0, familia: "Gorra / Piluso" },
+  { test: n => n.includes("PERFUMINA"), prod: PROD.PERFUMINA, estampa: 0, familia: "Perfumina" },
+  { test: n => n.includes("TOTE"), prod: PROD.TOTE_BAG, estampa: 0, familia: "Tote Bag" },
+  { test: n => n.includes("PANUELO") || n.includes("PAÑUELO"), prod: PROD.PANUELO, estampa: 0, familia: "Pañuelo" },
+  // "BASIC SHIRT" = remera lisa, sin estampa
+  { test: n => n.includes("BASIC") && n.includes("SHIRT"), prod: PROD.REMERA, estampa: 0, familia: "Remera lisa (Basic Shirt)" },
 ];
 
 // Categorías generales (orden de la planilla: la primera que matchea gana)

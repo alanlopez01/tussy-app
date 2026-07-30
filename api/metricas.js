@@ -281,7 +281,7 @@ async function modelosCostos(req, res) {
     WITH vendidos AS (
       SELECT producto_norm, SUM(cantidad)::int AS unidades_90d
       FROM ventas
-      WHERE fecha >= CURRENT_DATE - 90 AND producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')
+      WHERE fecha >= CURRENT_DATE - 90 AND producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
         AND producto_norm IS NOT NULL
       GROUP BY producto_norm
     )
@@ -333,7 +333,7 @@ async function rentabilidadProductos(req, res) {
       ORDER BY cp.vigente_desde DESC LIMIT 1
     ) c ON true
     WHERE v.fecha BETWEEN ${desde} AND ${hasta}
-      AND v.producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')
+      AND v.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
       AND v.producto_norm IS NOT NULL
       AND (${localFiltro}::text IS NULL OR v.local = ${localFiltro})
     GROUP BY v.producto_norm
