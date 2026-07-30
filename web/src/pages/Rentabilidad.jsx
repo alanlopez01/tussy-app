@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getJSON, rangoDe, hoyISO, fmtPesos, fmtPesosCorto } from "../lib/api.js";
+import { getJSON, rangoDe, hoyISO, fmtPesos, fmtPesosCorto, LOCALES } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar, StatTile, Paginacion } from "../components/ui.jsx";
 
 const PERIODOS = [
@@ -20,12 +20,14 @@ function colorMargen(pct) {
 // ── Detalle de un producto: cuánto deja según cómo lo paguen ──
 function DetalleProducto({ producto, mes, onCerrar }) {
   const [d, setD] = useState(null);
+  const [local, setLocal] = useState("");
 
   useEffect(() => {
     setD(null);
-    getJSON(`/api/metricas?action=rentabilidadProducto&producto=${encodeURIComponent(producto)}&mes=${mes}`, 25000)
+    const l = local ? `&local=${encodeURIComponent(local)}` : "";
+    getJSON(`/api/metricas?action=rentabilidadProducto&producto=${encodeURIComponent(producto)}&mes=${mes}${l}`, 25000)
       .then(setD).catch(() => setD({ error: true }));
-  }, [producto, mes]);
+  }, [producto, mes, local]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
@@ -39,16 +41,29 @@ function DetalleProducto({ producto, mes, onCerrar }) {
           <button onClick={onCerrar} className="text-ink-3 text-2xl leading-none px-1">×</button>
         </div>
 
+        {/* Punto de venta: cada local tiene su propia estructura y formas de cobro */}
+        <div className="mb-4">
+          <Chips
+            opciones={[{ value: "", label: "Todos los locales" },
+                       ...LOCALES.map(l => ({ value: l.db, label: l.nombre, color: l.color }))]}
+            valor={local}
+            onChange={setLocal}
+          />
+        </div>
+
         {!d ? <Spinner /> : d.error || d.sin_datos ? (
-          <p className="text-[13px] text-ink-3 py-8 text-center">Sin ventas de este modelo en el mes.</p>
+          <p className="text-[13px] text-ink-3 py-8 text-center">
+            Sin ventas de este modelo{local ? ` en ${local}` : ""} en el mes.
+          </p>
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
               {[["Precio de lista", fmtPesos(d.precio_lista),
                  d.descuento_efectivo_pct > 0 ? `real ${fmtPesos(d.precio_promedio)} (−${d.descuento_efectivo_pct}%)` : null],
                 ["Costo mercadería", d.costo_mercaderia != null ? fmtPesos(d.costo_mercaderia) : "—", null],
-                ["Fábrica / unidad", fmtPesos(d.costo_fabrica), null],
-                ["Estructura local", `${d.estructura_pct}% s/venta`, null]].map(([l, v, extra]) => (
+                ["Fábrica / unidad", d.lleva_estampa ? fmtPesos(d.costo_fabrica) : "—",
+                 d.lleva_estampa ? null : "no lleva estampa"],
+                ["Estructura", `${d.estructura_pct}% s/venta`, d.estructura_detalle]].map(([l, v, extra]) => (
                 <div key={l} className="bg-surface rounded-md px-3 py-2">
                   <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3">{l}</div>
                   <div className="text-[14px] font-bold text-ink tabular-nums">{v}</div>
@@ -391,11 +406,10 @@ function Negocio() {
             <div className="sm:hidden space-y-3">
               {data.unidades.map(u => {
                 const filas = [
-                  ["Mercadería", -u.mercaderia],
+                  ["Mercadería (incl. fábrica)", -u.mercaderia],
                   ["Costo financiero", -u.financiero],
                   ...((u.publicidad + u.envios) > 0 ? [["Publicidad y envíos", -(u.publicidad + u.envios)]] : []),
                   ["Fijos", -u.fijos],
-                  ["Fábrica", -u.fabrica],
                   ["Impuestos", -(u.impuestos || 0)],
                 ];
                 return (
@@ -452,11 +466,10 @@ function Negocio() {
                   <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
                     <th className="text-left py-2 font-semibold">Unidad</th>
                     <th className="text-right py-2 font-semibold">Venta</th>
-                    <th className="text-right py-2 font-semibold">Mercadería</th>
+                    <th className="text-right py-2 font-semibold">Mercadería*</th>
                     <th className="text-right py-2 font-semibold">Financiero</th>
                     <th className="text-right py-2 font-semibold">Publi+envíos</th>
                     <th className="text-right py-2 font-semibold">Fijos</th>
-                    <th className="text-right py-2 font-semibold">Fábrica</th>
                     <th className="text-right py-2 font-semibold">Impuestos</th>
                     <th className="text-right py-2 font-semibold">Resultado</th>
                     <th className="text-right py-2 font-semibold">%</th>
@@ -485,7 +498,6 @@ function Negocio() {
                         {(u.publicidad + u.envios) > 0 ? `−${fmtPesosCorto(u.publicidad + u.envios)}` : "—"}
                       </td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fijos)}</td>
-                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fabrica)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-3" title={u.detalle_impuestos
                         ? `IIBB ${fmtPesos(u.detalle_impuestos.iibb)} · IVA ${fmtPesos(u.detalle_impuestos.iva)} · cargas ${fmtPesos(u.detalle_impuestos.cargas_sociales)}`
                         : ""}>
@@ -506,7 +518,6 @@ function Negocio() {
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.financiero)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.publicidad + t.envios)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fijos)}</td>
-                    <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fabrica)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.impuestos || 0)}</td>
                     <td className={`py-2 text-right tabular-nums ${t.resultado >= 0 ? "text-ok" : "text-bad"}`}>
                       {fmtPesosCorto(t.resultado)}
@@ -518,10 +529,11 @@ function Negocio() {
             </div>
             {t.detalle_impuestos && (
               <p className="text-[11px] text-ink-3 mt-3">
-                Impuestos del mes: IIBB {fmtPesosCorto(t.detalle_impuestos.iibb)} ·
+                *Mercadería incluye la fábrica de estampado ({fmtPesosCorto(t.fabrica_en_mercaderia || 0)}),
+                repartida por prenda estampada: es costo de producción, no del local.
+                Impuestos: IIBB {fmtPesosCorto(t.detalle_impuestos.iibb)} ·
                 IVA neto {fmtPesosCorto(t.detalle_impuestos.iva)} ·
                 cargas sociales {fmtPesosCorto(t.detalle_impuestos.cargas_sociales)}.
-                Fábrica prorrateada por participación en la venta.
               </p>
             )}
           </Card>

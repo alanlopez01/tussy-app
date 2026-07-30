@@ -451,15 +451,23 @@ async function guardarGastoLocal(req, res) {
   return res.status(200).json({ ok: true, local, mes, conceptos: Object.keys(parsed).length });
 }
 
-// ── Costo de fábrica por unidad de un mes (fijo mensual ÷ unidades vendidas) ──
+// ── Costo de fábrica por prenda ESTAMPADA de un mes ──
+// La fábrica de estampado es un costo de producción, no de estructura del local:
+// se reparte por unidad producida y solo entre las prendas que pasan por ella
+// (los accesorios de reventa —pins, gorras, llaveros— no llevan estampa).
 async function fabricaPorUnidad(sql, mes) {
   const desde = `${mes}-01`;
   const [y, m] = mes.split("-").map(Number);
   const hasta = `${mes}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
   const [[u], fijos] = await Promise.all([
-    sql`SELECT SUM(cantidad)::int AS unidades FROM ventas
-        WHERE fecha BETWEEN ${desde} AND ${hasta}
-          AND producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')`,
+    sql`SELECT SUM(CASE WHEN cp.estampa > 0 THEN v.cantidad ELSE 0 END)::int AS unidades
+        FROM ventas v
+        LEFT JOIN LATERAL (
+          SELECT estampa FROM costos_producto c
+          WHERE c.producto = v.producto_norm AND c.vigente_desde <= v.fecha
+          ORDER BY c.vigente_desde DESC LIMIT 1) cp ON true
+        WHERE v.fecha BETWEEN ${desde} AND ${hasta}
+          AND v.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')`,
     leerGastosFijos(sql, mes),
   ]);
   const fabricaMes = fijos["__fabrica__"]?.total || 0;
@@ -479,12 +487,14 @@ async function rentabilidadProducto(req, res) {
   const hasta = `${mes}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
   const sql = neon(process.env.DATABASE_URL);
 
+  const localFiltro = req.query.local || null;
   const [datos, cfgRows, fab, fijos] = await Promise.all([
     // El precio de lista es el precio al que más unidades se vendieron (moda), no el
     // promedio: el promedio lo arrastran hacia abajo las ventas con descuento y los canjes.
     sql`WITH v AS (
           SELECT * FROM ventas
           WHERE fecha BETWEEN ${desde} AND ${hasta} AND producto_norm = ${producto}
+            AND (${localFiltro}::text IS NULL OR local = ${localFiltro})
         ),
         moda AS (
           SELECT precio_unit FROM v WHERE precio_unit > 0
@@ -494,10 +504,11 @@ async function rentabilidadProducto(req, res) {
                (SELECT ROUND(precio_unit)::bigint FROM moda) AS precio_lista,
                ROUND(SUM(v.precio_unit * v.cantidad) / NULLIF(SUM(v.cantidad),0))::bigint AS precio_promedio,
                ROUND(SUM(v.total) / NULLIF(SUM(v.cantidad),0))::bigint AS precio_cobrado,
-               ROUND(MAX(c.costo))::bigint AS costo
+               ROUND(MAX(c.costo))::bigint AS costo,
+               MAX(c.estampa)::numeric AS estampa
         FROM v
         LEFT JOIN LATERAL (
-          SELECT costo FROM costos_producto cp
+          SELECT costo, estampa FROM costos_producto cp
           WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
           ORDER BY cp.vigente_desde DESC LIMIT 1) c ON true`,
     sql`SELECT clave, valor FROM config_negocio`,
@@ -512,28 +523,72 @@ async function rentabilidadProducto(req, res) {
   const precioLista = Number(d.precio_lista || d.precio_promedio);
   const precioPromedio = Number(d.precio_promedio);
   const costoMerc = d.costo == null ? null : Number(d.costo);
-  const costoFabrica = Math.round(fab.porUnidad);
+  // La fábrica solo pesa sobre las prendas que pasan por ella
+  const llevaEstampa = Number(d.estampa || 0) > 0;
+  const costoFabrica = llevaEstampa ? Math.round(fab.porUnidad) : 0;
   const costoDirecto = costoMerc == null ? null : costoMerc + costoFabrica;
 
-  // Estructura de locales como % de la facturación (no por unidad: repartir un monto
-  // fijo por prenda castiga a los accesorios baratos y premia a los caros).
-  const [locV] = await sql`
-    SELECT ROUND(SUM(total))::bigint AS venta FROM ventas
-    WHERE fecha BETWEEN ${desde} AND ${hasta} AND local != 'Tiendanube'`;
-  const fijosLocales = Object.entries(fijos)
-    .filter(([k]) => !k.startsWith("__"))
-    .reduce((a, [, v]) => a + v.total, 0) + (fijos["__compartidos__"]?.total || 0);
-  const ventaLocales = Number(locV?.venta || 0);
-  const estructuraPct = ventaLocales > 0 ? fijosLocales / ventaLocales : 0;
+  // Estructura como % de la facturación del punto de venta elegido (cada local
+  // tiene su propia relación fijos/venta; online tiene sus propios costos).
+  const esOnline = localFiltro === "Tiendanube";
+  const [ventasPorLocal, gastosMesRows] = await Promise.all([
+    sql`SELECT local, ROUND(SUM(total))::bigint AS venta, SUM(cantidad)::int AS unidades
+        FROM ventas WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY local`,
+    sql`SELECT local, concepto, monto FROM gastos_mes WHERE mes = ${mes}`,
+  ]);
+  const ventaDe = l => Number(ventasPorLocal.find(v => v.local === l)?.venta || 0);
+  const ventaLocales = ventasPorLocal.filter(v => v.local !== "Tiendanube")
+    .reduce((a, v) => a + Number(v.venta), 0);
+  const compartidos = fijos["__compartidos__"]?.total || 0;
 
-  const escenarios = [
-    { key: "efectivo", label: "Efectivo (15% desc.)", ingreso: precioLista * (1 - (cfg.efectivo_desc ?? 0.15)), tasa: null },
-    { key: "debito",   label: "Débito",              ingreso: precioLista * (1 - (cfg.tasa_debito ?? 0)),      tasa: cfg.tasa_debito },
-    { key: "credito1", label: "Crédito 1 cuota",     ingreso: precioLista * (1 - (cfg.tasa_credito_1 ?? 0)),   tasa: cfg.tasa_credito_1 },
-    { key: "credito2", label: "Crédito 2 cuotas",    ingreso: precioLista * (1 - (cfg.tasa_credito_2 ?? 0)),   tasa: cfg.tasa_credito_2 },
-    { key: "credito3", label: "Crédito 3 cuotas",    ingreso: precioLista * (1 - (cfg.tasa_credito_3 ?? 0)),   tasa: cfg.tasa_credito_3 },
-    { key: "credito6", label: "Crédito 6 cuotas",    ingreso: precioLista * (1 - (cfg.tasa_credito_6 ?? 0)),   tasa: cfg.tasa_credito_6 },
-  ].map(e => {
+  let estructuraPct = 0, estructuraDetalle = "";
+  if (esOnline) {
+    // Online: publicidad, envíos, plan y packaging sobre su propia venta
+    const gv = {};
+    for (const g of gastosMesRows) if (g.local === "Tiendanube") gv[g.concepto] = Number(g.monto);
+    const uOnline = ventasPorLocal.find(v => v.local === "Tiendanube")?.unidades || 0;
+    const costoOnline = (gv.publicidad || 0) + (gv.envios || 0)
+      + (cfg.plan_tiendanube || 0) + (cfg.packaging_unidad || 0) * uOnline;
+    const vOnline = ventaDe("Tiendanube");
+    estructuraPct = vOnline > 0 ? costoOnline / vOnline : 0;
+    estructuraDetalle = "publicidad, envíos, plan y packaging";
+  } else if (localFiltro) {
+    // Un local puntual: sus fijos propios + su parte de los compartidos
+    const propios = fijos[localFiltro]?.total || 0;
+    const vLocal = ventaDe(localFiltro);
+    const suCompartido = ventaLocales > 0 ? compartidos * (vLocal / ventaLocales) : 0;
+    estructuraPct = vLocal > 0 ? (propios + suCompartido) / vLocal : 0;
+    estructuraDetalle = "alquiler, sueldos y compartidos del local";
+  } else {
+    // Todos los locales físicos juntos
+    const fijosLocales = Object.entries(fijos)
+      .filter(([k]) => !k.startsWith("__"))
+      .reduce((a, [, v]) => a + v.total, 0) + compartidos;
+    estructuraPct = ventaLocales > 0 ? fijosLocales / ventaLocales : 0;
+    estructuraDetalle = "promedio de los locales físicos";
+  }
+
+  // Online no cobra en efectivo: su descuento equivalente es el 10% por transferencia
+  const escenariosBase = esOnline
+    ? [
+        { key: "transferencia", label: "Transferencia (10% desc.)", tasa: null, desc: 0.10 },
+        { key: "credito1", label: "PagoNube 1 pago",  tasa: cfg.tn_costo_pct ?? 0.064009 },
+        { key: "credito3", label: "PagoNube 3 cuotas", tasa: 0.132132 },
+        { key: "credito6", label: "PagoNube 6 cuotas", tasa: 0.19481 },
+      ]
+    : [
+        { key: "efectivo", label: "Efectivo (15% desc.)", tasa: null, desc: cfg.efectivo_desc ?? 0.15 },
+        { key: "debito",   label: "Débito",               tasa: cfg.tasa_debito },
+        { key: "credito1", label: "Crédito 1 cuota",      tasa: cfg.tasa_credito_1 },
+        { key: "credito2", label: "Crédito 2 cuotas",     tasa: cfg.tasa_credito_2 },
+        { key: "credito3", label: "Crédito 3 cuotas",     tasa: cfg.tasa_credito_3 },
+        { key: "credito6", label: "Crédito 6 cuotas",     tasa: cfg.tasa_credito_6 },
+      ];
+
+  const escenarios = escenariosBase.map(e => ({
+    ...e,
+    ingreso: precioLista * (1 - (e.desc ?? e.tasa ?? 0)),
+  })).map(e => {
     const ingreso = Math.round(e.ingreso);
     const contribucion = costoDirecto == null ? null : ingreso - costoDirecto;
     const estructura = Math.round(ingreso * estructuraPct);
@@ -558,14 +613,19 @@ async function rentabilidadProducto(req, res) {
     precio_cobrado_promedio: Number(d.precio_cobrado),
     costo_mercaderia: costoMerc,
     costo_fabrica: costoFabrica,
+    lleva_estampa: llevaEstampa,
     costo_directo: costoDirecto,
+    local: localFiltro,
     estructura_pct: Math.round(estructuraPct * 1000) / 10,
+    estructura_detalle: estructuraDetalle,
     escenarios,
   });
 }
 
 // ── Rentabilidad por unidad de negocio (mes cerrado o en curso) ──
-// Cascada por local: venta − mercadería − costo financiero − fijos − fábrica prorrateada
+// Cascada por local: venta − mercadería (incluye fábrica) − financiero − fijos − impuestos.
+// La fábrica de estampado es costo de producción: viaja dentro de la mercadería, por
+// unidad estampada, no como un gasto de estructura del local.
 async function rentabilidadNegocio(req, res) {
   const mes = req.query.mes || hoyArg().slice(0, 7);
   const desde = `${mes}-01`;
@@ -583,16 +643,19 @@ async function rentabilidadNegocio(req, res) {
     SELECT v.local,
            ROUND(SUM(v.total))::bigint AS venta,
            SUM(CASE WHEN ${ES_PRODUCTO} THEN v.cantidad ELSE 0 END)::int AS unidades,
+           SUM(CASE WHEN ${ES_PRODUCTO} AND c.estampa > 0 THEN v.cantidad ELSE 0 END)::int AS unidades_estampadas,
            ROUND(SUM(CASE WHEN ${ES_PRODUCTO} AND c.costo IS NOT NULL THEN v.cantidad * c.costo ELSE 0 END))::bigint AS mercaderia,
            SUM(CASE WHEN ${ES_PRODUCTO} AND c.costo IS NULL THEN v.cantidad ELSE 0 END)::int AS unidades_sin_costo
     FROM ventas v
     LEFT JOIN LATERAL (
-      SELECT costo FROM costos_producto cp
+      SELECT costo, estampa FROM costos_producto cp
       WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
       ORDER BY cp.vigente_desde DESC LIMIT 1
     ) c ON true
     WHERE v.fecha BETWEEN ${desde} AND ${hasta}
     GROUP BY v.local`;
+  // Fábrica por prenda estampada del mes: entra en la mercadería de cada unidad
+  const totalEstampadas = ventas.reduce((a, v) => a + (v.unidades_estampadas || 0), 0);
 
   const [mixPagos, fijos, cfgRows, gastosMes, impuestosRows] = await Promise.all([
     sql`SELECT local, bruto, neto, costo_pct, mix FROM mix_pagos WHERE mes = ${mes}`,
@@ -640,12 +703,15 @@ async function rentabilidadNegocio(req, res) {
   const cargasMes = impuestosReales.cargas_sociales != null
     ? impuestosReales.cargas_sociales
     : baseCargasTotal * (cfg.cargas_pct || 0);
-  const cargasFabrica = 0; // la fábrica no tiene F931: el monto informado ya es final
+
+  const fabricaPorPrenda = totalEstampadas > 0 ? fabricaMesReal / totalEstampadas : 0;
 
   const unidades = ventas.map(v => {
     const local = v.local;
     const venta = Number(v.venta);
-    const mercaderia = Number(v.mercaderia);
+    // La fábrica va dentro de la mercadería, repartida por prenda estampada
+    const fabricaEnMercaderia = Math.round(fabricaPorPrenda * (v.unidades_estampadas || 0));
+    const mercaderia = Number(v.mercaderia) + fabricaEnMercaderia;
     const esWeb = local === "Tiendanube";
 
     // Costo financiero
@@ -686,9 +752,7 @@ async function rentabilidadNegocio(req, res) {
     const publicidad = gv.publicidad || 0;
     const envios = gv.envios || 0;
 
-    // Fábrica prorrateada por participación en la venta del mes (incluye sus cargas sociales)
     const share = ventaTotal > 0 ? venta / ventaTotal : 0;
-    const fabrica = Math.round((fabricaMesReal + cargasFabrica) * share);
 
     // Impuestos de esta unidad
     const iibb = Math.round(venta * iibbPct);
@@ -702,16 +766,17 @@ async function rentabilidadNegocio(req, res) {
 
     const margenBruto = venta - mercaderia;
     const contribucion = margenBruto - financiero - publicidad - envios;
-    const resultado = contribucion - fijosLocal - extrasWeb - fabrica - impuestos;
+    const resultado = contribucion - fijosLocal - extrasWeb - impuestos;
 
     return {
       local, venta, unidades: v.unidades, unidades_sin_costo: v.unidades_sin_costo,
-      mercaderia, margen_bruto: margenBruto,
+      mercaderia, fabrica_en_mercaderia: fabricaEnMercaderia,
+      unidades_estampadas: v.unidades_estampadas,
+      margen_bruto: margenBruto,
       financiero, detalle_financiero: detalleFin,
       publicidad, envios,
       contribucion, fijos: Math.round(fijosLocal + extrasWeb),
       detalle_fijos: { propios, compartidos, extras_web: extrasWeb, conceptos: fijos[local]?.conceptos || {} },
-      fabrica,
       impuestos, detalle_impuestos: { iibb, iva, cargas_sociales: cargas },
       resultado,
       margen_pct: venta > 0 ? Math.round(resultado / venta * 1000) / 10 : null,
@@ -727,7 +792,7 @@ async function rentabilidadNegocio(req, res) {
       venta: ventaTotal, mercaderia: suma("mercaderia"), margen_bruto: suma("margen_bruto"),
       financiero: suma("financiero"), publicidad: suma("publicidad"), envios: suma("envios"),
       contribucion: suma("contribucion"),
-      fijos: suma("fijos"), fabrica: suma("fabrica"),
+      fijos: suma("fijos"), fabrica_en_mercaderia: suma("fabrica_en_mercaderia"),
       impuestos: suma("impuestos"),
       detalle_impuestos: {
         iibb: unidades.reduce((a, u) => a + u.detalle_impuestos.iibb, 0),
