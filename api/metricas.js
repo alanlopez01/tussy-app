@@ -21,7 +21,7 @@ const KEY_LOCAL = {
 
 const { normalizarProducto } = require("../lib/normalizar");
 const { costear } = require("../lib/costeo");
-const { LOCALES_SIN_STOCK } = require("../lib/stock");
+const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
@@ -518,7 +518,107 @@ async function inventario(req, res) {
     locales_con_stock: localesConStock,
     modelos: modelos.sort((a, b) => (b.capital_inmovilizado || 0) - (a.capital_inmovilizado || 0)),
     fuentes: estados,
-    locales_sin_stock: LOCALES_SIN_STOCK,
+    locales_sin_stock: LOCALES_SIN_STOCK.concat("Tiendanube"),
+    motivo_sin_stock: MOTIVO_SIN_STOCK,
+  });
+}
+
+// ── Oportunidades de traslado entre locales ──
+// Busca modelos parados en un local que en otro se venden bien. La idea no es
+// mirar el stock global sino dónde está puesto: la misma prenda puede ser capital
+// muerto en Abasto y estar faltando en Dot.
+async function traslados(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const dias = Math.min(parseInt(req.query.dias || 60), 180);
+  const [ultima] = await sql`SELECT MAX(fecha)::text AS fecha FROM stock`;
+  if (!ultima?.fecha) return res.status(200).json({ sin_datos: true });
+  const fechaStock = ultima.fecha;
+
+  const [stockRows, ventasRows] = await Promise.all([
+    sql`SELECT local, producto_norm AS producto, SUM(cantidad)::numeric AS stock
+        FROM stock WHERE fecha = ${fechaStock} GROUP BY local, producto_norm`,
+    sql`SELECT local, producto_norm AS producto, SUM(cantidad)::numeric AS vendidas
+        FROM ventas
+        WHERE fecha >= ${fechaStock}::date - ${dias}::int
+          AND producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
+        GROUP BY local, producto_norm`,
+  ]);
+  const costos = await sql`
+    SELECT DISTINCT ON (producto) producto, costo::numeric AS costo
+    FROM costos_producto ORDER BY producto, vigente_desde DESC`;
+  const costoDe = Object.fromEntries(costos.map(c => [c.producto, Number(c.costo)]));
+
+  // producto → local → { stock, vendidas }
+  const mapa = {};
+  for (const r of stockRows) {
+    (mapa[r.producto] = mapa[r.producto] || {})[r.local] = { stock: Number(r.stock), vendidas: 0 };
+  }
+  for (const r of ventasRows) {
+    const p = (mapa[r.producto] = mapa[r.producto] || {});
+    p[r.local] = { stock: p[r.local]?.stock || 0, vendidas: Number(r.vendidas) };
+  }
+
+  const localesConStock = [...new Set(stockRows.map(r => r.local))];
+  const sugerencias = [];
+
+  for (const [producto, porLocal] of Object.entries(mapa)) {
+    // Origen: tiene stock y casi no lo vende
+    const origenes = localesConStock
+      .map(l => ({ local: l, ...(porLocal[l] || { stock: 0, vendidas: 0 }) }))
+      .filter(x => x.stock >= 3)
+      .map(x => ({ ...x, ritmo: x.vendidas / dias, diasInv: x.vendidas > 0 ? x.stock / (x.vendidas / dias) : Infinity }))
+      .filter(x => x.diasInv > 120)
+      .sort((a, b) => b.diasInv - a.diasInv);
+    if (!origenes.length) continue;
+
+    // Destino: lo vende bien. Los locales sin inventario cargado también sirven como
+    // destino (sabemos que venden, aunque no sepamos cuánto stock tienen).
+    const destinos = Object.entries(porLocal)
+      .map(([l, x]) => ({
+        local: l,
+        stock: localesConStock.includes(l) ? x.stock : null,
+        vendidas: x.vendidas,
+        ritmo: x.vendidas / dias,
+        diasInv: localesConStock.includes(l)
+          ? (x.vendidas > 0 ? x.stock / (x.vendidas / dias) : Infinity)
+          : null,
+      }))
+      .filter(x => x.vendidas >= 3 && (x.diasInv == null || x.diasInv < 45))
+      .sort((a, b) => b.ritmo - a.ritmo);
+    if (!destinos.length) continue;
+
+    const origen = origenes[0], destino = destinos[0];
+    if (origen.local === destino.local) continue;
+
+    // Cuántas unidades mover: lo que el destino vendería en 60 días, sin dejar al
+    // origen sin nada (le queda para 60 días de su propio ritmo) y sin pasarse.
+    const necesitaDestino = Math.ceil(destino.ritmo * 60 - (destino.stock ?? 0));
+    const puedeCeder = Math.floor(origen.stock - origen.ritmo * 60);
+    const mover = Math.max(0, Math.min(necesitaDestino, puedeCeder, origen.stock));
+    if (mover < 3) continue;
+
+    const costo = costoDe[producto] || 0;
+    sugerencias.push({
+      producto,
+      desde: origen.local, stock_origen: origen.stock, vendidas_origen: origen.vendidas,
+      dias_inventario_origen: origen.diasInv === Infinity ? null : Math.round(origen.diasInv),
+      hacia: destino.local, stock_destino: destino.stock, vendidas_destino: destino.vendidas,
+      dias_inventario_destino: destino.diasInv === Infinity ? null : (destino.diasInv == null ? null : Math.round(destino.diasInv)),
+      mover,
+      capital_liberado: Math.round(mover * costo),
+    });
+  }
+
+  sugerencias.sort((a, b) => b.capital_liberado - a.capital_liberado);
+  return res.status(200).json({
+    fecha_stock: fechaStock, dias,
+    locales_con_stock: localesConStock,
+    sugerencias,
+    total: {
+      movimientos: sugerencias.length,
+      unidades: sugerencias.reduce((a, s) => a + s.mover, 0),
+      capital: sugerencias.reduce((a, s) => a + s.capital_liberado, 0),
+    },
   });
 }
 
@@ -1084,6 +1184,7 @@ module.exports = async function handler(req, res) {
     if (action === "rentabilidadProducto") return await rentabilidadProducto(req, res);
     if (action === "evolucion") return await evolucion(req, res);
     if (action === "inventario") return await inventario(req, res);
+    if (action === "traslados") return await traslados(req, res);
     if (action === "gastosLocales") return await gastosLocales(req, res);
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
 
