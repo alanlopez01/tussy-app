@@ -436,8 +436,7 @@ async function inventario(req, res) {
 
   const rows = await sql`
     WITH s AS (
-      SELECT producto_norm, SUM(cantidad) AS unidades,
-             SUM(cantidad * COALESCE(precio, 0)) AS valor_venta
+      SELECT producto_norm, SUM(cantidad) AS unidades
       FROM stock
       WHERE fecha = ${fechaStock}
         AND (${localFiltro}::text IS NULL OR local = ${localFiltro})
@@ -458,43 +457,65 @@ async function inventario(req, res) {
         AND ve.local = ANY(${localesConStock}::text[])
         AND (${localFiltro}::text IS NULL OR ve.local = ${localFiltro})
       GROUP BY ve.producto_norm
+    ),
+    -- Antigüedad del modelo: desde cuándo se vende. Un producto que entró hace una
+    -- semana no puede medirse contra una ventana de 90 días.
+    edad AS (
+      SELECT producto_norm, MIN(fecha) AS primera_venta
+      FROM ventas
+      WHERE producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
+      GROUP BY producto_norm
     )
     SELECT COALESCE(s.producto_norm, v.producto_norm) AS producto,
            COALESCE(s.unidades, 0)::numeric AS stock,
            COALESCE(v.vendidas, 0)::numeric AS vendidas,
            ROUND(COALESCE(v.venta, 0))::bigint AS venta,
            ROUND(COALESCE(v.costo, 0))::bigint AS costo_vendido,
+           (${fechaStock}::date - e.primera_venta)::int AS dias_desde_lanzamiento,
            (SELECT ROUND(costo)::bigint FROM costos_producto cp
             WHERE cp.producto = COALESCE(s.producto_norm, v.producto_norm)
             ORDER BY vigente_desde DESC LIMIT 1) AS costo_unitario
     FROM s FULL OUTER JOIN v ON v.producto_norm = s.producto_norm
+    LEFT JOIN edad e ON e.producto_norm = COALESCE(s.producto_norm, v.producto_norm)
     WHERE COALESCE(s.unidades, 0) > 0 OR COALESCE(v.vendidas, 0) > 0`;
 
-  const factorAnual = 365 / dias;
+  const DIAS_NUEVO = 30; // por debajo de esto, el modelo todavía no tiene historia
   const modelos = rows.map(r => {
     const stock = Number(r.stock), vendidas = Number(r.vendidas);
     const venta = Number(r.venta), costoVendido = Number(r.costo_vendido);
     const costoUnit = r.costo_unitario == null ? null : Number(r.costo_unitario);
     const capital = costoUnit != null ? Math.round(stock * costoUnit) : null;
     const margen = venta - costoVendido;
+
+    // Días en que el modelo estuvo realmente a la venta dentro de la ventana:
+    // si entró hace 7 días, su ritmo se mide sobre 7 días, no sobre 90.
+    const edad = r.dias_desde_lanzamiento;
+    const diasEfectivos = Math.max(1, Math.min(dias, edad == null ? dias : edad + 1));
+    const esNuevo = edad != null && edad < DIAS_NUEVO;
+    const factorAnual = 365 / diasEfectivos;
+    const ritmoDiario = vendidas / diasEfectivos;
+
     return {
       producto: r.producto, stock, vendidas, venta, margen,
       costo_unitario: costoUnit,
       capital_inmovilizado: capital,
-      // Veces que se renueva el stock en un año al ritmo del período
+      dias_desde_lanzamiento: edad,
+      dias_medidos: diasEfectivos,
+      es_nuevo: esNuevo,
       rotacion: stock > 0 ? Math.round(vendidas / stock * factorAnual * 10) / 10 : null,
-      // Días que tardaría en venderse el stock actual
-      dias_inventario: vendidas > 0 ? Math.round(stock / (vendidas / dias)) : null,
-      // Ganancia bruta por cada peso invertido en ese stock
+      dias_inventario: ritmoDiario > 0 ? Math.round(stock / ritmoDiario) : null,
       gmroi: capital > 0 ? Math.round(margen * factorAnual / capital * 100) / 100 : null,
-      sin_movimiento: vendidas === 0 && stock > 0,
+      // Un modelo nuevo sin ventas todavía no es capital muerto: no tuvo tiempo
+      sin_movimiento: vendidas === 0 && stock > 0 && !esNuevo,
     };
   });
 
   const conStock = modelos.filter(m => m.stock > 0);
   // Dos problemas distintos: lo que no se vendió nunca, y lo que se vende muy lento
   const sinVentas = conStock.filter(m => m.sin_movimiento);
-  const lentos = conStock.filter(m => !m.sin_movimiento && m.dias_inventario != null && m.dias_inventario > 180);
+  // Los recién lanzados quedan fuera del diagnóstico de rotación lenta
+  const lentos = conStock.filter(m => !m.sin_movimiento && !m.es_nuevo && m.dias_inventario != null && m.dias_inventario > 180);
+  const nuevos = conStock.filter(m => m.es_nuevo);
   const capitalTotal = conStock.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0);
   const margenTotal = modelos.reduce((a, m) => a + m.margen, 0);
 
@@ -514,6 +535,8 @@ async function inventario(req, res) {
       modelos_sin_ventas: sinVentas.length,
       capital_lento: lentos.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
       modelos_lentos: lentos.length,
+      capital_nuevo: nuevos.reduce((a, m) => a + (m.capital_inmovilizado || 0), 0),
+      modelos_nuevos: nuevos.length,
     },
     locales_con_stock: localesConStock,
     modelos: modelos.sort((a, b) => (b.capital_inmovilizado || 0) - (a.capital_inmovilizado || 0)),
@@ -534,7 +557,7 @@ async function traslados(req, res) {
   if (!ultima?.fecha) return res.status(200).json({ sin_datos: true });
   const fechaStock = ultima.fecha;
 
-  const [stockRows, ventasRows] = await Promise.all([
+  const [stockRows, ventasRows, edadRows] = await Promise.all([
     sql`SELECT local, producto_norm AS producto, SUM(cantidad)::numeric AS stock
         FROM stock WHERE fecha = ${fechaStock} GROUP BY local, producto_norm`,
     sql`SELECT local, producto_norm AS producto, SUM(cantidad)::numeric AS vendidas
@@ -542,7 +565,13 @@ async function traslados(req, res) {
         WHERE fecha >= ${fechaStock}::date - ${dias}::int
           AND producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
         GROUP BY local, producto_norm`,
+    // Antigüedad de cada modelo: no se sugiere mover lo que recién entró
+    sql`SELECT producto_norm AS producto, (${fechaStock}::date - MIN(fecha))::int AS edad
+        FROM ventas WHERE producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
+        GROUP BY producto_norm`,
   ]);
+  const edadDe = Object.fromEntries(edadRows.map(r => [r.producto, r.edad]));
+  const DIAS_NUEVO = 30;
   const costos = await sql`
     SELECT DISTINCT ON (producto) producto, costo::numeric AS costo
     FROM costos_producto ORDER BY producto, vigente_desde DESC`;
@@ -562,11 +591,17 @@ async function traslados(req, res) {
   const sugerencias = [];
 
   for (const [producto, porLocal] of Object.entries(mapa)) {
+    const edad = edadDe[producto];
+    // Un modelo recién lanzado todavía no tuvo tiempo de venderse: no se mueve
+    if (edad != null && edad < DIAS_NUEVO) continue;
+    // El ritmo se mide sobre los días que el modelo estuvo realmente a la venta
+    const diasEfectivos = Math.max(1, Math.min(dias, edad == null ? dias : edad + 1));
+
     // Origen: tiene stock y casi no lo vende
     const origenes = localesConStock
       .map(l => ({ local: l, ...(porLocal[l] || { stock: 0, vendidas: 0 }) }))
       .filter(x => x.stock >= 3)
-      .map(x => ({ ...x, ritmo: x.vendidas / dias, diasInv: x.vendidas > 0 ? x.stock / (x.vendidas / dias) : Infinity }))
+      .map(x => ({ ...x, ritmo: x.vendidas / diasEfectivos, diasInv: x.vendidas > 0 ? x.stock / (x.vendidas / diasEfectivos) : Infinity }))
       .filter(x => x.diasInv > 120)
       .sort((a, b) => b.diasInv - a.diasInv);
     if (!origenes.length) continue;
@@ -581,9 +616,9 @@ async function traslados(req, res) {
         local: l,
         stock: localesConStock.includes(l) ? x.stock : null,
         vendidas: x.vendidas,
-        ritmo: x.vendidas / dias,
+        ritmo: x.vendidas / diasEfectivos,
         diasInv: localesConStock.includes(l)
-          ? (x.vendidas > 0 ? x.stock / (x.vendidas / dias) : Infinity)
+          ? (x.vendidas > 0 ? x.stock / (x.vendidas / diasEfectivos) : Infinity)
           : null,
       }))
       .filter(x => x.vendidas >= 3 && (x.diasInv == null || x.diasInv < 45))
@@ -602,7 +637,7 @@ async function traslados(req, res) {
 
     const costo = costoDe[producto] || 0;
     sugerencias.push({
-      producto,
+      producto, dias_desde_lanzamiento: edad,
       desde: origen.local, stock_origen: origen.stock, vendidas_origen: origen.vendidas,
       dias_inventario_origen: origen.diasInv === Infinity ? null : Math.round(origen.diasInv),
       hacia: destino.local, stock_destino: destino.stock, vendidas_destino: destino.vendidas,
