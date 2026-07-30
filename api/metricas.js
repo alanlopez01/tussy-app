@@ -448,7 +448,7 @@ async function inventario(req, res) {
         SELECT costo FROM costos_producto cp
         WHERE cp.producto = ve.producto_norm AND cp.vigente_desde <= ve.fecha
         ORDER BY cp.vigente_desde DESC LIMIT 1) c ON true
-      WHERE ve.fecha >= ${fechaStock}::date - ${dias}
+      WHERE ve.fecha >= ${fechaStock}::date - ${dias}::int
         AND ve.producto_norm NOT IN ('ENVIO','DESCUENTO','AJUSTE','CAFE GRATI')
         AND (${localFiltro}::text IS NULL OR ve.local = ${localFiltro})
       GROUP BY ve.producto_norm
