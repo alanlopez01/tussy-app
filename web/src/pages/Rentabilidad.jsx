@@ -181,19 +181,136 @@ function Costos() {
   );
 }
 
+// ── Tab: Resultado por unidad de negocio ──
+function Negocio() {
+  const [mes, setMes] = useState(hoyISO().slice(0, 7));
+  const [data, setData] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  const cargar = useCallback(() => {
+    setCargando(true);
+    getJSON(`/api/metricas?action=rentabilidadNegocio&mes=${mes}`, 40000)
+      .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
+  }, [mes]);
+
+  useEffect(() => { setData(null); cargar(); }, [cargar]);
+
+  const meses = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(Date.UTC(2026, new Date().getUTCMonth() - i, 1));
+    meses.push(d.toISOString().slice(0, 7));
+  }
+  const nombreMes = m => new Date(m + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+
+  const t = data?.total;
+  const faltaMix = data?.faltan_datos?.mix_pagos || [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <select value={mes} onChange={e => setMes(e.target.value)}
+                className="rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[12px] font-semibold text-ink-2 capitalize">
+          {meses.map(m => <option key={m} value={m}>{nombreMes(m)}</option>)}
+        </select>
+        <BotonActualizar onClick={cargar} cargando={cargando} />
+      </div>
+
+      {!data ? <Spinner /> : (
+        <>
+          {faltaMix.length > 0 && (
+            <Card>
+              <p className="text-[12px] text-warn font-medium">
+                Sin reporte de MercadoPago de este mes para: {faltaMix.join(", ")}. El costo financiero
+                de esos locales figura en $0 hasta que se cargue.
+              </p>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatTile label="Venta del mes" value={fmtPesosCorto(t.venta)} />
+            <StatTile label="Margen bruto" value={fmtPesosCorto(t.margen_bruto)}
+                      sub={`${(t.margen_bruto / t.venta * 100).toFixed(1)}% sobre la venta`} />
+            <StatTile label="Resultado operativo" value={fmtPesosCorto(t.resultado)}
+                      sub={`${t.margen_pct}% sobre la venta`} />
+          </div>
+
+          <Card title="Cascada por unidad de negocio">
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12px] min-w-[720px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                    <th className="text-left py-2 font-semibold">Unidad</th>
+                    <th className="text-right py-2 font-semibold">Venta</th>
+                    <th className="text-right py-2 font-semibold">Mercadería</th>
+                    <th className="text-right py-2 font-semibold">Financiero</th>
+                    <th className="text-right py-2 font-semibold">Fijos</th>
+                    <th className="text-right py-2 font-semibold">Fábrica</th>
+                    <th className="text-right py-2 font-semibold">Resultado</th>
+                    <th className="text-right py-2 font-semibold">%</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borde">
+                  {data.unidades.map(u => (
+                    <tr key={u.local}>
+                      <td className="py-2 pr-3 font-semibold text-ink">
+                        {u.local === "Tiendanube" ? "Online" : u.local}
+                        {u.detalle_financiero?.tipo === "point" && (
+                          <span className="block text-[10px] font-normal text-ink-3">
+                            Point {u.detalle_financiero.share_point}% · costo {u.detalle_financiero.pct_point}%
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(u.venta)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.mercaderia)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.financiero)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fijos)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(u.fabrica)}</td>
+                      <td className={`py-2 text-right tabular-nums font-bold ${u.resultado >= 0 ? "text-ok" : "text-bad"}`}>
+                        {fmtPesosCorto(u.resultado)}
+                      </td>
+                      <td className={`py-2 text-right tabular-nums font-bold ${colorMargen(u.margen_pct)}`}>
+                        {u.margen_pct}%
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-ink/20 font-bold">
+                    <td className="py-2 text-ink">TOTAL</td>
+                    <td className="py-2 text-right tabular-nums text-ink">{fmtPesosCorto(t.venta)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.mercaderia)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.financiero)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fijos)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">−{fmtPesosCorto(t.fabrica)}</td>
+                    <td className={`py-2 text-right tabular-nums ${t.resultado >= 0 ? "text-ok" : "text-bad"}`}>
+                      {fmtPesosCorto(t.resultado)}
+                    </td>
+                    <td className={`py-2 text-right tabular-nums ${colorMargen(t.margen_pct)}`}>{t.margen_pct}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-ink-3 mt-3">
+              Online todavía no incluye publicidad ni envíos pagados por la tienda: su resultado está sobrestimado.
+            </p>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Rentabilidad() {
-  const [tab, setTab] = useState("margenes");
+  const [tab, setTab] = useState("negocio");
   return (
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[20px] font-bold text-ink">Rentabilidad</h1>
-          <p className="text-[12px] text-ink-3">Margen bruto por modelo · solo visible para vos (en construcción)</p>
+          <p className="text-[12px] text-ink-3">Solo visible para vos (en construcción)</p>
         </div>
-        <Chips opciones={[{ value: "margenes", label: "Márgenes" }, { value: "costos", label: "Costos" }]}
+        <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "margenes", label: "Productos" }, { value: "costos", label: "Costos" }]}
                valor={tab} onChange={setTab} />
       </header>
-      {tab === "margenes" ? <Margenes /> : <Costos />}
+      {tab === "negocio" ? <Negocio /> : tab === "margenes" ? <Margenes /> : <Costos />}
     </div>
   );
 }
