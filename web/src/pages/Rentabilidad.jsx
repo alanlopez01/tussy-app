@@ -450,6 +450,15 @@ function Negocio() {
                         {fmtPesosCorto(u.resultado)} <span className="text-[12px]">({u.margen_pct}%)</span>
                       </span>
                     </div>
+                    {u.equilibrio && (
+                      <div className="text-[11px] text-ink-3 pt-1.5 tabular-nums">
+                        Equilibrio: {u.equilibrio.unidades.toLocaleString("es-AR")} u. ·{" "}
+                        {fmtPesosCorto(u.equilibrio.venta)} · puede caer{" "}
+                        <span className={u.equilibrio.margen_seguridad >= 40 ? "text-ok" : "text-warn"}>
+                          {u.equilibrio.margen_seguridad}%
+                        </span>{" "}antes de perder
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -481,6 +490,7 @@ function Negocio() {
                     <th className="text-right py-2 font-semibold">Impuestos</th>
                     <th className="text-right py-2 font-semibold">Resultado</th>
                     <th className="text-right py-2 font-semibold">%</th>
+                    <th className="text-right py-2 font-semibold">Equilibrio</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borde">
@@ -517,6 +527,14 @@ function Negocio() {
                       <td className={`py-2 text-right tabular-nums font-bold ${colorMargen(u.margen_pct)}`}>
                         {u.margen_pct}%
                       </td>
+                      <td className="py-2 text-right tabular-nums text-ink-3"
+                          title={u.equilibrio ? `Necesita vender ${u.equilibrio.unidades} u. (${fmtPesosCorto(u.equilibrio.venta)}) para cubrir sus fijos` : ""}>
+                        {u.equilibrio ? (
+                          <span className={u.equilibrio.margen_seguridad >= 40 ? "text-ok" : "text-warn"}>
+                            −{u.equilibrio.margen_seguridad}%
+                          </span>
+                        ) : "—"}
+                      </td>
                     </tr>
                   ))}
                   <tr className="border-t-2 border-ink/20 font-bold">
@@ -531,6 +549,7 @@ function Negocio() {
                       {fmtPesosCorto(t.resultado)}
                     </td>
                     <td className={`py-2 text-right tabular-nums ${colorMargen(t.margen_pct)}`}>{t.margen_pct}%</td>
+                    <td className="py-2"></td>
                   </tr>
                 </tbody>
               </table>
@@ -662,6 +681,110 @@ function Fijos() {
   );
 }
 
+// ── Tab: Evolución mes a mes ──
+function Evolucion() {
+  const [data, setData] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  const cargar = useCallback(() => {
+    setCargando(true);
+    getJSON("/api/metricas?action=evolucion&meses=6", 60000)
+      .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
+  }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  const nombreMes = m => new Date(m + "-15T12:00:00Z")
+    .toLocaleDateString("es-AR", { month: "short", year: "2-digit" });
+
+  const ms = data?.meses || [];
+  const ultimo = ms[ms.length - 1], primero = ms[0];
+  const varVenta = primero && ultimo && primero.venta > 0
+    ? ((ultimo.venta - primero.venta) / primero.venta) * 100 : null;
+  const varMargen = primero && ultimo ? ultimo.margen_pct - primero.margen_pct : null;
+  const maxVenta = Math.max(...ms.map(m => m.venta), 1);
+  const locales = ultimo ? Object.keys(ultimo.por_unidad) : [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end"><BotonActualizar onClick={cargar} cargando={cargando} /></div>
+
+      {!data ? <Spinner texto="Calculando los últimos meses…" /> : !ms.length ? (
+        <Card><p className="text-[13px] text-ink-3 py-6 text-center">Sin datos</p></Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatTile label="Venta último mes" value={fmtPesosCorto(ultimo.venta)}
+                      delta={varVenta} sub={`vs. ${nombreMes(primero.mes)}`} />
+            <StatTile label="Resultado último mes" value={fmtPesosCorto(ultimo.resultado)}
+                      sub={`${ultimo.margen_pct}% sobre la venta`} />
+            <StatTile label="Margen: cambio del período"
+                      value={`${varMargen > 0 ? "+" : ""}${varMargen?.toFixed(1)} pts`}
+                      sub={`de ${primero.margen_pct}% a ${ultimo.margen_pct}%`} />
+          </div>
+
+          <Card title="Venta y resultado por mes">
+            <div className="space-y-3">
+              {ms.map(m => (
+                <div key={m.mes}>
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <span className="text-[12px] font-semibold text-ink capitalize">{nombreMes(m.mes)}</span>
+                    <span className="text-[12px] text-ink-2 tabular-nums">
+                      {fmtPesosCorto(m.venta)} · <span className={m.resultado >= 0 ? "text-ok font-semibold" : "text-bad font-semibold"}>
+                        {fmtPesosCorto(m.resultado)} ({m.margen_pct}%)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="h-[10px] rounded-[3px] bg-surface overflow-hidden flex">
+                    <div className="h-full bg-negro" style={{ width: `${(m.resultado / maxVenta) * 100}%` }} />
+                    <div className="h-full bg-borde" style={{ width: `${((m.venta - m.resultado) / maxVenta) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-ink-3 mt-3">La parte oscura es el resultado; el resto, los costos.</p>
+          </Card>
+
+          <Card title="Margen por unidad de negocio, mes a mes">
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12px] min-w-[420px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                    <th className="text-left py-2 font-semibold">Unidad</th>
+                    {ms.map(m => <th key={m.mes} className="text-right py-2 font-semibold capitalize">{nombreMes(m.mes)}</th>)}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borde">
+                  {locales.map(l => (
+                    <tr key={l}>
+                      <td className="py-2 pr-3 font-semibold text-ink">{l === "Tiendanube" ? "Online" : l}</td>
+                      {ms.map(m => {
+                        const u = m.por_unidad[l];
+                        return (
+                          <td key={m.mes} className={`py-2 text-right tabular-nums font-semibold ${u ? colorMargen(u.margen_pct) : "text-ink-3"}`}>
+                            {u ? `${u.margen_pct}%` : "—"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-ink/20">
+                    <td className="py-2 font-bold text-ink">TOTAL</td>
+                    {ms.map(m => (
+                      <td key={m.mes} className={`py-2 text-right tabular-nums font-bold ${colorMargen(m.margen_pct)}`}>
+                        {m.margen_pct}%
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Rentabilidad() {
   const [tab, setTab] = useState("negocio");
   return (
@@ -671,12 +794,13 @@ export default function Rentabilidad() {
           <h1 className="text-[20px] font-bold text-ink">Rentabilidad</h1>
           <p className="text-[12px] text-ink-3">Solo visible para vos (en construcción)</p>
         </div>
-        <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "margenes", label: "Productos" },
+        <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "evolucion", label: "Evolución" },
+                          { value: "margenes", label: "Productos" },
                           { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" }]}
                valor={tab} onChange={setTab} />
       </header>
-      {tab === "negocio" ? <Negocio /> : tab === "margenes" ? <Margenes />
-        : tab === "costos" ? <Costos /> : <Fijos />}
+      {tab === "negocio" ? <Negocio /> : tab === "evolucion" ? <Evolucion />
+        : tab === "margenes" ? <Margenes /> : tab === "costos" ? <Costos /> : <Fijos />}
     </div>
   );
 }
