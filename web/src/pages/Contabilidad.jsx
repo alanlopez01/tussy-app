@@ -2,7 +2,7 @@
 // conciliación de transferencias MP contra facturas recibidas.
 // Los exports de ARCA (Mis Comprobantes) y de MP se leen en el navegador y se
 // suben ya normalizados; el WS de ARCA trae los emitidos solo cuando hay certificado.
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getJSON, postJSON, fmtPesos, fmtPesosCorto, hoyISO } from "../lib/api.js";
 import { Card, Spinner, BotonActualizar, Chips } from "../components/ui.jsx";
 
@@ -497,66 +497,72 @@ export default function Contabilidad() {
                         const ok = r.facturado >= r.transferido * 0.9;
                         const abierto = detalle === r.nombre;
                         return (
-                          <Fragment key={r.nombre}>
-                            <tr onClick={() => setDetalle(abierto ? null : r.nombre)}
-                                className={`border-t border-borde cursor-pointer hover:bg-surface ${abierto ? "bg-surface" : ""}`}>
-                              <td className={`${td} font-semibold text-ink`}>
-                                <span className="text-ink-3 mr-1.5">{abierto ? "▾" : "▸"}</span>{r.nombre}
-                              </td>
-                              <td className={`${td} text-right`}>{r.transferencias}</td>
-                              <td className={`${td} text-right`}>{fmtPesos(r.transferido)}</td>
-                              <td className={`${td} text-right`}>{fmtPesos(r.facturado)}</td>
-                              <td className={td}>{ok
-                                ? <span className="text-ok font-semibold">✓ cubierto{r.porMonto ? " (por monto)" : ""}</span>
-                                : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}</td>
-                            </tr>
-                            {abierto && (
-                              <tr className="bg-surface">
-                                <td colSpan={5} className="px-3 py-3">
-                                  <div className="grid gap-4 md:grid-cols-2">
-                                    <div>
-                                      <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
-                                        Transferencias ({r.movimientos.length})
-                                      </div>
-                                      {r.movimientos.map(m => (
-                                        <div key={m.id} className="flex justify-between gap-3 text-[12px] py-1 border-b border-borde last:border-0">
-                                          <span className="text-ink-2">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
-                                          <span className="text-ink-3 text-[10px] font-mono flex-1 truncate" title="N° de operación en MercadoPago">op. {m.id}</span>
-                                          <span className="tabular-nums font-semibold text-ink">{fmtPesos(m.monto)}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div>
-                                      <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
-                                        Facturas imputadas ({r.comprobantes.length})
-                                      </div>
-                                      {r.comprobantes.length === 0 && (
-                                        <p className="text-[12px] text-bad font-medium">
-                                          Ninguna. Buscá el comprobante con el proveedor, o revisá si facturó en otro mes
-                                          (subí ese período en Carga).
-                                        </p>
-                                      )}
-                                      {r.comprobantes.map(c => (
-                                        <div key={`${c.tipo}-${c.punto_venta}-${c.numero}`} className="flex justify-between gap-3 text-[12px] py-1 border-b border-borde last:border-0">
-                                          <span className="text-ink-2">{c.fecha.slice(8, 10)}/{c.fecha.slice(5, 7)}</span>
-                                          <span className="text-ink-3 text-[10px] flex-1 truncate">
-                                            {data.nombresTipo?.[c.tipo] || `Tipo ${c.tipo}`} {String(c.punto_venta).padStart(4, "0")}-{String(c.numero).padStart(8, "0")}
-                                          </span>
-                                          <span className="tabular-nums font-semibold text-ink">{fmtPesos(c.total)}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
+                          <tr key={r.nombre} onClick={() => setDetalle(abierto ? null : r.nombre)}
+                              className={`border-t border-borde cursor-pointer hover:bg-surface ${abierto ? "bg-surface" : ""}`}>
+                            <td className={`${td} font-semibold text-ink`}>
+                              <span className="text-ink-3 mr-1.5">{abierto ? "▾" : "▸"}</span>{r.nombre}
+                            </td>
+                            <td className={`${td} text-right`}>{r.transferencias}</td>
+                            <td className={`${td} text-right`}>{fmtPesos(r.transferido)}</td>
+                            <td className={`${td} text-right`}>{fmtPesos(r.facturado)}</td>
+                            <td className={td}>{ok
+                              ? <span className="text-ok font-semibold">✓ cubierto{r.porMonto ? " (por monto)" : ""}</span>
+                              : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}</td>
+                          </tr>
                         );
                       })}
                       {!filas.length && <tr><td colSpan={5} className={`${td} text-center text-ink-3`}>Sin resultados para esa búsqueda</td></tr>}
                     </tbody>
                   </table>
                 </div>
+
+                {/* El detalle vive fuera del scroll horizontal de la tabla: en celular
+                    tiene que leerse completo sin desplazar de costado. */}
+                {(() => {
+                  const r = filas.find(x => x.nombre === detalle);
+                  if (!r) return null;
+                  return (
+                    <div className="mt-3 rounded-md bg-surface border border-borde p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <span className="text-[13px] font-bold text-ink">{r.nombre}</span>
+                        <button onClick={() => setDetalle(null)} className="text-[11px] font-semibold text-ink-3">Cerrar ✕</button>
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
+                            Transferencias ({r.movimientos.length})
+                          </div>
+                          {r.movimientos.map(m => (
+                            <div key={m.id} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
+                              <span className="text-ink-2 shrink-0">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
+                              <span className="text-ink-3 text-[10px] font-mono truncate" title="N° de operación en MercadoPago">op. {m.id}</span>
+                              <span className="tabular-nums font-semibold text-ink shrink-0">{fmtPesos(m.monto)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
+                            Facturas imputadas ({r.comprobantes.length})
+                          </div>
+                          {r.comprobantes.length === 0 ? (
+                            <p className="text-[12px] text-bad font-medium">
+                              Ninguna. Reclamale el comprobante al proveedor, o revisá si facturó en otro mes
+                              (subí ese período en Carga).
+                            </p>
+                          ) : r.comprobantes.map(c => (
+                            <div key={`${c.tipo}-${c.punto_venta}-${c.numero}`} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
+                              <span className="text-ink-2 shrink-0">{c.fecha.slice(8, 10)}/{c.fecha.slice(5, 7)}</span>
+                              <span className="text-ink-3 text-[10px] truncate">
+                                {data.nombresTipo?.[c.tipo] || `Tipo ${c.tipo}`} {String(c.punto_venta).padStart(4, "0")}-{String(c.numero).padStart(8, "0")}
+                              </span>
+                              <span className="tabular-nums font-semibold text-ink shrink-0">{fmtPesos(c.total)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <p className="text-[11px] text-ink-3 mt-3">
                   Se compara por total (los pagos suelen ser parciales), con facturas de hasta 20 días antes o después
                   del mes. Las transferencias a cuentas propias o retiros de socios van a figurar "sin factura": es esperable.
