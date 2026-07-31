@@ -567,7 +567,10 @@ function Negocio() {
                 *Mercadería incluye la fábrica de estampado ({fmtPesosCorto(t.fabrica_en_mercaderia || 0)}),
                 repartida por prenda estampada: es costo de producción, no del local.
                 Impuestos: IIBB {fmtPesosCorto(t.detalle_impuestos.iibb)} ·
-                IVA neto {fmtPesosCorto(t.detalle_impuestos.iva)} ·
+                IVA {fmtPesosCorto(t.detalle_impuestos.iva)}
+                {t.detalle_impuestos.origen_iva === "arca" && " (posición real de ARCA: débito − crédito del mes)"}
+                {t.detalle_impuestos.origen_iva === "declarado" && " (monto declarado)"}
+                {t.detalle_impuestos.origen_iva === "estimado" && " (estimado: faltan comprobantes de ese mes)"} ·
                 cargas sociales {fmtPesosCorto(t.detalle_impuestos.cargas_sociales)}.
               </p>
             )}

@@ -1072,12 +1072,20 @@ async function calcularNegocio(sql, mes) {
   // Fábrica por prenda estampada del mes: entra en la mercadería de cada unidad
   const totalEstampadas = ventas.reduce((a, v) => a + (v.unidades_estampadas || 0), 0);
 
-  const [mixPagos, fijos, cfgRows, gastosMes, impuestosRows] = await Promise.all([
+  const [mixPagos, fijos, cfgRows, gastosMes, impuestosRows, posIvaRows] = await Promise.all([
     sql`SELECT local, bruto, neto, costo_pct, mix FROM mix_pagos WHERE mes = ${mes}`,
     leerGastosFijos(sql, mes),
     sql`SELECT clave, valor FROM config_negocio`,
     sql`SELECT local, concepto, monto FROM gastos_mes WHERE mes = ${mes}`,
     sql`SELECT concepto, monto FROM impuestos_mes WHERE mes = ${mes}`,
+    // Posición de IVA real del mes según los comprobantes de ARCA
+    sql`SELECT
+          COALESCE((SELECT SUM(iva * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END)
+                    FROM comprobantes_emitidos WHERE to_char(fecha, 'YYYY-MM') = ${mes}), 0)
+        - COALESCE((SELECT SUM(iva * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END)
+                    FROM comprobantes_recibidos WHERE to_char(fecha, 'YYYY-MM') = ${mes}), 0) AS posicion,
+          (SELECT COUNT(*) FROM comprobantes_emitidos WHERE to_char(fecha, 'YYYY-MM') = ${mes})::int AS emitidos,
+          (SELECT COUNT(*) FROM comprobantes_recibidos WHERE to_char(fecha, 'YYYY-MM') = ${mes})::int AS recibidos`,
   ]);
   const impuestosReales = Object.fromEntries(impuestosRows.map(r => [r.concepto, Number(r.monto)]));
   const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
@@ -1103,7 +1111,18 @@ async function calcularNegocio(sql, mes) {
   // Cargas sociales: monto real del F931 (o % sobre sueldos), repartido según el
   // peso de los sueldos de cada local en la nómina total.
   const iibbPct = cfg.iibb_pct || 0;
-  const ivaMes = impuestosReales.iva != null ? impuestosReales.iva : ventaTotal * (cfg.iva_pct || 0);
+  // El IVA sale de los comprobantes de ARCA: débito de lo facturado menos crédito de
+  // las compras. Es lo que genera la actividad del mes y varía mucho según cuánto se
+  // compró (entre 0,5% y 5,4% de la venta), así que un % fijo distorsiona el resultado.
+  // Si hay un monto declarado cargado a mano en impuestos_mes, ese manda.
+  const pi = posIvaRows[0] || {};
+  const ivaReal = Number(pi.emitidos) > 0 && Number(pi.recibidos) > 0 ? Number(pi.posicion) : null;
+  const ivaMes = impuestosReales.iva != null ? impuestosReales.iva
+    : ivaReal != null ? ivaReal
+    : ventaTotal * (cfg.iva_pct || 0);
+  const origenIva = impuestosReales.iva != null ? "declarado"
+    : ivaReal != null ? "arca"
+    : "estimado";
 
   // Base de cargas: sueldos que efectivamente tributan. Se descuentan los montos
   // marcados como sin cargas; franqueros y fábrica no tributan (la fábrica no tiene F931).
@@ -1227,6 +1246,7 @@ async function calcularNegocio(sql, mes) {
         iibb: unidades.reduce((a, u) => a + u.detalle_impuestos.iibb, 0),
         iva: unidades.reduce((a, u) => a + u.detalle_impuestos.iva, 0),
         cargas_sociales: unidades.reduce((a, u) => a + u.detalle_impuestos.cargas_sociales, 0),
+        origen_iva: origenIva,
       },
       resultado: suma("resultado"),
       margen_pct: ventaTotal > 0 ? Math.round(suma("resultado") / ventaTotal * 1000) / 10 : null,
