@@ -6,6 +6,7 @@ import Productos from "./pages/Productos.jsx";
 import Pedidos from "./pages/Pedidos.jsx";
 import Finanzas from "./pages/Finanzas.jsx";
 import Rentabilidad from "./pages/Rentabilidad.jsx";
+import Contabilidad from "./pages/Contabilidad.jsx";
 import Login from "./pages/Login.jsx";
 
 const NAV = [
@@ -15,6 +16,7 @@ const NAV = [
   { to: "/pedidos", label: "Pedidos", icon: "◷" },
   { to: "/finanzas", label: "Finanzas", icon: "◈" },
   { to: "/rentabilidad", label: "Rentabilidad", icon: "◎" },
+  { to: "/contabilidad", label: "Contabilidad", icon: "▧" },
 ];
 
 function navPara(user) {
@@ -144,6 +146,7 @@ export default function App() {
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/finanzas" element={<Finanzas />} />
             <Route path="/rentabilidad" element={<Rentabilidad />} />
+            <Route path="/contabilidad" element={<Contabilidad />} />
           </Routes>
         </main>
       </div>

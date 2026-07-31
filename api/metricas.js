@@ -24,6 +24,7 @@ const { requerirSesion } = require("../lib/auth");
 const { costear } = require("../lib/costeo");
 const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
+const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
@@ -306,6 +307,13 @@ async function cierreDiario(req, res) {
     snapshotStock(sql, hoyArg())
       .then(r => console.log("[stock]", JSON.stringify(r)))
       .catch(e => console.error("[stock] error:", e))
+  );
+  // Y traemos del web service de ARCA los comprobantes emitidos del día
+  // (si el certificado todavía no está cargado, sincronizarEmitidos se retira solo)
+  waitUntil(
+    sincronizarEmitidos(sql, { maxComprobantes: 2000 })
+      .then(r => console.log("[arca]", JSON.stringify(r)))
+      .catch(e => console.error("[arca] error:", e))
   );
   return res.status(200).json({ ok: true, fecha: ayer, total, porLocal: rows, notificadas: enviadas });
 }
@@ -1272,6 +1280,204 @@ async function operaciones(req, res) {
   });
 }
 
+// ── Contabilidad: comprobantes ARCA, posición de IVA, gastos y conciliación ──
+
+// Las notas de crédito restan (tipos 3, 8 y 13 = NC A/B/C)
+const SIGNO_CBTE = "CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END";
+
+// Alta masiva desde el export de Mis Comprobantes (emitidos o recibidos).
+// El parseo del xlsx/csv se hace en el navegador; acá llegan filas ya normalizadas.
+async function cargarComprobantes(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { clase, filas } = req.body || {};
+  if (!["emitidos", "recibidos"].includes(clase) || !Array.isArray(filas) || !filas.length) {
+    return res.status(400).json({ error: "clase (emitidos|recibidos) y filas requeridas" });
+  }
+  if (filas.length > 20000) return res.status(400).json({ error: "demasiadas filas en una carga" });
+  const sql = neon(process.env.DATABASE_URL);
+  const validas = filas.filter(f => f.fecha && f.tipo != null && f.numero != null &&
+    (clase === "emitidos" || f.cuit_emisor));
+  let nuevas = 0;
+  // En lotes vía unnest: un viaje a la base por cada 1000 filas
+  for (let i = 0; i < validas.length; i += 1000) {
+    const lote = validas.slice(i, i + 1000);
+    const col = fn => lote.map(fn);
+    if (clase === "emitidos") {
+      const r = await sql`INSERT INTO comprobantes_emitidos
+        (fecha, tipo, punto_venta, numero, doc_tipo, doc_nro, receptor, neto, iva, otros_tributos, total, cae, fuente)
+        SELECT x.*, 'mc' FROM unnest(
+          ${col(f => f.fecha)}::date[], ${col(f => f.tipo)}::int[], ${col(f => f.punto_venta || 0)}::int[],
+          ${col(f => f.numero)}::bigint[], ${col(f => f.doc_tipo ?? null)}::int[], ${col(f => f.doc_nro ?? null)}::bigint[],
+          ${col(f => f.receptor || null)}::text[], ${col(f => f.neto || 0)}::numeric[], ${col(f => f.iva || 0)}::numeric[],
+          ${col(f => f.otros_tributos || 0)}::numeric[], ${col(f => f.total || 0)}::numeric[], ${col(f => f.cae || null)}::text[]
+        ) AS x(fecha, tipo, punto_venta, numero, doc_tipo, doc_nro, receptor, neto, iva, otros_tributos, total, cae)
+        ON CONFLICT (tipo, punto_venta, numero) DO NOTHING RETURNING id`;
+      nuevas += r.length;
+    } else {
+      const r = await sql`INSERT INTO comprobantes_recibidos
+        (fecha, tipo, punto_venta, numero, cuit_emisor, emisor, neto, iva, otros_tributos, total)
+        SELECT * FROM unnest(
+          ${col(f => f.fecha)}::date[], ${col(f => f.tipo)}::int[], ${col(f => f.punto_venta || 0)}::int[],
+          ${col(f => f.numero)}::bigint[], ${col(f => f.cuit_emisor)}::bigint[], ${col(f => f.emisor || null)}::text[],
+          ${col(f => f.neto || 0)}::numeric[], ${col(f => f.iva || 0)}::numeric[],
+          ${col(f => f.otros_tributos || 0)}::numeric[], ${col(f => f.total || 0)}::numeric[]
+        ) AS x(fecha, tipo, punto_venta, numero, cuit_emisor, emisor, neto, iva, otros_tributos, total)
+        ON CONFLICT (cuit_emisor, tipo, punto_venta, numero) DO NOTHING RETURNING id`;
+      nuevas += r.length;
+      await sql`INSERT INTO proveedores (cuit, nombre)
+        SELECT DISTINCT ON (cuit) * FROM unnest(${col(f => f.cuit_emisor)}::bigint[], ${col(f => f.emisor || null)}::text[]) AS x(cuit, nombre)
+        ON CONFLICT (cuit) DO UPDATE SET nombre = COALESCE(proveedores.nombre, EXCLUDED.nombre)`;
+    }
+  }
+  return res.status(200).json({ ok: true, clase, recibidas: filas.length, nuevas });
+}
+
+// Asignar rubro a un proveedor (aplica a todas sus facturas, pasadas y futuras)
+async function rubroProveedor(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { cuit, rubro } = req.body || {};
+  if (!cuit || !rubro) return res.status(400).json({ error: "cuit y rubro requeridos" });
+  const sql = neon(process.env.DATABASE_URL);
+  await sql`INSERT INTO proveedores (cuit, rubro) VALUES (${cuit}, ${rubro})
+    ON CONFLICT (cuit) DO UPDATE SET rubro = ${rubro}`;
+  return res.status(200).json({ ok: true });
+}
+
+// Disparo manual del barrido WSFE (el automático corre con el cierre diario)
+async function arcaSync(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const r = await sincronizarEmitidos(sql, { maxComprobantes: 800 });
+  return res.status(200).json(r);
+}
+
+// Tablero: posición de IVA, cruce vendido vs facturado, gastos por rubro y conciliación
+async function contabilidad(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const mes = /^\d{4}-\d{2}$/.test(req.query.mes || "") ? req.query.mes : hoyArg().slice(0, 7);
+  const desde = `${mes}-01`;
+  const hasta = `${mes}-31`;
+
+  // Posición de IVA de los últimos 6 meses (débito emitidos − crédito recibidos)
+  const iva = await sql`
+    WITH deb AS (
+      SELECT to_char(fecha, 'YYYY-MM') AS mes,
+             ROUND(SUM(iva * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS debito,
+             ROUND(SUM(total * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS facturado
+      FROM comprobantes_emitidos GROUP BY 1
+    ), cred AS (
+      SELECT to_char(fecha, 'YYYY-MM') AS mes,
+             ROUND(SUM(iva * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS credito,
+             ROUND(SUM(total * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS compras
+      FROM comprobantes_recibidos GROUP BY 1
+    )
+    SELECT COALESCE(d.mes, c.mes) AS mes,
+           COALESCE(d.debito, 0) AS debito, COALESCE(c.credito, 0) AS credito,
+           COALESCE(d.facturado, 0) AS facturado, COALESCE(c.compras, 0) AS compras
+    FROM deb d FULL OUTER JOIN cred c ON d.mes = c.mes
+    ORDER BY 1 DESC LIMIT 6`;
+
+  // Cruce diario del mes: venta según los sistemas vs total facturado en ARCA
+  const cruce = await sql`
+    WITH v AS (
+      SELECT fecha, ROUND(SUM(total))::bigint AS venta FROM ventas
+      WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY 1
+    ), f AS (
+      SELECT fecha, ROUND(SUM(total * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS facturado
+      FROM comprobantes_emitidos WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY 1
+    )
+    SELECT COALESCE(v.fecha, f.fecha)::text AS fecha,
+           COALESCE(v.venta, 0) AS venta, COALESCE(f.facturado, 0) AS facturado
+    FROM v FULL OUTER JOIN f ON v.fecha = f.fecha ORDER BY 1`;
+
+  // Facturación del mes por punto de venta
+  const porPV = await sql`
+    SELECT punto_venta, COUNT(*)::int AS comprobantes,
+           ROUND(SUM(total * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS total
+    FROM comprobantes_emitidos WHERE fecha BETWEEN ${desde} AND ${hasta}
+    GROUP BY 1 ORDER BY total DESC`;
+
+  // Pista de qué punto de venta es cada local Dragonfish (sale del prefijo del orden_id)
+  const pvLocales = await sql`
+    SELECT local, split_part(regexp_replace(orden_id, '^[A-Z]+', ''), '-', 1) AS pv, COUNT(*)::int AS n
+    FROM ventas
+    WHERE sistema = 'Dragonfish' AND fecha BETWEEN ${desde} AND ${hasta} AND orden_id ~ '^[A-Z]+[0-9]+-'
+    GROUP BY 1, 2 ORDER BY n DESC`;
+
+  // Gastos del mes por rubro y por proveedor
+  const rubros = await sql`
+    SELECT COALESCE(p.rubro, 'Sin rubro') AS rubro,
+           ROUND(SUM(c.total * CASE WHEN c.tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS total,
+           COUNT(*)::int AS comprobantes
+    FROM comprobantes_recibidos c LEFT JOIN proveedores p ON p.cuit = c.cuit_emisor
+    WHERE c.fecha BETWEEN ${desde} AND ${hasta}
+    GROUP BY 1 ORDER BY total DESC`;
+  const provs = await sql`
+    SELECT c.cuit_emisor AS cuit, COALESCE(p.nombre, MAX(c.emisor)) AS nombre,
+           COALESCE(p.rubro, 'Sin rubro') AS rubro,
+           ROUND(SUM(c.total * CASE WHEN c.tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS total,
+           ROUND(SUM(c.iva * CASE WHEN c.tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS iva,
+           COUNT(*)::int AS comprobantes
+    FROM comprobantes_recibidos c LEFT JOIN proveedores p ON p.cuit = c.cuit_emisor
+    WHERE c.fecha BETWEEN ${desde} AND ${hasta}
+    GROUP BY 1, p.nombre, p.rubro ORDER BY total DESC LIMIT 60`;
+
+  // Conciliación: transferencias MP del mes sin factura recibida que las respalde
+  // (mismo CUIT y monto dentro del 1%, o monto casi exacto si el egreso no trae CUIT)
+  const egresos = await sql`
+    SELECT e.id, e.fecha::text, e.contraparte, e.cuit, e.monto, e.detalle,
+           EXISTS (
+             SELECT 1 FROM comprobantes_recibidos c
+             WHERE c.fecha BETWEEN e.fecha - 20 AND e.fecha + 20
+               AND ((e.cuit IS NOT NULL AND c.cuit_emisor = e.cuit AND abs(c.total - e.monto) <= e.monto * 0.01)
+                    OR (e.cuit IS NULL AND abs(c.total - e.monto) <= e.monto * 0.005))
+           ) AS con_factura
+    FROM egresos_mp e WHERE e.fecha BETWEEN ${desde} AND ${hasta}
+    ORDER BY e.fecha DESC, e.monto DESC LIMIT 300`;
+
+  const [estado] = await sql`
+    SELECT (SELECT COUNT(*) FROM comprobantes_emitidos)::int AS emitidos,
+           (SELECT COUNT(*) FROM comprobantes_recibidos)::int AS recibidos,
+           (SELECT MAX(cargado_en) FROM comprobantes_recibidos)::text AS ultima_carga_recibidos,
+           (SELECT COALESCE(SUM(ultimo), 0) FROM arca_cursor)::bigint AS cursor_ws`;
+
+  return res.status(200).json({
+    ok: true, mes,
+    arca: arcaConfigurada(),
+    iva: iva.map(r => ({ ...r, debito: Number(r.debito), credito: Number(r.credito), posicion: Number(r.debito) - Number(r.credito), facturado: Number(r.facturado), compras: Number(r.compras) })),
+    cruce: cruce.map(r => ({ ...r, venta: Number(r.venta), facturado: Number(r.facturado) })),
+    porPV: porPV.map(r => ({ ...r, total: Number(r.total) })),
+    pvLocales,
+    rubros: rubros.map(r => ({ ...r, total: Number(r.total) })),
+    proveedores: provs.map(r => ({ ...r, cuit: Number(r.cuit), total: Number(r.total), iva: Number(r.iva) })),
+    egresos: egresos.map(r => ({ ...r, monto: Number(r.monto), cuit: r.cuit ? Number(r.cuit) : null })),
+    estado,
+    nombresTipo: NOMBRES_TIPO,
+  });
+}
+
+// Alta de egresos de MercadoPago (transferencias a proveedores) para conciliar
+async function cargarEgresos(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { filas } = req.body || {};
+  if (!Array.isArray(filas) || !filas.length) return res.status(400).json({ error: "filas requeridas" });
+  if (filas.length > 20000) return res.status(400).json({ error: "demasiadas filas en una carga" });
+  const sql = neon(process.env.DATABASE_URL);
+  const validas = filas.filter(f => f.id && f.fecha && f.monto);
+  let nuevas = 0;
+  for (let i = 0; i < validas.length; i += 1000) {
+    const lote = validas.slice(i, i + 1000);
+    const col = fn => lote.map(fn);
+    const r = await sql`INSERT INTO egresos_mp (id, fecha, contraparte, cuit, monto, detalle)
+      SELECT * FROM unnest(
+        ${col(f => String(f.id))}::text[], ${col(f => f.fecha)}::date[], ${col(f => f.contraparte || null)}::text[],
+        ${col(f => f.cuit ?? null)}::bigint[], ${col(f => f.monto)}::numeric[], ${col(f => f.detalle || null)}::text[]
+      ) AS x(id, fecha, contraparte, cuit, monto, detalle)
+      ON CONFLICT (id) DO NOTHING RETURNING id`;
+    nuevas += r.length;
+  }
+  return res.status(200).json({ ok: true, recibidas: filas.length, nuevas });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -1305,6 +1511,11 @@ module.exports = async function handler(req, res) {
     if (action === "cargarReporte") return await cargarReporte(req, res);
     if (action === "gastosLocales") return await gastosLocales(req, res);
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
+    if (action === "contabilidad") return await contabilidad(req, res);
+    if (action === "cargarComprobantes") return await cargarComprobantes(req, res);
+    if (action === "cargarEgresos") return await cargarEgresos(req, res);
+    if (action === "rubroProveedor") return await rubroProveedor(req, res);
+    if (action === "arcaSync") return await arcaSync(req, res);
 
     if (!process.env.DATABASE_URL) {
       return res.status(503).json({ error: "DATABASE_URL no configurada" });
