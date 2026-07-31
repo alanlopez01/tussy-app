@@ -1438,46 +1438,76 @@ async function contabilidad(req, res) {
   // "FABRIKA S.A.", apellido/nombre invertidos, Ñ perdida, truncados), así que el
   // match es por palabras normalizadas; si no hay match de nombre, se busca una
   // factura por el monto exacto (pagos hechos a nombre de un tercero).
-  const trf = await sql`
-    SELECT upper(trim(contraparte)) AS nombre,
-           ROUND(SUM(monto))::bigint AS transferido,
-           COUNT(*)::int AS transferencias
-    FROM egresos_mp
-    WHERE fecha BETWEEN ${desde} AND ${hasta}
-      AND detalle ILIKE 'Transferencia enviada%' AND contraparte IS NOT NULL
-    GROUP BY 1 ORDER BY 2 DESC`;
-  const factRows = await sql`
-    SELECT upper(COALESCE(emisor, '')) AS nombre,
-           ROUND(SUM(total * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS facturado,
-           ARRAY_AGG(ROUND(total)::bigint) AS montos
+  // Se devuelve adem\u00e1s el detalle: cada transferencia con su n\u00famero de operaci\u00f3n de
+  // MercadoPago (con ese n\u00famero se busca el pago en la app de MP) y cada factura que
+  // se le imput\u00f3, para poder rastrear un pago puntual.
+  const egresosMes = await sql`
+    SELECT id, fecha::text, contraparte, ROUND(monto)::bigint AS monto, detalle
+    FROM egresos_mp WHERE fecha BETWEEN ${desde} AND ${hasta}
+    ORDER BY fecha DESC, monto DESC`;
+  const facturasRows = await sql`
+    SELECT upper(COALESCE(emisor, '')) AS nombre, fecha::text, tipo, punto_venta,
+           numero, cuit_emisor, ROUND(total)::bigint AS total
     FROM comprobantes_recibidos
     WHERE fecha BETWEEN ${desde}::date - 20 AND ${hasta}::date + 20
-    GROUP BY 1`;
+    ORDER BY fecha`;
+
   const SUFIJOS = new Set(["SA", "SRL", "SAS", "SACI", "SAU", "SCA", "SH", "SOCIEDAD", "ANONIMA", "RESPONSABILIDAD", "LIMITADA"]);
   const tokens = s => new Set(String(s || "")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
     .replace(/[^A-Z0-9 ]/g, " ").split(/\s+/)
     .filter(w => w.length > 1 && !SUFIJOS.has(w)));
-  const fact = factRows.map(r => ({ ...r, facturado: Number(r.facturado), toks: tokens(r.nombre) }));
-  const conciliacion = trf.map(t => {
+
+  const porEmisor = new Map();
+  for (const f of facturasRows) {
+    const signo = [3, 8, 13].includes(f.tipo) ? -1 : 1;
+    if (!porEmisor.has(f.nombre)) {
+      porEmisor.set(f.nombre, { facturado: 0, toks: tokens(f.nombre), comprobantes: [] });
+    }
+    const g = porEmisor.get(f.nombre);
+    g.facturado += signo * Number(f.total);
+    g.comprobantes.push({
+      fecha: f.fecha, tipo: f.tipo, punto_venta: f.punto_venta, numero: Number(f.numero),
+      emisor: f.nombre, cuit: Number(f.cuit_emisor), total: signo * Number(f.total),
+    });
+  }
+  const emisores = [...porEmisor.values()];
+
+  const porContraparte = new Map();
+  for (const m of egresosMes) {
+    if (!/^Transferencia enviada/i.test(m.detalle || "") || !m.contraparte) continue;
+    const nombre = m.contraparte.trim().toUpperCase();
+    if (!porContraparte.has(nombre)) porContraparte.set(nombre, { nombre, transferido: 0, movimientos: [] });
+    const g = porContraparte.get(nombre);
+    g.transferido += Number(m.monto);
+    g.movimientos.push({ id: m.id, fecha: m.fecha, monto: Number(m.monto) });
+  }
+
+  const conciliacion = [...porContraparte.values()].map(t => {
     const toks = tokens(t.nombre);
-    let facturado = 0, matchNombre = false;
-    for (const f of fact) {
+    let facturado = 0, comprobantes = [], matchNombre = false;
+    for (const e of emisores) {
       let inter = 0;
-      for (const w of toks) if (f.toks.has(w)) inter++;
-      if (inter >= 2 || (inter >= 1 && inter >= Math.min(toks.size, f.toks.size))) {
-        facturado += f.facturado;
+      for (const w of toks) if (e.toks.has(w)) inter++;
+      if (inter >= 2 || (inter >= 1 && inter >= Math.min(toks.size, e.toks.size))) {
+        facturado += e.facturado;
+        comprobantes = comprobantes.concat(e.comprobantes);
         matchNombre = true;
       }
     }
     let porMonto = false;
     if (!matchNombre) {
-      const objetivo = Number(t.transferido);
-      porMonto = fact.some(f => (f.montos || []).some(m => Math.abs(Number(m) - objetivo) <= objetivo * 0.005));
-      if (porMonto) facturado = objetivo;
+      for (const e of emisores) {
+        const c = e.comprobantes.find(x => Math.abs(x.total - t.transferido) <= t.transferido * 0.005);
+        if (c) { facturado = t.transferido; comprobantes = [c]; porMonto = true; break; }
+      }
     }
-    return { nombre: t.nombre, transferido: Number(t.transferido), transferencias: t.transferencias, facturado, porMonto };
-  });
+    return {
+      nombre: t.nombre, transferido: t.transferido, transferencias: t.movimientos.length,
+      facturado, porMonto, movimientos: t.movimientos,
+      comprobantes: comprobantes.sort((a, b) => a.fecha.localeCompare(b.fecha)),
+    };
+  }).sort((a, b) => b.transferido - a.transferido);
 
   // Otros egresos del mes (pauta, servicios, envíos) para tener el gasto por canal
   const otrosEgresos = await sql`
@@ -1511,6 +1541,7 @@ async function contabilidad(req, res) {
     proveedores: provs.map(r => ({ ...r, cuit: Number(r.cuit), total: Number(r.total), iva: Number(r.iva) })),
     conciliacion,
     otrosEgresos: otrosEgresos.map(r => ({ ...r, total: Number(r.total) })),
+    movimientos: egresosMes.map(r => ({ ...r, monto: Number(r.monto) })),
     estado,
     nombresTipo: NOMBRES_TIPO,
   });
