@@ -364,7 +364,7 @@ export default function Contabilidad() {
               <table className="w-full min-w-[780px]">
                 <thead><tr>
                   <th className={th}>Local</th><th className={`${th} text-right`}>Venta</th>
-                  <th className={`${th} text-right`}>Electrónico</th><th className={`${th} text-right`}>Cobrado MP</th>
+                  <th className={`${th} text-right`}>Electrónico</th><th className={`${th} text-right`}>Cobrado MP/PN</th>
                   <th className={`${th} text-right`}>Facturado</th>
                   <th className={`${th} text-right`}>Fact./electr.</th>
                   <th className={`${th} text-right`}>% de la venta</th><th className={`${th} text-right`}>mes ant.</th>
@@ -400,10 +400,11 @@ export default function Contabilidad() {
               (ELECTRON en Dragonfish, Chip and Pin en Woo); es lo que corresponde facturar, así que{" "}
               <strong>Fact./electr. debería rondar el 100%</strong> y se marca en amarillo si se aleja más de 10
               puntos. Ojo que ARCA impacta 24-48 h después, así que sobre el cierre del mes siempre se ve corto.
-              <strong> Cobrado MP</strong> es lo liquidado por MercadoPago con todos los medios (Point, QR,
-              billeteras): debería calzar con Electrónico — exportá el reporte de Ventas de MP{" "}
-              <strong>sin el filtro Point</strong>. La última columna compara contra el propio ratio del mes
-              anterior para detectar cambios de comportamiento.
+              <strong> Cobrado MP/PN</strong> es lo liquidado por la pasarela de cada canal: en los locales,
+              MercadoPago con todos los medios (Point, QR, billeteras — exportá el reporte de Ventas{" "}
+              <strong>sin el filtro Point</strong>); en Online, <strong>Pago Nube</strong> más transferencias,
+              según el reporte de Tiendanube. Debería calzar con Electrónico. La última columna compara contra
+              el propio ratio del mes anterior para detectar cambios de comportamiento.
             </p>
           </Card>
           <Card title="Detalle por punto de venta"
