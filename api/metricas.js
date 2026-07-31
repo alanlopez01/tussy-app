@@ -12,7 +12,7 @@
 const { neon } = require("@neondatabase/serverless");
 const { waitUntil } = require("@vercel/functions");
 const webpush = require("web-push");
-const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchDFDia } = require("../lib/fuentes");
+const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchDFDia, fetchDFRango } = require("../lib/fuentes");
 
 const KEY_LOCAL = {
   "Palermo": "palermo", "La Plata": "laplata", "Tiendanube": "online",
@@ -306,6 +306,48 @@ function fmtCortoPesos(n) {
   return "$" + v;
 }
 
+// Re-ingesta de los últimos días: captura órdenes que se pagaron DESPUÉS del día
+// en que se crearon (transferencias, pagos demorados de Tiendanube). Sin esto, la
+// foto diaria de ventas queda congelada y esas órdenes se pierden para siempre.
+async function reingestarUltimosDias(sql, dias = 7) {
+  const resumen = [];
+  const hoy = hoyArg();
+  // Dragonfish: un solo sweep por local cubre todo el rango (paginar es lo caro)
+  const desde = new Date(Date.now() - 3 * 3600 * 1000 - dias * 86400000).toISOString().slice(0, 10);
+  const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
+  for (const l of dfLocales()) {
+    const r = await fetchDFRango(l, desde, ayer);
+    if (!r.ok) { resumen.push({ local: l.nombre, ok: false, error: r.error }); continue; }
+    for (const [dia, filas] of Object.entries(r.porDia)) {
+      if (dia >= hoy) continue;
+      await escribirDiaLocal(sql, dia, l.nombre, filas);
+      await escribirCobrosDia(sql, dia, l.nombre, (r.cobrosPorDia || {})[dia] || []);
+    }
+    resumen.push({ local: l.nombre, ok: true, dias: Object.keys(r.porDia).length });
+  }
+  // Woo y Tiendanube: día por día
+  const listaDias = [];
+  for (let i = 1; i <= dias; i++) {
+    listaDias.push(new Date(Date.now() - 3 * 3600 * 1000 - i * 86400000).toISOString().slice(0, 10));
+  }
+  const fuentesWebs = [
+    ...wooLocales().map(l => ({ local: l.nombre, fn: f => fetchWooDia(l, f) })),
+    { local: "Tiendanube", fn: f => fetchTNDia(f) },
+  ];
+  for (const { local, fn } of fuentesWebs) {
+    let ok = 0;
+    for (const dia of listaDias) {
+      const r = await fn(dia);
+      if (!r.ok) continue;
+      await escribirDiaLocal(sql, dia, local, r.filas);
+      await escribirCobrosDia(sql, dia, local, r.cobros);
+      ok++;
+    }
+    resumen.push({ local, ok: true, dias: ok });
+  }
+  return resumen;
+}
+
 // ── Cierre del día anterior (cron diario 00:05 ARG via cron-job.org) ──
 async function cierreDiario(req, res) {
   const secret = process.env.CRON_SECRET || "tussy2026";
@@ -333,6 +375,12 @@ async function cierreDiario(req, res) {
     sincronizarEmitidos(sql, { maxComprobantes: 2000 })
       .then(r => console.log("[arca]", JSON.stringify(r)))
       .catch(e => console.error("[arca] error:", e))
+  );
+  // Y re-ingestamos la última semana para capturar pagos que se acreditaron tarde
+  waitUntil(
+    reingestarUltimosDias(sql, 7)
+      .then(r => console.log("[reingesta]", JSON.stringify(r)))
+      .catch(e => console.error("[reingesta] error:", e))
   );
   return res.status(200).json({ ok: true, fecha: ayer, total, porLocal: rows, notificadas: enviadas });
 }
