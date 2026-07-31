@@ -323,38 +323,64 @@ export default function Contabilidad() {
       )}
 
       {tab === "facturacion" && data && (() => {
-        const aFacturar = (data.esperado?.ventaOnline || 0) + (data.esperado?.tarjetasLocales || 0);
-        const difEsperado = aFacturar - totalFacturado;
-        const sinMix = !(data.esperado?.tarjetasLocales > 0);
+        const locales = data.facturacionLocal || [];
+        const alertas = locales.filter(l => l.ratio != null && l.ratioPrev != null && Math.abs(l.ratio - l.ratioPrev) > 0.1);
         return (
         <>
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-3">
             <Card title="Venta total del mes"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalVenta)}</div></Card>
-            <Card title="A facturar (operatoria)">
-              <div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(aFacturar)}</div>
-              <p className="text-[11px] text-ink-3 mt-1">online {fmtPesosCorto(data.esperado?.ventaOnline || 0)} + tarjetas locales {fmtPesosCorto(data.esperado?.tarjetasLocales || 0)}</p>
-            </Card>
             <Card title="Facturado en ARCA"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalFacturado)}</div></Card>
-            <Card title="Diferencia">
-              <div className={`text-[24px] font-bold tabular-nums ${Math.abs(difEsperado) > Math.max(aFacturar, 1) * 0.03 ? "text-warn" : "text-ok"}`}>
-                {fmtPesosCorto(difEsperado)}
-              </div>
-              <p className="text-[11px] text-ink-3 mt-1">{aFacturar ? (difEsperado / aFacturar * 100).toFixed(1) : 0}% vs. lo esperado</p>
+            <Card title="Locales fuera de su patrón">
+              <div className={`text-[24px] font-bold tabular-nums ${alertas.length ? "text-warn" : "text-ok"}`}>{alertas.length}</div>
+              <p className="text-[11px] text-ink-3 mt-1">
+                {alertas.length ? alertas.map(a => a.local).join(", ") : "todos facturan como el mes pasado"}
+              </p>
             </Card>
           </div>
-          <Card>
-            <p className="text-[11px] text-ink-3">
-              <strong>Cómo se compara</strong>: online se factura el 100%; en los locales se factura lo cobrado por
-              MP Point (tarjeta, QR), que se toma del bruto del reporte mensual
-              {sinMix && <strong className="text-warn"> — todavía no hay reporte de MP Point cargado para este mes, así que el esperado está incompleto</strong>}.
-              Como la facturación de los locales es manual y a veces facturas de fin de mes se emiten al mes
-              siguiente, el desvío de un mes suelto no alarma: lo que tiene que cerrar es el acumulado.
+
+          <Card title="Facturación por local">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px]">
+                <thead><tr>
+                  <th className={th}>Local</th><th className={`${th} text-right`}>Venta</th>
+                  <th className={`${th} text-right`}>Cobrado Point</th><th className={`${th} text-right`}>Facturado</th>
+                  <th className={`${th} text-right`}>% de la venta</th><th className={`${th} text-right`}>mes anterior</th>
+                </tr></thead>
+                <tbody>
+                  {locales.map(l => {
+                    const salto = l.ratio != null && l.ratioPrev != null && Math.abs(l.ratio - l.ratioPrev) > 0.1;
+                    return (
+                      <tr key={l.local} className="border-t border-borde">
+                        <td className={`${td} font-semibold text-ink`}>{l.local === "Tiendanube" ? "Online" : l.local}
+                          <span className="text-[10px] text-ink-3 ml-1.5">PV {String(l.punto_venta).padStart(4, "0")}</span></td>
+                        <td className={`${td} text-right`}>{fmtPesosCorto(l.venta)}</td>
+                        <td className={`${td} text-right`}>{l.point ? fmtPesosCorto(l.point) : "—"}</td>
+                        <td className={`${td} text-right`}>{fmtPesosCorto(l.facturado)}</td>
+                        <td className={`${td} text-right font-bold ${salto ? "text-warn" : "text-ink"}`}>
+                          {l.ratio != null ? Math.round(l.ratio * 100) + "%" : "—"}
+                        </td>
+                        <td className={`${td} text-right text-ink-3`}>
+                          {l.ratioPrev != null ? Math.round(l.ratioPrev * 100) + "%" : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-ink-3 mt-3">
+              Cada local factura una porción distinta de lo que vende: online factura todo, y en los locales depende
+              de la operatoria de cada uno. Por eso no se compara contra una regla única sino contra{" "}
+              <strong>el propio ratio del mes anterior</strong>: lo que hay que detectar es un cambio de
+              comportamiento. Se marca en amarillo cuando el porcentaje se movió más de 10 puntos. Como la
+              facturación es manual y a veces se pasan facturas al mes siguiente, un mes suelto puede desviarse.
             </p>
           </Card>
-          <Card title="Por punto de venta">
+          <Card title="Detalle por punto de venta"
+                right={<span className="text-[11px] text-ink-3">si aparece un PV sin nombre, avisame y lo mapeo</span>}>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[420px]">
-                <thead><tr><th className={th}>PV</th><th className={th}>Local (estimado)</th><th className={`${th} text-right`}>Comprobantes</th><th className={`${th} text-right`}>Facturado</th></tr></thead>
+                <thead><tr><th className={th}>PV</th><th className={th}>Local</th><th className={`${th} text-right`}>Comprobantes</th><th className={`${th} text-right`}>Facturado</th></tr></thead>
                 <tbody>
                   {data.porPV.map(r => (
                     <tr key={r.punto_venta} className="border-t border-borde">

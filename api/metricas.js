@@ -1396,15 +1396,39 @@ async function contabilidad(req, res) {
     FROM comprobantes_emitidos WHERE fecha BETWEEN ${desde} AND ${hasta}
     GROUP BY 1 ORDER BY total DESC`;
 
-  // Lo que corresponde facturar según la operatoria del negocio: online se factura
-  // todo; en los locales, lo cobrado con tarjeta (electron/chip&pin = bruto de MP
-  // Point del mes, que viene del reporte que se sube en Rentabilidad → Carga).
-  const [esperado] = await sql`
-    SELECT
-      (SELECT ROUND(COALESCE(SUM(total), 0))::bigint FROM ventas
-        WHERE fecha BETWEEN ${desde} AND ${hasta} AND local = 'Tiendanube') AS venta_online,
-      (SELECT ROUND(COALESCE(SUM(bruto), 0))::bigint FROM mix_pagos
-        WHERE mes = ${mes} AND local <> 'Tiendanube') AS tarjetas_locales`;
+  // Control de facturación por local. Cada uno factura una porción distinta de lo que
+  // vende (online factura todo; los locales, según su operatoria), así que en vez de
+  // una regla teórica se compara cada local contra SU PROPIO ratio del mes anterior:
+  // lo que hay que detectar es un cambio de comportamiento, no el nivel absoluto.
+  const mesPrev = (() => {
+    const [y, m] = mes.split("-").map(Number);
+    return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  })();
+  const facturacionLocal = await sql`
+    WITH v AS (
+      SELECT local, to_char(fecha, 'YYYY-MM') AS mes, ROUND(SUM(total))::bigint AS venta
+      FROM ventas WHERE to_char(fecha, 'YYYY-MM') IN (${mes}, ${mesPrev}) GROUP BY 1, 2
+    ), p AS (
+      SELECT local, mes, ROUND(SUM(bruto))::bigint AS point
+      FROM mix_pagos WHERE mes IN (${mes}, ${mesPrev}) GROUP BY 1, 2
+    ), f AS (
+      SELECT punto_venta, to_char(fecha, 'YYYY-MM') AS mes,
+             ROUND(SUM(total * CASE WHEN tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint AS facturado
+      FROM comprobantes_emitidos WHERE to_char(fecha, 'YYYY-MM') IN (${mes}, ${mesPrev}) GROUP BY 1, 2
+    ), pv (punto_venta, local) AS (
+      VALUES (33, 'Tiendanube'), (1901, 'Palermo'), (1902, 'La Plata'),
+             (1904, 'Dot'), (1905, 'Abasto'), (1401, 'Córdoba')
+    )
+    SELECT pv.local, pv.punto_venta,
+           COALESCE(vh.venta, 0) AS venta, COALESCE(ph.point, 0) AS point, COALESCE(fh.facturado, 0) AS facturado,
+           COALESCE(va.venta, 0) AS venta_prev, COALESCE(fa.facturado, 0) AS facturado_prev
+    FROM pv
+    LEFT JOIN v vh ON vh.local = pv.local AND vh.mes = ${mes}
+    LEFT JOIN p ph ON ph.local = pv.local AND ph.mes = ${mes}
+    LEFT JOIN f fh ON fh.punto_venta = pv.punto_venta AND fh.mes = ${mes}
+    LEFT JOIN v va ON va.local = pv.local AND va.mes = ${mesPrev}
+    LEFT JOIN f fa ON fa.punto_venta = pv.punto_venta AND fa.mes = ${mesPrev}
+    ORDER BY COALESCE(vh.venta, 0) DESC`;
 
   // Pista de qué punto de venta es cada local Dragonfish (sale del prefijo del orden_id)
   const pvLocales = await sql`
@@ -1534,7 +1558,13 @@ async function contabilidad(req, res) {
     arca: arcaConfigurada(),
     iva: iva.map(r => ({ ...r, debito: Number(r.debito), credito: Number(r.credito), posicion: Number(r.debito) - Number(r.credito), facturado: Number(r.facturado), compras: Number(r.compras) })),
     cruce: cruce.map(r => ({ ...r, venta: Number(r.venta), facturado: Number(r.facturado) })),
-    esperado: { ventaOnline: Number(esperado.venta_online), tarjetasLocales: Number(esperado.tarjetas_locales) },
+    mesPrev,
+    facturacionLocal: facturacionLocal.map(r => ({
+      local: r.local, punto_venta: r.punto_venta,
+      venta: Number(r.venta), point: Number(r.point), facturado: Number(r.facturado),
+      ratio: Number(r.venta) ? Number(r.facturado) / Number(r.venta) : null,
+      ratioPrev: Number(r.venta_prev) ? Number(r.facturado_prev) / Number(r.venta_prev) : null,
+    })),
     porPV: porPV.map(r => ({ ...r, total: Number(r.total) })),
     pvLocales,
     rubros: rubros.map(r => ({ ...r, total: Number(r.total) })),
