@@ -35,13 +35,18 @@ function aEntero(v) {
   return m ? parseInt(m[0]) : null;
 }
 
-// Busca la fila de encabezados y devuelve un índice por nombre (tolerante a variantes)
+// Busca la fila de encabezados y devuelve un índice por nombre. Los patrones se
+// prueban EN ORDEN: el primero que matchea gana (así "total iva" le gana a "iva 2,5%").
 function mapearColumnas(rows, requeridas) {
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
     const celdas = (rows[i] || []).map(c => String(c ?? "").toLowerCase());
     const idx = {};
     for (const [clave, patrones] of Object.entries(requeridas)) {
-      idx[clave] = celdas.findIndex(c => patrones.some(p => c.includes(p)));
+      idx[clave] = -1;
+      for (const p of patrones) {
+        const j = celdas.findIndex(c => c.includes(p));
+        if (j >= 0) { idx[clave] = j; break; }
+      }
     }
     if (idx.fecha >= 0 && idx.total >= 0) return { fila: i, idx };
   }
@@ -63,10 +68,10 @@ async function parsearMisComprobantes(file, clase) {
     tipo: ["tipo de comprobante", "tipo comprobante", "tipo cbte"],
     pv: ["punto de venta"],
     numero: ["número desde", "numero desde", "número de comprobante", "numero comprobante"],
-    doc: [clase === "recibidos" ? "doc. emisor" : "doc. receptor", "nro. doc"],
+    doc: [clase === "recibidos" ? "nro. doc. emisor" : "nro. doc. receptor", "nro. doc"],
     nombre: ["denominaci"],
-    neto: ["neto gravado"],
-    iva: ["iva"],
+    neto: ["neto gravado total", "neto gravado"],
+    iva: ["total iva", "iva total", "iva"],
     tributos: ["otros tributos"],
     total: ["imp. total", "importe total", "imp total"],
   });
@@ -302,18 +307,34 @@ export default function Contabilidad() {
         </>
       )}
 
-      {tab === "facturacion" && data && (
+      {tab === "facturacion" && data && (() => {
+        const aFacturar = (data.esperado?.ventaOnline || 0) + (data.esperado?.tarjetasLocales || 0);
+        const difEsperado = aFacturar - totalFacturado;
+        const sinMix = !(data.esperado?.tarjetasLocales > 0);
+        return (
         <>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Card title="Venta según sistemas"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalVenta)}</div></Card>
+          <div className="grid gap-3 md:grid-cols-4">
+            <Card title="Venta total del mes"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalVenta)}</div></Card>
+            <Card title="A facturar (operatoria)">
+              <div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(aFacturar)}</div>
+              <p className="text-[11px] text-ink-3 mt-1">online {fmtPesosCorto(data.esperado?.ventaOnline || 0)} + tarjetas locales {fmtPesosCorto(data.esperado?.tarjetasLocales || 0)}</p>
+            </Card>
             <Card title="Facturado en ARCA"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalFacturado)}</div></Card>
             <Card title="Diferencia">
-              <div className={`text-[24px] font-bold tabular-nums ${Math.abs(totalVenta - totalFacturado) > totalVenta * 0.02 ? "text-warn" : "text-ok"}`}>
-                {fmtPesosCorto(totalVenta - totalFacturado)}
+              <div className={`text-[24px] font-bold tabular-nums ${Math.abs(difEsperado) > Math.max(aFacturar, 1) * 0.03 ? "text-warn" : "text-ok"}`}>
+                {fmtPesosCorto(difEsperado)}
               </div>
-              <p className="text-[11px] text-ink-3 mt-1">{totalVenta ? ((totalVenta - totalFacturado) / totalVenta * 100).toFixed(1) : 0}% de la venta</p>
+              <p className="text-[11px] text-ink-3 mt-1">{aFacturar ? (difEsperado / aFacturar * 100).toFixed(1) : 0}% vs. lo esperado</p>
             </Card>
           </div>
+          <Card>
+            <p className="text-[11px] text-ink-3">
+              <strong>Cómo se compara</strong>: online se factura el 100%; en los locales se factura lo cobrado con
+              tarjeta (electron / chip&nbsp;&&nbsp;pin), que se toma del bruto de MP Point del reporte mensual
+              {sinMix && <strong className="text-warn"> — todavía no hay reporte de MP Point cargado para este mes, así que el esperado está incompleto</strong>}.
+              Las cuotas y el redondeo de fechas hacen que una diferencia de hasta ±3% sea normal.
+            </p>
+          </Card>
           <Card title="Por punto de venta">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[420px]">
@@ -332,7 +353,7 @@ export default function Contabilidad() {
               </table>
             </div>
           </Card>
-          <Card title="Día por día">
+          <Card title="Día por día · venta total vs. facturado (referencia)">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[440px]">
                 <thead><tr><th className={th}>Fecha</th><th className={`${th} text-right`}>Venta</th><th className={`${th} text-right`}>Facturado</th><th className={`${th} text-right`}>Dif.</th></tr></thead>
@@ -353,7 +374,8 @@ export default function Contabilidad() {
             </div>
           </Card>
         </>
-      )}
+        );
+      })()}
 
       {tab === "gastos" && data && (
         <>

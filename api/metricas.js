@@ -1396,6 +1396,16 @@ async function contabilidad(req, res) {
     FROM comprobantes_emitidos WHERE fecha BETWEEN ${desde} AND ${hasta}
     GROUP BY 1 ORDER BY total DESC`;
 
+  // Lo que corresponde facturar según la operatoria del negocio: online se factura
+  // todo; en los locales, lo cobrado con tarjeta (electron/chip&pin = bruto de MP
+  // Point del mes, que viene del reporte que se sube en Rentabilidad → Carga).
+  const [esperado] = await sql`
+    SELECT
+      (SELECT ROUND(COALESCE(SUM(total), 0))::bigint FROM ventas
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND local = 'Tiendanube') AS venta_online,
+      (SELECT ROUND(COALESCE(SUM(bruto), 0))::bigint FROM mix_pagos
+        WHERE mes = ${mes} AND local <> 'Tiendanube') AS tarjetas_locales`;
+
   // Pista de qué punto de venta es cada local Dragonfish (sale del prefijo del orden_id)
   const pvLocales = await sql`
     SELECT local, split_part(regexp_replace(orden_id, '^[A-Z]+', ''), '-', 1) AS pv, COUNT(*)::int AS n
@@ -1445,6 +1455,7 @@ async function contabilidad(req, res) {
     arca: arcaConfigurada(),
     iva: iva.map(r => ({ ...r, debito: Number(r.debito), credito: Number(r.credito), posicion: Number(r.debito) - Number(r.credito), facturado: Number(r.facturado), compras: Number(r.compras) })),
     cruce: cruce.map(r => ({ ...r, venta: Number(r.venta), facturado: Number(r.facturado) })),
+    esperado: { ventaOnline: Number(esperado.venta_online), tarjetasLocales: Number(esperado.tarjetas_locales) },
     porPV: porPV.map(r => ({ ...r, total: Number(r.total) })),
     pvLocales,
     rubros: rubros.map(r => ({ ...r, total: Number(r.total) })),
