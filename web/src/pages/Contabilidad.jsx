@@ -512,7 +512,7 @@ export default function Contabilidad() {
                 Acá está en qué se usaron:
               </p>
               <div className="space-y-2">
-                {data.banco.categorias.filter(c => c.egresos > 0).map(c => (
+                {data.banco.categorias.filter(c => c.egresos > 0).sort((a, b) => b.egresos - a.egresos).map(c => (
                   <div key={c.categoria}>
                     <div className="flex justify-between text-[12px] mb-0.5 gap-3">
                       <span className="font-semibold text-ink-2">{c.categoria}</span>
