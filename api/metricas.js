@@ -25,6 +25,7 @@ const { costear } = require("../lib/costeo");
 const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
+const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia } = require("../lib/bancos");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
@@ -1350,6 +1351,36 @@ async function arcaSync(req, res) {
   return res.status(200).json(r);
 }
 
+// Alta de movimientos de un extracto bancario (Galicia). El navegador manda el CSV
+// crudo y el parseo ocurre acá, con la misma librería que usan los scripts.
+async function cargarBanco(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { texto } = req.body || {};
+  if (typeof texto !== "string" || !texto.trim()) return res.status(400).json({ error: "texto del extracto requerido" });
+  if (texto.length > 8_000_000) return res.status(400).json({ error: "archivo demasiado grande" });
+  let filas;
+  try { filas = parsearGalicia(texto); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
+  const sql = neon(process.env.DATABASE_URL);
+  const validas = filas.filter(f => f.id && f.fecha && f.monto);
+  let nuevas = 0;
+  for (let i = 0; i < validas.length; i += 1000) {
+    const lote = validas.slice(i, i + 1000);
+    const a = fn => lote.map(fn);
+    const r = await sql`INSERT INTO movimientos_banco
+      (id, origen, fecha, descripcion, contraparte, cuit, monto, comprobante, categoria)
+      SELECT * FROM unnest(
+        ${a(f => String(f.id))}::text[], ${a(f => f.origen || "galicia")}::text[], ${a(f => f.fecha)}::date[],
+        ${a(f => f.descripcion || null)}::text[], ${a(f => f.contraparte || null)}::text[],
+        ${a(f => f.cuit ?? null)}::bigint[], ${a(f => f.monto)}::numeric[],
+        ${a(f => f.comprobante || null)}::text[], ${a(f => f.categoria || "Otros")}::text[]
+      ) AS x(id, origen, fecha, descripcion, contraparte, cuit, monto, comprobante, categoria)
+      ON CONFLICT (id) DO NOTHING RETURNING id`;
+    nuevas += r.length;
+  }
+  return res.status(200).json({ ok: true, recibidas: filas.length, nuevas });
+}
+
 // Tablero: posición de IVA, cruce vendido vs facturado, gastos por rubro y conciliación
 async function contabilidad(req, res) {
   const sql = neon(process.env.DATABASE_URL);
@@ -1526,12 +1557,35 @@ async function contabilidad(req, res) {
         if (c) { facturado = t.transferido; comprobantes = [c]; porMonto = true; break; }
       }
     }
+    // La plata que va a la propia cuenta bancaria no es un gasto: es un movimiento
+    // interno. No lleva factura y no puede contarse como pago sin respaldo.
+    const cuentaPropia = esCuentaPropia(t.nombre, null);
     return {
       nombre: t.nombre, transferido: t.transferido, transferencias: t.movimientos.length,
-      facturado, porMonto, movimientos: t.movimientos,
+      facturado, porMonto, cuentaPropia, movimientos: t.movimientos,
       comprobantes: comprobantes.sort((a, b) => a.fecha.localeCompare(b.fecha)),
     };
   }).sort((a, b) => b.transferido - a.transferido);
+
+  // ── Flujo de fondos: qué entró a la cuenta bancaria y en qué se gastó ──
+  // Cierra el circuito: cobranzas → MercadoPago → transferencia a cuenta propia →
+  // desde el banco se pagan sueldos, AFIP, echeqs y proveedores.
+  const bancoCategorias = await sql`
+    SELECT categoria,
+           ROUND(SUM(CASE WHEN monto > 0 THEN monto ELSE 0 END))::bigint AS ingresos,
+           ROUND(SUM(CASE WHEN monto < 0 THEN -monto ELSE 0 END))::bigint AS egresos,
+           COUNT(*)::int AS movimientos
+    FROM movimientos_banco WHERE fecha BETWEEN ${desde} AND ${hasta}
+    GROUP BY 1 ORDER BY 2 DESC, 3 DESC`;
+  const bancoMovs = await sql`
+    SELECT id, fecha::text, descripcion, contraparte, cuit, ROUND(monto)::bigint AS monto, categoria
+    FROM movimientos_banco WHERE fecha BETWEEN ${desde} AND ${hasta}
+    ORDER BY fecha DESC, abs(monto) DESC`;
+  const [bancoTot] = await sql`
+    SELECT ROUND(COALESCE(SUM(CASE WHEN monto > 0 THEN monto ELSE 0 END), 0))::bigint AS ingresos,
+           ROUND(COALESCE(SUM(CASE WHEN monto < 0 THEN -monto ELSE 0 END), 0))::bigint AS egresos,
+           ROUND(COALESCE(SUM(CASE WHEN monto > 0 AND categoria = ${CATEGORIA_PROPIA} THEN monto ELSE 0 END), 0))::bigint AS desde_mp
+    FROM movimientos_banco WHERE fecha BETWEEN ${desde} AND ${hasta}`;
 
   // Otros egresos del mes (pauta, servicios, envíos) para tener el gasto por canal
   const otrosEgresos = await sql`
@@ -1572,6 +1626,14 @@ async function contabilidad(req, res) {
     conciliacion,
     otrosEgresos: otrosEgresos.map(r => ({ ...r, total: Number(r.total) })),
     movimientos: egresosMes.map(r => ({ ...r, monto: Number(r.monto) })),
+    banco: {
+      total: {
+        ingresos: Number(bancoTot.ingresos), egresos: Number(bancoTot.egresos),
+        desdeMP: Number(bancoTot.desde_mp),
+      },
+      categorias: bancoCategorias.map(r => ({ ...r, ingresos: Number(r.ingresos), egresos: Number(r.egresos) })),
+      movimientos: bancoMovs.map(r => ({ ...r, monto: Number(r.monto), cuit: r.cuit ? Number(r.cuit) : null })),
+    },
     estado,
     nombresTipo: NOMBRES_TIPO,
   });
@@ -1636,6 +1698,7 @@ module.exports = async function handler(req, res) {
     if (action === "contabilidad") return await contabilidad(req, res);
     if (action === "cargarComprobantes") return await cargarComprobantes(req, res);
     if (action === "cargarEgresos") return await cargarEgresos(req, res);
+    if (action === "cargarBanco") return await cargarBanco(req, res);
     if (action === "rubroProveedor") return await rubroProveedor(req, res);
     if (action === "arcaSync") return await arcaSync(req, res);
 

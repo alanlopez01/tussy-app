@@ -8,7 +8,8 @@ import { Card, Spinner, BotonActualizar, Chips } from "../components/ui.jsx";
 
 const RUBROS = [
   "Mercadería / Fábrica", "Alquileres", "Servicios", "Publicidad", "Logística",
-  "Impuestos", "Honorarios", "Financiero", "Insumos", "Sueldos", "Otros", "Sin rubro",
+  "Impuestos", "Honorarios", "Financiero", "Insumos", "Sueldos",
+  "Transferencias cuenta propia", "Otros", "Sin rubro",
 ];
 
 // ── Lectura de exports (números "1.234,56", fechas dd/mm/yyyy o Date) ──
@@ -201,8 +202,13 @@ export default function Contabilidad() {
     if (!file) return;
     setEstados(s => ({ ...s, [clave]: { estado: "procesando" } }));
     try {
-      const filas = await parser(file);
-      const payload = clave === "emitidos" || clave === "recibidos" ? { clase: clave, filas } : { filas };
+      // El extracto bancario lo parsea el server (misma librería que los scripts);
+      // los xlsx se leen acá porque el navegador ya trae el lector.
+      const payload = clave === "banco"
+        ? { texto: await file.text() }
+        : clave === "emitidos" || clave === "recibidos"
+          ? { clase: clave, filas: await parser(file) }
+          : { filas: await parser(file) };
       const resultado = await postJSON(`/api/metricas?action=${endpoint}`, payload, 120000);
       setEstados(s => ({ ...s, [clave]: { estado: "ok", resultado } }));
       cargar();
@@ -238,7 +244,10 @@ export default function Contabilidad() {
   const pvHint = { 33: "Online", 1901: "Palermo", 1902: "La Plata", 1904: "Dot", 1905: "Abasto", 1401: "Córdoba" };
   for (const r of data?.pvLocales || []) if (!pvHint[Number(r.pv)]) pvHint[Number(r.pv)] = r.local;
   const transferido = data?.conciliacion?.reduce((a, r) => a + r.transferido, 0) || 0;
-  const sinRespaldo = data?.conciliacion?.filter(r => r.facturado < r.transferido * 0.9) || [];
+  // Las transferencias a la cuenta propia del banco no son gasto: son plata que
+  // cambia de bolsillo y se rastrea en el flujo de fondos, no contra una factura.
+  const sinRespaldo = data?.conciliacion?.filter(r => !r.cuentaPropia && r.facturado < r.transferido * 0.9) || [];
+  const aCuentaPropia = data?.conciliacion?.filter(r => r.cuentaPropia).reduce((a, r) => a + r.transferido, 0) || 0;
 
   const th = "text-left text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold px-3 py-2";
   const td = "px-3 py-2 text-[12px] text-ink-2 tabular-nums";
@@ -481,14 +490,64 @@ export default function Contabilidad() {
           : [];
         return (
         <>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Card title="Transferido a proveedores"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(transferido)}</div></Card>
-            <Card title="Proveedores"><div className="text-[24px] font-bold text-ink tabular-nums">{data.conciliacion.length}</div></Card>
+          <div className="grid gap-3 md:grid-cols-4">
+            <Card title="Salió de MercadoPago"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(transferido)}</div>
+              <p className="text-[11px] text-ink-3 mt-1">{data.conciliacion.length} contrapartes</p></Card>
+            <Card title="A cuenta propia (Galicia)">
+              <div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(aCuentaPropia)}</div>
+              <p className="text-[11px] text-ink-3 mt-1">no es gasto: se rastrea abajo</p>
+            </Card>
+            <Card title="A proveedores"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(transferido - aCuentaPropia)}</div></Card>
             <Card title="Con facturación corta">
               <div className={`text-[24px] font-bold tabular-nums ${sinRespaldo.length ? "text-bad" : "text-ok"}`}>{sinRespaldo.length}</div>
-              {sinRespaldo.length > 0 && <p className="text-[11px] text-ink-3 mt-1">{fmtPesosCorto(sinRespaldo.reduce((a, e) => a + (e.transferido - Math.max(e.facturado, 0)), 0))} transferidos sin factura que los cubra</p>}
+              {sinRespaldo.length > 0 && <p className="text-[11px] text-ink-3 mt-1">{fmtPesosCorto(sinRespaldo.reduce((a, e) => a + (e.transferido - Math.max(e.facturado, 0)), 0))} sin factura que los cubra</p>}
             </Card>
           </div>
+
+          {data.banco?.total?.ingresos > 0 && (
+            <Card title="Flujo de fondos · cuenta Galicia"
+                  right={<span className="text-[11px] text-ink-3">entró {fmtPesosCorto(data.banco.total.ingresos)} · salió {fmtPesosCorto(data.banco.total.egresos)}</span>}>
+              <p className="text-[12px] text-ink-2 mb-3">
+                De MercadoPago entraron <strong>{fmtPesosCorto(data.banco.total.desdeMP)}</strong> a la cuenta propia.
+                Acá está en qué se usaron:
+              </p>
+              <div className="space-y-2">
+                {data.banco.categorias.filter(c => c.egresos > 0).map(c => (
+                  <div key={c.categoria}>
+                    <div className="flex justify-between text-[12px] mb-0.5 gap-3">
+                      <span className="font-semibold text-ink-2">{c.categoria}</span>
+                      <span className="tabular-nums text-ink shrink-0">
+                        {fmtPesos(c.egresos)} · {data.banco.total.egresos ? Math.round(c.egresos / data.banco.total.egresos * 100) : 0}%
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-surface overflow-hidden">
+                      <div className="h-full rounded-full bg-negro"
+                           style={{ width: `${data.banco.total.egresos ? Math.max(2, c.egresos / data.banco.total.egresos * 100) : 0}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {q && (() => {
+                const hits = data.banco.movimientos.filter(m =>
+                  coincide(m.descripcion) || coincide(m.contraparte) || coincide(m.categoria));
+                if (!hits.length) return null;
+                return (
+                  <div className="mt-4">
+                    <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
+                      Movimientos del banco que coinciden ({hits.length})
+                    </div>
+                    {hits.map(m => (
+                      <div key={m.id} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
+                        <span className="text-ink-2 shrink-0">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
+                        <span className="text-ink-3 truncate">{m.descripcion}{m.contraparte ? ` · ${m.contraparte}` : ""}</span>
+                        <span className={`tabular-nums font-semibold shrink-0 ${m.monto > 0 ? "text-ok" : "text-ink"}`}>{fmtPesos(m.monto)}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </Card>
+          )}
 
           <Card>
             <div className="flex gap-2 flex-wrap items-center">
@@ -530,10 +589,12 @@ export default function Contabilidad() {
                             </td>
                             <td className={`${td} text-right`}>{r.transferencias}</td>
                             <td className={`${td} text-right`}>{fmtPesos(r.transferido)}</td>
-                            <td className={`${td} text-right`}>{fmtPesos(r.facturado)}</td>
-                            <td className={td}>{ok
-                              ? <span className="text-ok font-semibold">✓ cubierto{r.porMonto ? " (por monto)" : ""}</span>
-                              : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}</td>
+                            <td className={`${td} text-right`}>{r.cuentaPropia ? "—" : fmtPesos(r.facturado)}</td>
+                            <td className={td}>{r.cuentaPropia
+                              ? <span className="text-ink-3 font-semibold">cuenta propia</span>
+                              : ok
+                                ? <span className="text-ok font-semibold">✓ cubierto{r.porMonto ? " (por monto)" : ""}</span>
+                                : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}</td>
                           </tr>
                         );
                       })}
@@ -571,9 +632,10 @@ export default function Contabilidad() {
                             Facturas imputadas ({r.comprobantes.length})
                           </div>
                           {r.comprobantes.length === 0 ? (
-                            <p className="text-[12px] text-bad font-medium">
-                              Ninguna. Reclamale el comprobante al proveedor, o revisá si facturó en otro mes
-                              (subí ese período en Carga).
+                            <p className={`text-[12px] font-medium ${r.cuentaPropia ? "text-ink-2" : "text-bad"}`}>
+                              {r.cuentaPropia
+                                ? "Es plata que pasa a la cuenta de Galicia, no un gasto: no lleva factura. En qué se usó lo ves en el flujo de fondos, más arriba."
+                                : "Ninguna. Reclamale el comprobante al proveedor, o revisá si facturó en otro mes (subí ese período en Carga)."}
                             </p>
                           ) : r.comprobantes.map(c => (
                             <div key={`${c.tipo}-${c.punto_venta}-${c.numero}`} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
@@ -677,6 +739,9 @@ export default function Contabilidad() {
           <Uploader titulo="MercadoPago · Estado de cuenta (para conciliar transferencias)" estado={estados.egresos || { estado: "idle" }}
             descripcion="MercadoPago → Dinero → Movimientos → Exportar (estado de cuenta). Tomo solo la plata que sale: transferencias a proveedores (se concilian contra sus facturas), pauta, envíos y servicios."
             onFile={subir("egresos", parsearMovimientosMP, "cargarEgresos")} />
+          <Uploader titulo="Galicia · Extracto de la cuenta corriente" estado={estados.banco || { estado: "idle" }}
+            descripcion="Galicia Office → Consultas → Movimientos → Descargar CSV. Es lo que cierra el circuito: muestra en qué se gastó la plata que se transfiere de MercadoPago a la cuenta propia (sueldos, AFIP, echeqs, proveedores)."
+            onFile={subir("banco", null, "cargarBanco")} />
         </>
       )}
     </div>
