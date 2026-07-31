@@ -472,7 +472,7 @@ export default function Contabilidad() {
                             <td className={`${td} text-right`}>{fmtPesos(r.transferido)}</td>
                             <td className={`${td} text-right`}>{fmtPesos(r.facturado)}</td>
                             <td className={td}>{ok
-                              ? <span className="text-ok font-semibold">✓ cubierto</span>
+                              ? <span className="text-ok font-semibold">✓ cubierto{r.porMonto ? " (por monto)" : ""}</span>
                               : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}</td>
                           </tr>
                         );
