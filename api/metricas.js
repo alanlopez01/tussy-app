@@ -25,7 +25,7 @@ const { costear } = require("../lib/costeo");
 const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
-const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia } = require("../lib/bancos");
+const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = require("../lib/bancos");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
@@ -82,6 +82,22 @@ function hoyArg() { return new Date(Date.now() - 3 * 3600 * 1000).toISOString().
 function horaArgNum() { return parseInt(new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(11, 13)); }
 
 const NO_PRODUCTO = ["ENVIO", "DESCUENTO", "AJUSTE"];
+
+// Cobros del día (cómo se pagó): se reescriben junto con las ventas del día.
+async function escribirCobrosDia(sql, fecha, local, cobros) {
+  await sql`DELETE FROM cobros WHERE fecha = ${fecha} AND local = ${local}`;
+  if (!cobros || !cobros.length) return;
+  for (let i = 0; i < cobros.length; i += 500) {
+    const c = cobros.slice(i, i + 500);
+    await sql`
+      INSERT INTO cobros (fecha, local, orden_id, item, medio, detalle, monto)
+      SELECT * FROM UNNEST(
+        ${c.map(f => f.fecha)}::date[], ${c.map(f => f.local)}::text[], ${c.map(f => f.orden_id)}::text[],
+        ${c.map(f => f.item)}::int[], ${c.map(f => f.medio)}::text[],
+        ${c.map(f => f.detalle || null)}::text[], ${c.map(f => f.monto)}::numeric[]
+      ) ON CONFLICT (local, orden_id, item) DO NOTHING`;
+  }
+}
 
 async function escribirDiaLocal(sql, fecha, local, filas) {
   await sql`DELETE FROM ventas WHERE fecha = ${fecha} AND local = ${local}`;
@@ -178,6 +194,7 @@ async function correrIngesta() {
       }
     }
     await escribirDiaLocal(sql, hoy, local, r.filas);
+    await escribirCobrosDia(sql, hoy, local, r.cobros);
     await marcarSync(sql, hoy, local, true, null);
     resumen.push({ local, ok: true, filas: r.filas.length, nuevas: habiaBaseline ? Object.keys(porOrden).filter(id => !idsPrevios.has(id)).length : 0 });
   }));
@@ -193,6 +210,7 @@ async function correrIngesta() {
     const r = await fuente.fn(p.fecha);
     if (r.ok) {
       await escribirDiaLocal(sql, p.fecha, p.local, r.filas);
+      await escribirCobrosDia(sql, p.fecha, p.local, r.cobros);
       await marcarSync(sql, p.fecha, p.local, true, null);
       resumen.push({ local: p.local, fecha: p.fecha, ok: true, recuperado: true, filas: r.filas.length });
     } else {
@@ -1435,6 +1453,19 @@ async function contabilidad(req, res) {
     const [y, m] = mes.split("-").map(Number);
     return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
   })();
+  // Pagos electrónicos (tarjeta/QR) según lo que registra cada sistema de venta.
+  // Es la base contra la que se compara la facturación: lo electrónico se factura.
+  // ARCA impacta 24-48 h después, así que la comparación del último día siempre
+  // va a mostrar un desfasaje que se acomoda solo.
+  const electronico = await sql`
+    SELECT local,
+           ROUND(SUM(monto) FILTER (WHERE medio = 'electronico'))::bigint AS electronico,
+           ROUND(SUM(monto) FILTER (WHERE medio = 'efectivo'))::bigint AS efectivo,
+           ROUND(SUM(monto))::bigint AS cobrado
+    FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta}
+    GROUP BY 1`;
+  const porLocalElec = Object.fromEntries(electronico.map(r => [r.local, r]));
+
   const facturacionLocal = await sql`
     WITH v AS (
       SELECT local, to_char(fecha, 'YYYY-MM') AS mes, ROUND(SUM(total))::bigint AS venta
@@ -1587,19 +1618,35 @@ async function contabilidad(req, res) {
            ROUND(COALESCE(SUM(CASE WHEN monto > 0 AND categoria = ${CATEGORIA_PROPIA} THEN monto ELSE 0 END), 0))::bigint AS desde_mp
     FROM movimientos_banco WHERE fecha BETWEEN ${desde} AND ${hasta}`;
 
-  // Otros egresos del mes (pauta, servicios, envíos) para tener el gasto por canal
-  const otrosEgresos = await sql`
-    SELECT CASE
-             WHEN detalle ILIKE '%faceb%' THEN 'Publicidad Meta'
-             WHEN detalle ILIKE 'Pago de impuestos%' THEN 'Impuestos al débito'
-             WHEN detalle ILIKE 'Pago Envío%' OR detalle ILIKE '%MiCorreo%' OR detalle ILIKE '%dhl%' THEN 'Envíos'
-             WHEN detalle ILIKE 'Compra Mercado%' THEN 'Compras ML'
-             ELSE 'Servicios y otros'
-           END AS canal,
-           ROUND(SUM(monto))::bigint AS total, COUNT(*)::int AS pagos
-    FROM egresos_mp
-    WHERE fecha BETWEEN ${desde} AND ${hasta} AND detalle NOT ILIKE 'Transferencia%'
-    GROUP BY 1 ORDER BY total DESC`;
+  // Egresos de TODAS las cuentas en una sola vista, con las mismas categorías, para
+  // poder controlar el gasto de forma integral. Las transferencias a cuenta propia
+  // se separan: no son gasto, y sumarlas contaría dos veces lo que después paga el banco.
+  const porCategoria = new Map();
+  const sumar = (categoria, mov) => {
+    if (!porCategoria.has(categoria)) porCategoria.set(categoria, { categoria, total: 0, movimientos: [] });
+    const g = porCategoria.get(categoria);
+    g.total += mov.monto;
+    g.movimientos.push(mov);
+  };
+  for (const m of egresosMes) {
+    const categoria = categorizar(m.detalle, m.contraparte, m.cuit);
+    sumar(categoria, {
+      id: m.id, fecha: m.fecha, origen: "MercadoPago",
+      descripcion: m.detalle, contraparte: m.contraparte, monto: Number(m.monto),
+    });
+  }
+  for (const m of bancoMovs) {
+    if (Number(m.monto) >= 0) continue; // los ingresos del banco no son gasto
+    sumar(m.categoria, {
+      id: m.id, fecha: m.fecha, origen: "Galicia",
+      descripcion: m.descripcion, contraparte: m.contraparte, monto: -Number(m.monto),
+    });
+  }
+  const egresosCategorias = [...porCategoria.values()]
+    .map(g => ({ ...g, movimientos: g.movimientos.sort((a, b) => b.monto - a.monto) }))
+    .sort((a, b) => b.total - a.total);
+  const egresosPropios = porCategoria.get(CATEGORIA_PROPIA)?.total || 0;
+  const egresosTotal = egresosCategorias.reduce((a, g) => a + g.total, 0) - egresosPropios;
 
   const [estado] = await sql`
     SELECT (SELECT COUNT(*) FROM comprobantes_emitidos)::int AS emitidos,
@@ -1613,18 +1660,25 @@ async function contabilidad(req, res) {
     iva: iva.map(r => ({ ...r, debito: Number(r.debito), credito: Number(r.credito), posicion: Number(r.debito) - Number(r.credito), facturado: Number(r.facturado), compras: Number(r.compras) })),
     cruce: cruce.map(r => ({ ...r, venta: Number(r.venta), facturado: Number(r.facturado) })),
     mesPrev,
-    facturacionLocal: facturacionLocal.map(r => ({
-      local: r.local, punto_venta: r.punto_venta,
-      venta: Number(r.venta), point: Number(r.point), facturado: Number(r.facturado),
-      ratio: Number(r.venta) ? Number(r.facturado) / Number(r.venta) : null,
-      ratioPrev: Number(r.venta_prev) ? Number(r.facturado_prev) / Number(r.venta_prev) : null,
-    })),
+    facturacionLocal: facturacionLocal.map(r => {
+      const e = porLocalElec[r.local];
+      const elec = e ? Number(e.electronico || 0) : null;
+      return {
+        local: r.local, punto_venta: r.punto_venta,
+        venta: Number(r.venta), point: Number(r.point), facturado: Number(r.facturado),
+        electronico: elec, efectivo: e ? Number(e.efectivo || 0) : null,
+        ratio: Number(r.venta) ? Number(r.facturado) / Number(r.venta) : null,
+        ratioPrev: Number(r.venta_prev) ? Number(r.facturado_prev) / Number(r.venta_prev) : null,
+        // Lo que de verdad hay que controlar: electrónico vs facturado
+        ratioElec: elec ? Number(r.facturado) / elec : null,
+      };
+    }),
     porPV: porPV.map(r => ({ ...r, total: Number(r.total) })),
     pvLocales,
     rubros: rubros.map(r => ({ ...r, total: Number(r.total) })),
     proveedores: provs.map(r => ({ ...r, cuit: Number(r.cuit), total: Number(r.total), iva: Number(r.iva) })),
     conciliacion,
-    otrosEgresos: otrosEgresos.map(r => ({ ...r, total: Number(r.total) })),
+    egresos: { total: egresosTotal, cuentaPropia: egresosPropios, categorias: egresosCategorias },
     movimientos: egresosMes.map(r => ({ ...r, monto: Number(r.monto) })),
     banco: {
       total: {

@@ -8,7 +8,7 @@ import { Card, Spinner, BotonActualizar, Chips } from "../components/ui.jsx";
 
 const RUBROS = [
   "Mercadería / Fábrica", "Alquileres", "Servicios", "Publicidad", "Logística",
-  "Impuestos", "Honorarios", "Financiero", "Insumos", "Sueldos",
+  "Impuestos", "Honorarios", "Financiero", "Insumos", "Sueldos", "Factura",
   "Transferencias cuenta propia", "Otros", "Sin rubro",
 ];
 
@@ -189,6 +189,7 @@ export default function Contabilidad() {
   const [busqueda, setBusqueda] = useState("");
   const [soloFaltan, setSoloFaltan] = useState(false);
   const [detalle, setDetalle] = useState(null);
+  const [catAbierta, setCatAbierta] = useState(null);
 
   const cargar = async (m = mes) => {
     setCargando(true); setError("");
@@ -334,26 +335,39 @@ export default function Contabilidad() {
       {tab === "facturacion" && data && (() => {
         const locales = data.facturacionLocal || [];
         const alertas = locales.filter(l => l.ratio != null && l.ratioPrev != null && Math.abs(l.ratio - l.ratioPrev) > 0.1);
+        const totalElec = locales.reduce((a, l) => a + (l.electronico || 0), 0);
+        const hayElec = totalElec > 0;
+        const difElec = totalElec - totalFacturado;
         return (
         <>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-4">
             <Card title="Venta total del mes"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalVenta)}</div></Card>
-            <Card title="Facturado en ARCA"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalFacturado)}</div></Card>
-            <Card title="Locales fuera de su patrón">
-              <div className={`text-[24px] font-bold tabular-nums ${alertas.length ? "text-warn" : "text-ok"}`}>{alertas.length}</div>
+            <Card title="Pagos electrónicos">
+              <div className="text-[24px] font-bold text-ink tabular-nums">{hayElec ? fmtPesosCorto(totalElec) : "—"}</div>
               <p className="text-[11px] text-ink-3 mt-1">
-                {alertas.length ? alertas.map(a => a.local).join(", ") : "todos facturan como el mes pasado"}
+                {hayElec ? `${Math.round(totalElec / totalVenta * 100)}% de la venta · el resto, efectivo` : "sin datos de medio de pago este mes"}
+              </p>
+            </Card>
+            <Card title="Facturado en ARCA"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalFacturado)}</div></Card>
+            <Card title="Electrónico − facturado">
+              <div className={`text-[24px] font-bold tabular-nums ${hayElec && Math.abs(difElec) > totalElec * 0.05 ? "text-warn" : "text-ok"}`}>
+                {hayElec ? fmtPesosCorto(difElec) : "—"}
+              </div>
+              <p className="text-[11px] text-ink-3 mt-1">
+                {hayElec ? `${(difElec / totalElec * 100).toFixed(1)}% · ARCA impacta 24-48 h después` : ""}
               </p>
             </Card>
           </div>
 
           <Card title="Facturación por local">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[620px]">
+              <table className="w-full min-w-[780px]">
                 <thead><tr>
                   <th className={th}>Local</th><th className={`${th} text-right`}>Venta</th>
-                  <th className={`${th} text-right`}>Cobrado Point</th><th className={`${th} text-right`}>Facturado</th>
-                  <th className={`${th} text-right`}>% de la venta</th><th className={`${th} text-right`}>mes anterior</th>
+                  <th className={`${th} text-right`}>Electrónico</th><th className={`${th} text-right`}>Cobrado Point</th>
+                  <th className={`${th} text-right`}>Facturado</th>
+                  <th className={`${th} text-right`}>Fact./electr.</th>
+                  <th className={`${th} text-right`}>% de la venta</th><th className={`${th} text-right`}>mes ant.</th>
                 </tr></thead>
                 <tbody>
                   {locales.map(l => {
@@ -363,8 +377,12 @@ export default function Contabilidad() {
                         <td className={`${td} font-semibold text-ink`}>{l.local === "Tiendanube" ? "Online" : l.local}
                           <span className="text-[10px] text-ink-3 ml-1.5">PV {String(l.punto_venta).padStart(4, "0")}</span></td>
                         <td className={`${td} text-right`}>{fmtPesosCorto(l.venta)}</td>
+                        <td className={`${td} text-right font-semibold`}>{l.electronico ? fmtPesosCorto(l.electronico) : "—"}</td>
                         <td className={`${td} text-right`}>{l.point ? fmtPesosCorto(l.point) : "—"}</td>
                         <td className={`${td} text-right`}>{fmtPesosCorto(l.facturado)}</td>
+                        <td className={`${td} text-right font-bold ${l.ratioElec != null && Math.abs(l.ratioElec - 1) > 0.1 ? "text-warn" : "text-ink"}`}>
+                          {l.ratioElec != null ? Math.round(l.ratioElec * 100) + "%" : "—"}
+                        </td>
                         <td className={`${td} text-right font-bold ${salto ? "text-warn" : "text-ink"}`}>
                           {l.ratio != null ? Math.round(l.ratio * 100) + "%" : "—"}
                         </td>
@@ -378,11 +396,13 @@ export default function Contabilidad() {
               </table>
             </div>
             <p className="text-[11px] text-ink-3 mt-3">
-              Cada local factura una porción distinta de lo que vende: online factura todo, y en los locales depende
-              de la operatoria de cada uno. Por eso no se compara contra una regla única sino contra{" "}
-              <strong>el propio ratio del mes anterior</strong>: lo que hay que detectar es un cambio de
-              comportamiento. Se marca en amarillo cuando el porcentaje se movió más de 10 puntos. Como la
-              facturación es manual y a veces se pasan facturas al mes siguiente, un mes suelto puede desviarse.
+              <strong>Electrónico</strong> es lo cobrado con tarjeta o QR según el propio sistema del local
+              (ELECTRON en Dragonfish, Chip and Pin en Woo); es lo que corresponde facturar, así que{" "}
+              <strong>Fact./electr. debería rondar el 100%</strong> y se marca en amarillo si se aleja más de 10
+              puntos. Ojo que ARCA impacta 24-48 h después, así que sobre el cierre del mes siempre se ve corto.
+              <strong> Cobrado Point</strong> es solo lo que liquidó MercadoPago: si es bastante menor que el
+              electrónico, hay otra terminal cobrando (por ejemplo Payway). La última columna compara contra el
+              propio ratio del mes anterior para detectar cambios de comportamiento.
             </p>
           </Card>
           <Card title="Detalle por punto de venta"
@@ -483,76 +503,39 @@ export default function Contabilidad() {
         const q = busqueda.trim().toLowerCase();
         const coincide = t => !q || String(t || "").toLowerCase().includes(q);
         const filas = data.conciliacion.filter(r =>
-          (!soloFaltan || r.facturado < r.transferido * 0.9) &&
+          (!soloFaltan || (!r.cuentaPropia && r.facturado < r.transferido * 0.9)) &&
           (coincide(r.nombre) || r.movimientos.some(m => coincide(m.id))));
-        const movsBusqueda = q
-          ? (data.movimientos || []).filter(m => coincide(m.contraparte) || coincide(m.detalle) || coincide(m.id))
-          : [];
+        const cats = (data.egresos?.categorias || [])
+          .map(c => ({ ...c, hits: c.movimientos.filter(m => coincide(m.descripcion) || coincide(m.contraparte) || coincide(m.id) || coincide(c.categoria)) }))
+          .filter(c => !q || c.hits.length);
+        const totalEgresos = data.egresos?.total || 0;
         return (
         <>
           <div className="grid gap-3 md:grid-cols-4">
-            <Card title="Salió de MercadoPago"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(transferido)}</div>
-              <p className="text-[11px] text-ink-3 mt-1">{data.conciliacion.length} contrapartes</p></Card>
-            <Card title="A cuenta propia (Galicia)">
-              <div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(aCuentaPropia)}</div>
-              <p className="text-[11px] text-ink-3 mt-1">no es gasto: se rastrea abajo</p>
+            <Card title="Gasto real del mes">
+              <div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(totalEgresos)}</div>
+              <p className="text-[11px] text-ink-3 mt-1">MercadoPago + Galicia, sin contar traspasos internos</p>
             </Card>
-            <Card title="A proveedores"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(transferido - aCuentaPropia)}</div></Card>
-            <Card title="Con facturación corta">
-              <div className={`text-[24px] font-bold tabular-nums ${sinRespaldo.length ? "text-bad" : "text-ok"}`}>{sinRespaldo.length}</div>
-              {sinRespaldo.length > 0 && <p className="text-[11px] text-ink-3 mt-1">{fmtPesosCorto(sinRespaldo.reduce((a, e) => a + (e.transferido - Math.max(e.facturado, 0)), 0))} sin factura que los cubra</p>}
+            <Card title="Movido a cuenta propia">
+              <div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(aCuentaPropia)}</div>
+              <p className="text-[11px] text-ink-3 mt-1">de MercadoPago a Galicia · no es gasto</p>
+            </Card>
+            <Card title="A proveedores desde MP">
+              <div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(transferido - aCuentaPropia)}</div>
+              <p className="text-[11px] text-ink-3 mt-1">{data.conciliacion.length - 1} contrapartes</p>
+            </Card>
+            <Card title="Sin factura que lo cubra">
+              <div className={`text-[24px] font-bold tabular-nums ${sinRespaldo.length ? "text-bad" : "text-ok"}`}>
+                {fmtPesosCorto(sinRespaldo.reduce((a, e) => a + (e.transferido - Math.max(e.facturado, 0)), 0))}
+              </div>
+              <p className="text-[11px] text-ink-3 mt-1">{sinRespaldo.length} proveedores</p>
             </Card>
           </div>
-
-          {data.banco?.total?.ingresos > 0 && (
-            <Card title="Flujo de fondos · cuenta Galicia"
-                  right={<span className="text-[11px] text-ink-3">entró {fmtPesosCorto(data.banco.total.ingresos)} · salió {fmtPesosCorto(data.banco.total.egresos)}</span>}>
-              <p className="text-[12px] text-ink-2 mb-3">
-                De MercadoPago entraron <strong>{fmtPesosCorto(data.banco.total.desdeMP)}</strong> a la cuenta propia.
-                Acá está en qué se usaron:
-              </p>
-              <div className="space-y-2">
-                {data.banco.categorias.filter(c => c.egresos > 0).sort((a, b) => b.egresos - a.egresos).map(c => (
-                  <div key={c.categoria}>
-                    <div className="flex justify-between text-[12px] mb-0.5 gap-3">
-                      <span className="font-semibold text-ink-2">{c.categoria}</span>
-                      <span className="tabular-nums text-ink shrink-0">
-                        {fmtPesos(c.egresos)} · {data.banco.total.egresos ? Math.round(c.egresos / data.banco.total.egresos * 100) : 0}%
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-surface overflow-hidden">
-                      <div className="h-full rounded-full bg-negro"
-                           style={{ width: `${data.banco.total.egresos ? Math.max(2, c.egresos / data.banco.total.egresos * 100) : 0}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {q && (() => {
-                const hits = data.banco.movimientos.filter(m =>
-                  coincide(m.descripcion) || coincide(m.contraparte) || coincide(m.categoria));
-                if (!hits.length) return null;
-                return (
-                  <div className="mt-4">
-                    <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
-                      Movimientos del banco que coinciden ({hits.length})
-                    </div>
-                    {hits.map(m => (
-                      <div key={m.id} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
-                        <span className="text-ink-2 shrink-0">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
-                        <span className="text-ink-3 truncate">{m.descripcion}{m.contraparte ? ` · ${m.contraparte}` : ""}</span>
-                        <span className={`tabular-nums font-semibold shrink-0 ${m.monto > 0 ? "text-ok" : "text-ink"}`}>{fmtPesos(m.monto)}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </Card>
-          )}
 
           <Card>
             <div className="flex gap-2 flex-wrap items-center">
               <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
-                     placeholder="Buscar proveedor, concepto o N° de operación…"
+                     placeholder="Buscar proveedor, concepto, categoría o N° de operación…"
                      className="flex-1 min-w-[220px] rounded-md border border-borde bg-surface-1 px-3 py-2 text-[13px] text-ink" />
               <label className="flex items-center gap-2 text-[12px] font-semibold text-ink-2">
                 <input type="checkbox" checked={soloFaltan} onChange={e => setSoloFaltan(e.target.checked)} />
@@ -565,8 +548,81 @@ export default function Contabilidad() {
             </div>
           </Card>
 
+          {/* ── Control integral: todo lo que salió, de las dos cuentas ── */}
+          <Card title="En qué se fue la plata · MercadoPago + Galicia"
+                right={<span className="text-[11px] text-ink-3">tocá una categoría para ver los movimientos</span>}>
+            {!cats.length ? (
+              <p className="text-[13px] text-ink-2">
+                {q ? "Ningún egreso coincide con esa búsqueda." : "Subí el estado de cuenta de MercadoPago y el extracto de Galicia en la pestaña Carga."}
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {cats.map(c => {
+                  const propio = c.categoria === "Transferencias cuenta propia";
+                  const abierto = catAbierta === c.categoria;
+                  const lista = q ? c.hits : c.movimientos;
+                  return (
+                    <div key={c.categoria} className="border-b border-borde last:border-0 pb-2">
+                      <button onClick={() => setCatAbierta(abierto ? null : c.categoria)}
+                              className="w-full text-left py-1.5 group">
+                        <div className="flex justify-between items-baseline gap-3 mb-1">
+                          <span className="text-[13px] font-semibold text-ink">
+                            <span className="text-ink-3 mr-1.5 text-[11px]">{abierto ? "▾" : "▸"}</span>
+                            {c.categoria}
+                            <span className="text-[11px] text-ink-3 font-normal ml-1.5">({c.movimientos.length})</span>
+                          </span>
+                          <span className="tabular-nums text-[13px] font-bold text-ink shrink-0">
+                            {fmtPesos(c.total)}
+                            {!propio && totalEgresos > 0 && (
+                              <span className="text-[11px] text-ink-3 font-normal ml-1.5">
+                                {Math.round(c.total / totalEgresos * 100)}%
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {propio ? (
+                          <p className="text-[11px] text-ink-3">traspaso interno · no cuenta como gasto</p>
+                        ) : (
+                          <div className="h-2 rounded-full bg-surface overflow-hidden">
+                            <div className="h-full rounded-full bg-negro"
+                                 style={{ width: `${totalEgresos ? Math.max(2, c.total / totalEgresos * 100) : 0}%` }} />
+                          </div>
+                        )}
+                      </button>
+                      {abierto && (
+                        <div className="mt-1.5 rounded-md bg-surface p-3">
+                          {lista.map(m => (
+                            <div key={`${m.origen}-${m.id}`}
+                                 className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
+                              <span className="text-ink-2 shrink-0 w-11">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
+                              <span className={`text-[9px] font-semibold uppercase tracking-wide shrink-0 px-1.5 py-0.5 rounded ${m.origen === "Galicia" ? "bg-negro text-white" : "bg-borde text-ink-2"}`}>
+                                {m.origen === "Galicia" ? "GAL" : "MP"}
+                              </span>
+                              <span className="text-ink-3 truncate flex-1">
+                                {m.descripcion}{m.contraparte && !String(m.descripcion || "").includes(m.contraparte) ? ` · ${m.contraparte}` : ""}
+                              </span>
+                              <span className="tabular-nums font-semibold text-ink shrink-0">{fmtPesos(m.monto)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {data.banco?.total?.ingresos > 0 && (
+              <p className="text-[11px] text-ink-3 mt-3">
+                A Galicia entraron <strong>{fmtPesosCorto(data.banco.total.ingresos)}</strong> (de los cuales{" "}
+                {fmtPesosCorto(data.banco.total.desdeMP)} vinieron de MercadoPago) y salieron{" "}
+                <strong>{fmtPesosCorto(data.banco.total.egresos)}</strong>.
+              </p>
+            )}
+          </Card>
+
+          {/* ── Conciliación de transferencias contra facturas ── */}
           <Card title="Transferencias vs. facturas, por proveedor"
-                right={<span className="text-[11px] text-ink-3">tocá una fila para ver el detalle</span>}>
+                right={<span className="text-[11px] text-ink-3">tocá un proveedor para ver el detalle</span>}>
             {!data.conciliacion.length ? (
               <p className="text-[13px] text-ink-2">
                 Subí el <strong>estado de cuenta</strong> de MercadoPago (Dinero → Movimientos → Exportar) en la
@@ -574,134 +630,96 @@ export default function Contabilidad() {
               </p>
             ) : (
               <>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px]">
-                    <thead><tr><th className={th}>Proveedor</th><th className={`${th} text-right`}>Transf.</th><th className={`${th} text-right`}>Transferido</th><th className={`${th} text-right`}>Facturado</th><th className={th}>Estado</th></tr></thead>
-                    <tbody>
-                      {filas.map(r => {
-                        const ok = r.facturado >= r.transferido * 0.9;
-                        const abierto = detalle === r.nombre;
-                        return (
-                          <tr key={r.nombre} onClick={() => setDetalle(abierto ? null : r.nombre)}
-                              className={`border-t border-borde cursor-pointer hover:bg-surface ${abierto ? "bg-surface" : ""}`}>
-                            <td className={`${td} font-semibold text-ink`}>
-                              <span className="text-ink-3 mr-1.5">{abierto ? "▾" : "▸"}</span>{r.nombre}
-                            </td>
-                            <td className={`${td} text-right`}>{r.transferencias}</td>
-                            <td className={`${td} text-right`}>{fmtPesos(r.transferido)}</td>
-                            <td className={`${td} text-right`}>{r.cuentaPropia ? "—" : fmtPesos(r.facturado)}</td>
-                            <td className={td}>{r.cuentaPropia
-                              ? <span className="text-ink-3 font-semibold">cuenta propia</span>
-                              : ok
-                                ? <span className="text-ok font-semibold">✓ cubierto{r.porMonto ? " (por monto)" : ""}</span>
-                                : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}</td>
-                          </tr>
-                        );
-                      })}
-                      {!filas.length && <tr><td colSpan={5} className={`${td} text-center text-ink-3`}>Sin resultados para esa búsqueda</td></tr>}
-                    </tbody>
-                  </table>
+                <div className="hidden md:flex gap-3 px-2 pb-1.5 text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold">
+                  <span className="flex-1">Proveedor</span>
+                  <span className="w-28 text-right">Transferido</span>
+                  <span className="w-28 text-right">Facturado</span>
+                  <span className="w-36">Estado</span>
                 </div>
-
-                {/* El detalle vive fuera del scroll horizontal de la tabla: en celular
-                    tiene que leerse completo sin desplazar de costado. */}
-                {(() => {
-                  const r = filas.find(x => x.nombre === detalle);
-                  if (!r) return null;
+                {filas.map(r => {
+                  const ok = r.facturado >= r.transferido * 0.9;
+                  const abierto = detalle === r.nombre;
                   return (
-                    <div className="mt-3 rounded-md bg-surface border border-borde p-4">
-                      <div className="flex items-center justify-between gap-3 mb-3">
-                        <span className="text-[13px] font-bold text-ink">{r.nombre}</span>
-                        <button onClick={() => setDetalle(null)} className="text-[11px] font-semibold text-ink-3">Cerrar ✕</button>
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                          <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
-                            Transferencias ({r.movimientos.length})
-                          </div>
-                          {r.movimientos.map(m => (
-                            <div key={m.id} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
-                              <span className="text-ink-2 shrink-0">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
-                              <span className="text-ink-3 text-[10px] font-mono truncate" title="N° de operación en MercadoPago">op. {m.id}</span>
-                              <span className="tabular-nums font-semibold text-ink shrink-0">{fmtPesos(m.monto)}</span>
+                    <div key={r.nombre} className="border-t border-borde">
+                      <button onClick={() => setDetalle(abierto ? null : r.nombre)}
+                              className={`w-full text-left px-2 py-2.5 md:flex md:items-baseline md:gap-3 hover:bg-surface ${abierto ? "bg-surface" : ""}`}>
+                        <span className="flex-1 text-[13px] font-semibold text-ink block">
+                          <span className="text-ink-3 mr-1.5 text-[11px]">{abierto ? "▾" : "▸"}</span>
+                          {r.nombre}
+                          <span className="text-[11px] text-ink-3 font-normal ml-1.5">({r.transferencias})</span>
+                        </span>
+                        <span className="w-28 text-right text-[13px] tabular-nums text-ink hidden md:inline-block">{fmtPesos(r.transferido)}</span>
+                        <span className="w-28 text-right text-[13px] tabular-nums text-ink-2 hidden md:inline-block">{r.cuentaPropia ? "—" : fmtPesos(r.facturado)}</span>
+                        <span className="w-36 text-[12px] hidden md:inline-block">
+                          {r.cuentaPropia
+                            ? <span className="text-ink-3 font-semibold">cuenta propia</span>
+                            : ok
+                              ? <span className="text-ok font-semibold">✓ cubierto{r.porMonto ? " (por monto)" : ""}</span>
+                              : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}
+                        </span>
+                        {/* En celular la fila se lee apilada */}
+                        <span className="md:hidden flex justify-between items-baseline gap-2 mt-1 text-[12px]">
+                          <span className="text-ink-2 tabular-nums">
+                            {fmtPesos(r.transferido)}
+                            {!r.cuentaPropia && <span className="text-ink-3"> · fact. {fmtPesosCorto(r.facturado)}</span>}
+                          </span>
+                          {r.cuentaPropia
+                            ? <span className="text-ink-3 font-semibold">cuenta propia</span>
+                            : ok
+                              ? <span className="text-ok font-semibold">✓ cubierto</span>
+                              : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}
+                        </span>
+                      </button>
+                      {abierto && (
+                        <div className="px-2 pb-3">
+                          <div className="rounded-md bg-surface p-3 grid gap-4 md:grid-cols-2">
+                            <div>
+                              <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
+                                Transferencias ({r.movimientos.length})
+                              </div>
+                              {r.movimientos.map(m => (
+                                <div key={m.id} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
+                                  <span className="text-ink-2 shrink-0">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
+                                  <span className="text-ink-3 text-[10px] font-mono truncate" title="N° de operación en MercadoPago">op. {m.id}</span>
+                                  <span className="tabular-nums font-semibold text-ink shrink-0">{fmtPesos(m.monto)}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                        <div>
-                          <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
-                            Facturas imputadas ({r.comprobantes.length})
-                          </div>
-                          {r.comprobantes.length === 0 ? (
-                            <p className={`text-[12px] font-medium ${r.cuentaPropia ? "text-ink-2" : "text-bad"}`}>
-                              {r.cuentaPropia
-                                ? "Es plata que pasa a la cuenta de Galicia, no un gasto: no lleva factura. En qué se usó lo ves en el flujo de fondos, más arriba."
-                                : "Ninguna. Reclamale el comprobante al proveedor, o revisá si facturó en otro mes (subí ese período en Carga)."}
-                            </p>
-                          ) : r.comprobantes.map(c => (
-                            <div key={`${c.tipo}-${c.punto_venta}-${c.numero}`} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
-                              <span className="text-ink-2 shrink-0">{c.fecha.slice(8, 10)}/{c.fecha.slice(5, 7)}</span>
-                              <span className="text-ink-3 text-[10px] truncate">
-                                {data.nombresTipo?.[c.tipo] || `Tipo ${c.tipo}`} {String(c.punto_venta).padStart(4, "0")}-{String(c.numero).padStart(8, "0")}
-                              </span>
-                              <span className="tabular-nums font-semibold text-ink shrink-0">{fmtPesos(c.total)}</span>
+                            <div>
+                              <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold mb-1.5">
+                                Facturas imputadas ({r.comprobantes.length})
+                              </div>
+                              {r.comprobantes.length === 0 ? (
+                                <p className={`text-[12px] font-medium ${r.cuentaPropia ? "text-ink-2" : "text-bad"}`}>
+                                  {r.cuentaPropia
+                                    ? "Es plata que pasa a la cuenta de Galicia, no un gasto: no lleva factura. En qué se usó lo ves arriba, en el desglose por categoría."
+                                    : "Ninguna. Reclamale el comprobante al proveedor, o revisá si facturó en otro mes (subí ese período en Carga)."}
+                                </p>
+                              ) : r.comprobantes.map(c => (
+                                <div key={`${c.tipo}-${c.punto_venta}-${c.numero}`} className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
+                                  <span className="text-ink-2 shrink-0">{c.fecha.slice(8, 10)}/{c.fecha.slice(5, 7)}</span>
+                                  <span className="text-ink-3 text-[10px] truncate">
+                                    {data.nombresTipo?.[c.tipo] || `Tipo ${c.tipo}`} {String(c.punto_venta).padStart(4, "0")}-{String(c.numero).padStart(8, "0")}
+                                  </span>
+                                  <span className="tabular-nums font-semibold text-ink shrink-0">{fmtPesos(c.total)}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
-                })()}
+                })}
+                {!filas.length && <p className="text-[12px] text-ink-3 py-3 text-center">Sin resultados para esa búsqueda</p>}
                 <p className="text-[11px] text-ink-3 mt-3">
                   Se compara por total (los pagos suelen ser parciales), con facturas de hasta 20 días antes o después
-                  del mes. Las transferencias a cuentas propias o retiros de socios van a figurar "sin factura": es esperable.
-                  El <strong>N° de operación</strong> de cada transferencia es el mismo que aparece en MercadoPago → Actividad.
+                  del mes. El <strong>N° de operación</strong> de cada transferencia es el mismo que aparece en
+                  MercadoPago → Actividad.
                 </p>
               </>
             )}
           </Card>
-
-          {q && (
-            <Card title={`Todos los movimientos que coinciden con "${busqueda}" (${movsBusqueda.length})`}>
-              {!movsBusqueda.length ? (
-                <p className="text-[12px] text-ink-3">Ningún movimiento de este mes coincide. Probá con otro mes.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px]">
-                    <thead><tr><th className={th}>Fecha</th><th className={th}>Concepto</th><th className={th}>N° operación</th><th className={`${th} text-right`}>Monto</th></tr></thead>
-                    <tbody>
-                      {movsBusqueda.map(m => (
-                        <tr key={m.id} className="border-t border-borde">
-                          <td className={td}>{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</td>
-                          <td className={td}>{m.detalle}</td>
-                          <td className={`${td} text-[10px] font-mono text-ink-3`}>{m.id}</td>
-                          <td className={`${td} text-right font-semibold`}>{fmtPesos(m.monto)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card>
-          )}
-
-          {data.otrosEgresos?.length > 0 && (
-            <Card title="Otros egresos de la cuenta MP (no transferencias)">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[420px]">
-                  <thead><tr><th className={th}>Canal</th><th className={`${th} text-right`}>Pagos</th><th className={`${th} text-right`}>Total</th></tr></thead>
-                  <tbody>
-                    {data.otrosEgresos.map(r => (
-                      <tr key={r.canal} className="border-t border-borde">
-                        <td className={`${td} font-semibold`}>{r.canal}</td>
-                        <td className={`${td} text-right`}>{r.pagos}</td>
-                        <td className={`${td} text-right font-semibold`}>{fmtPesos(r.total)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          )}
         </>
         );
       })()}
