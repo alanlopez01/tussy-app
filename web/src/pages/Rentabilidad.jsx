@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getJSON, rangoDe, hoyISO, fmtPesos, fmtPesosCorto, LOCALES } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar, StatTile, Paginacion } from "../components/ui.jsx";
+import Carga from "./Carga.jsx";
 
 const PERIODOS = [
   { key: "mes", label: "Este mes" },
@@ -1085,12 +1086,13 @@ export default function Rentabilidad() {
         </div>
         <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "evolucion", label: "Evolución" },
                           { value: "margenes", label: "Productos" }, { value: "inventario", label: "Inventario" },
-                          { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" }]}
+                          { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" },
+                          { value: "carga", label: "Carga" }]}
                valor={tab} onChange={setTab} />
       </header>
       {tab === "negocio" ? <Negocio /> : tab === "evolucion" ? <Evolucion />
         : tab === "margenes" ? <Margenes /> : tab === "inventario" ? <Inventario />
-        : tab === "costos" ? <Costos /> : <Fijos />}
+        : tab === "costos" ? <Costos /> : tab === "fijos" ? <Fijos /> : <Carga />}
     </div>
   );
 }

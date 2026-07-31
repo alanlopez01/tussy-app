@@ -23,6 +23,7 @@ const { normalizarProducto } = require("../lib/normalizar");
 const { costear } = require("../lib/costeo");
 const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
+const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
 async function ventasLive(req, res) {
@@ -719,6 +720,34 @@ async function evolucion(req, res) {
   });
 }
 
+// ── Carga de reportes mensuales desde la app ──
+// El navegador lee el .xlsx con SheetJS, extrae solo las columnas necesarias y
+// las manda acá. El procesamiento (mismo que los scripts) corre del lado server.
+async function cargarReporte(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { tipo, periodo, filas, publicidad } = req.body || {};
+  if (!tipo || !Array.isArray(filas) || !filas.length) {
+    return res.status(400).json({ error: "Faltan tipo/filas" });
+  }
+  const sql = neon(process.env.DATABASE_URL);
+
+  if (tipo === "mp") {
+    const r = procesarMP(periodo, filas);
+    if (!r.filas.length) return res.status(400).json({ error: "No encontré operaciones aprobadas de locales conocidos" });
+    await guardarMixPagos(sql, r.filas);
+    return res.status(200).json({ ok: true, tipo, mes: r.mes, cargado: r.filas, aprobadas: r.aprobadas, locales_desconocidos: r.locales_desconocidos });
+  }
+
+  if (tipo === "tn") {
+    const r = procesarTN(filas, publicidad);
+    if (!r.meses.length) return res.status(400).json({ error: "No encontré órdenes válidas en el reporte" });
+    await guardarMixPagos(sql, r.meses);
+    return res.status(200).json({ ok: true, tipo, cargado: r.meses, canceladas: r.canceladas });
+  }
+
+  return res.status(400).json({ error: "tipo inválido (mp | tn)" });
+}
+
 // ── Gastos fijos: listar y editar desde la app (esquema clave-valor, versionado) ──
 
 // Devuelve, para cada local, los conceptos vigentes al mes pedido
@@ -1247,6 +1276,7 @@ module.exports = async function handler(req, res) {
     if (action === "evolucion") return await evolucion(req, res);
     if (action === "inventario") return await inventario(req, res);
     if (action === "traslados") return await traslados(req, res);
+    if (action === "cargarReporte") return await cargarReporte(req, res);
     if (action === "gastosLocales") return await gastosLocales(req, res);
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
 
