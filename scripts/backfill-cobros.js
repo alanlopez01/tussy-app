@@ -12,6 +12,12 @@ const sql = neon(process.env.DATABASE_URL);
 
 async function guardar(cobros) {
   if (!cobros.length) return 0;
+  // El barrido de Dragonfish puede traer la misma factura dos veces (las páginas
+  // se corren si entran ventas mientras pagina). Nos quedamos con la última:
+  // dos filas iguales en un mismo INSERT rompen el ON CONFLICT DO UPDATE.
+  const porClave = new Map();
+  for (const f of cobros) porClave.set(`${f.local}|${f.orden_id}|${f.item}`, f);
+  cobros = [...porClave.values()];
   let n = 0;
   for (let i = 0; i < cobros.length; i += 500) {
     const c = cobros.slice(i, i + 500);
