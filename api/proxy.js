@@ -1,6 +1,10 @@
+const { requerirSesion } = require("../lib/auth");
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Tussy-Auth");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
+  if (!requerirSesion(req, res)) return;
 
   const { action, params, target } = req.query;
 

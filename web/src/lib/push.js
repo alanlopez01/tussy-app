@@ -25,9 +25,10 @@ export async function activarPush(usuario = "socio") {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
     });
   }
+  const token = localStorage.getItem("tussy_token");
   await fetch("/api/resumen-diario?action=subscribe", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(token ? { "X-Tussy-Auth": token } : {}) },
     body: JSON.stringify({ subscription: sub.toJSON(), usuario }),
   });
   return true;

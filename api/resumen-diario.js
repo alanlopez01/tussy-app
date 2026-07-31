@@ -1,11 +1,14 @@
 // Suscripciones a notificaciones push. (El resumen diario legacy que daba nombre a
 // este archivo se retiró: hoy los envíos los hace /api/metricas — ingesta, cierre y
 // semanal. La ruta se conserva porque las PWA instaladas ya apuntan acá.)
+const { requerirSesion } = require("../lib/auth");
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Tussy-Auth");
   if (req.method === "OPTIONS") return res.status(200).end();
+  if (!requerirSesion(req, res)) return;
 
   const OPS_URL = process.env.APPS_SCRIPT_URL_OPERACIONES;
   const { action } = req.query;

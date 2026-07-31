@@ -26,6 +26,7 @@ function cerrarSesion() {
   localStorage.removeItem("tussy_pass");
   localStorage.removeItem("tussy_remember");
   localStorage.removeItem("tussy_sesion");
+  localStorage.removeItem("tussy_token");
   window.location.href = "/";
 }
 

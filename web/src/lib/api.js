@@ -1,9 +1,36 @@
 // Cliente de las APIs. En dev, vite proxya /api a producción.
 
+// Sesión firmada que emite /api/auth al loguearse
+export function authHeaders() {
+  const t = localStorage.getItem("tussy_token");
+  return t ? { "X-Tussy-Auth": t } : {};
+}
+
+// 401 = sesión inválida (token vencido o AUTH_SECRET rotado): volver al login
+function sesionVencida() {
+  localStorage.removeItem("tussy_token");
+  localStorage.removeItem("tussy_sesion");
+  window.location.href = "/";
+}
+
 export async function getJSON(url, timeoutMs = 55000) {
-  const r = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  const r = await fetch(url, { headers: authHeaders(), signal: AbortSignal.timeout(timeoutMs) });
+  if (r.status === 401) { sesionVencida(); throw new Error("sesión vencida"); }
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
+}
+
+export async function postJSON(url, body, timeoutMs = 55000) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (r.status === 401) { sesionVencida(); throw new Error("sesión vencida"); }
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+  return data;
 }
 
 export function hoyISO() {

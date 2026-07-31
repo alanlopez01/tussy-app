@@ -7,12 +7,13 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
-  // Auto-login si quedó recordado
+  // Migración: versiones anteriores guardaban usuario+contraseña. Si están, se usa
+  // una única vez para renovar la sesión y se borran para siempre.
   useEffect(() => {
     const u = localStorage.getItem("tussy_user");
     const p = localStorage.getItem("tussy_pass");
     if (localStorage.getItem("tussy_remember") === "1" && u && p) {
-      setUsuario(u); setPass(p);
+      setUsuario(u);
       entrar(u, p, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -22,19 +23,24 @@ export default function Login({ onLogin }) {
     if (!u || !p) { setError("Completá usuario y contraseña"); return; }
     setCargando(true); setError("");
     try {
-      const r = await fetch(`/api/auth?usuario=${encodeURIComponent(u.trim().toLowerCase())}&password=${encodeURIComponent(p.trim())}`);
+      const r = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario: u.trim().toLowerCase(), password: p.trim() }),
+      });
       const data = await r.json();
       if (data.ok) {
+        // La contraseña NUNCA se guarda: la sesión vive en un token firmado.
+        localStorage.removeItem("tussy_pass");
+        localStorage.setItem("tussy_token", data.token);
+        localStorage.setItem("tussy_sesion", JSON.stringify({ rol: data.rol, nombre: data.nombre }));
         if (recordar || silencioso) {
           localStorage.setItem("tussy_user", u);
-          localStorage.setItem("tussy_pass", p);
           localStorage.setItem("tussy_remember", "1");
         } else {
           localStorage.removeItem("tussy_user");
-          localStorage.removeItem("tussy_pass");
           localStorage.removeItem("tussy_remember");
         }
-        localStorage.setItem("tussy_sesion", JSON.stringify({ rol: data.rol, nombre: data.nombre }));
         onLogin({ rol: data.rol, nombre: data.nombre });
       } else {
         if (!silencioso) setError(data.error || "Usuario o contraseña incorrectos");

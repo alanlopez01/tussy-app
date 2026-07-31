@@ -1,10 +1,13 @@
 // Proxy para Apps Script de Operaciones
 // Soporta GET (query params) y POST (body raw forwarded a Apps Script)
+const { requerirSesion } = require("../lib/auth");
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Tussy-Auth");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
+  if (!requerirSesion(req, res)) return;
 
   if (!process.env.APPS_SCRIPT_URL_OPERACIONES) {
     return res.status(503).json({ error: "APPS_SCRIPT_URL_OPERACIONES no configurada en Vercel" });

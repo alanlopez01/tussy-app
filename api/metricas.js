@@ -20,6 +20,7 @@ const KEY_LOCAL = {
 };
 
 const { normalizarProducto } = require("../lib/normalizar");
+const { requerirSesion } = require("../lib/auth");
 const { costear } = require("../lib/costeo");
 const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
@@ -130,6 +131,22 @@ async function ingesta(req, res) {
 
 async function correrIngesta() {
   const sql = neon(process.env.DATABASE_URL);
+
+  // Candado: si otra corrida arrancó hace menos de 3 minutos, esta se retira.
+  // Evita que dos ejecuciones superpuestas detecten la misma venta como "nueva"
+  // y la notifiquen dos veces. El UPDATE condicional es atómico en Postgres.
+  await sql`INSERT INTO config_negocio (clave, valor, descripcion)
+            VALUES ('ingesta_lock', 0, 'epoch de la última corrida de ingesta (candado anti-solapamiento)')
+            ON CONFLICT (clave) DO NOTHING`;
+  const lock = await sql`
+    UPDATE config_negocio SET valor = EXTRACT(EPOCH FROM now())
+    WHERE clave = 'ingesta_lock' AND valor < EXTRACT(EPOCH FROM now()) - 180
+    RETURNING clave`;
+  if (!lock.length) {
+    console.log("[ingesta] salteada: hay otra corrida en curso (lock activo)");
+    return { ok: true, salteada: true, motivo: "otra corrida en curso" };
+  }
+
   const hoy = hoyArg();
   const eventos = [];
   const resumen = [];
@@ -1257,9 +1274,18 @@ async function operaciones(req, res) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Tussy-Auth");
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
 
   const { action, desde, hasta, local, limite } = req.query;
+
+  // Las acciones del cron se autentican con su secret; todo lo demás requiere
+  // la sesión firmada que emite /api/auth al loguearse.
+  const ACCIONES_CRON = ["ingesta", "cierre", "semanal"];
+  if (!ACCIONES_CRON.includes(action)) {
+    if (!requerirSesion(req, res)) return;
+  }
 
   try {
     if (action === "live") return await ventasLive(req, res);

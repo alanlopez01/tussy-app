@@ -2,18 +2,11 @@
 // El navegador lee el .xlsx, extrae solo las columnas necesarias y se las manda
 // al server, que las procesa con la misma lógica que los scripts de siempre.
 import { useState } from "react";
-import { fmtPesosCorto } from "../lib/api.js";
+import { fmtPesosCorto, postJSON } from "../lib/api.js";
 import { Card, Spinner } from "../components/ui.jsx";
 
-async function postReporte(payload) {
-  const r = await fetch("/api/metricas?action=cargarReporte", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-  return data;
+function postReporte(payload) {
+  return postJSON("/api/metricas?action=cargarReporte", payload);
 }
 
 function ResultadoCarga({ resultado }) {
