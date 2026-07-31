@@ -1431,18 +1431,43 @@ async function contabilidad(req, res) {
     WHERE c.fecha BETWEEN ${desde} AND ${hasta}
     GROUP BY 1, p.nombre, p.rubro ORDER BY total DESC LIMIT 60`;
 
-  // Conciliación: transferencias MP del mes sin factura recibida que las respalde
-  // (mismo CUIT y monto dentro del 1%, o monto casi exacto si el egreso no trae CUIT)
-  const egresos = await sql`
-    SELECT e.id, e.fecha::text, e.contraparte, e.cuit, e.monto, e.detalle,
-           EXISTS (
-             SELECT 1 FROM comprobantes_recibidos c
-             WHERE c.fecha BETWEEN e.fecha - 20 AND e.fecha + 20
-               AND ((e.cuit IS NOT NULL AND c.cuit_emisor = e.cuit AND abs(c.total - e.monto) <= e.monto * 0.01)
-                    OR (e.cuit IS NULL AND abs(c.total - e.monto) <= e.monto * 0.005))
-           ) AS con_factura
-    FROM egresos_mp e WHERE e.fecha BETWEEN ${desde} AND ${hasta}
-    ORDER BY e.fecha DESC, e.monto DESC LIMIT 300`;
+  // Conciliación de transferencias a proveedores. Los pagos suelen ser parciales,
+  // así que no se matchea factura por factura: se agrupa POR PROVEEDOR y se compara
+  // total transferido vs. total facturado por él (ventana del mes ±20 días).
+  // El nombre del estado de cuenta viene truncado ("Martinez Analia Dor"), por eso
+  // el join es por prefijo.
+  const conciliacion = await sql`
+    WITH trf AS (
+      SELECT upper(trim(contraparte)) AS nombre,
+             ROUND(SUM(monto))::bigint AS transferido,
+             COUNT(*)::int AS transferencias
+      FROM egresos_mp
+      WHERE fecha BETWEEN ${desde} AND ${hasta}
+        AND detalle ILIKE 'Transferencia enviada%' AND contraparte IS NOT NULL
+      GROUP BY 1
+    )
+    SELECT t.nombre, t.transferido, t.transferencias,
+           COALESCE((
+             SELECT ROUND(SUM(c.total * CASE WHEN c.tipo IN (3,8,13) THEN -1 ELSE 1 END))::bigint
+             FROM comprobantes_recibidos c
+             WHERE upper(c.emisor) LIKE t.nombre || '%'
+               AND c.fecha BETWEEN ${desde}::date - 20 AND ${hasta}::date + 20
+           ), 0) AS facturado
+    FROM trf t ORDER BY t.transferido DESC`;
+
+  // Otros egresos del mes (pauta, servicios, envíos) para tener el gasto por canal
+  const otrosEgresos = await sql`
+    SELECT CASE
+             WHEN detalle ILIKE '%faceb%' THEN 'Publicidad Meta'
+             WHEN detalle ILIKE 'Pago de impuestos%' THEN 'Impuestos al débito'
+             WHEN detalle ILIKE 'Pago Envío%' OR detalle ILIKE '%MiCorreo%' OR detalle ILIKE '%dhl%' THEN 'Envíos'
+             WHEN detalle ILIKE 'Compra Mercado%' THEN 'Compras ML'
+             ELSE 'Servicios y otros'
+           END AS canal,
+           ROUND(SUM(monto))::bigint AS total, COUNT(*)::int AS pagos
+    FROM egresos_mp
+    WHERE fecha BETWEEN ${desde} AND ${hasta} AND detalle NOT ILIKE 'Transferencia%'
+    GROUP BY 1 ORDER BY total DESC`;
 
   const [estado] = await sql`
     SELECT (SELECT COUNT(*) FROM comprobantes_emitidos)::int AS emitidos,
@@ -1460,7 +1485,8 @@ async function contabilidad(req, res) {
     pvLocales,
     rubros: rubros.map(r => ({ ...r, total: Number(r.total) })),
     proveedores: provs.map(r => ({ ...r, cuit: Number(r.cuit), total: Number(r.total), iva: Number(r.iva) })),
-    egresos: egresos.map(r => ({ ...r, monto: Number(r.monto), cuit: r.cuit ? Number(r.cuit) : null })),
+    conciliacion: conciliacion.map(r => ({ ...r, transferido: Number(r.transferido), facturado: Number(r.facturado) })),
+    otrosEgresos: otrosEgresos.map(r => ({ ...r, total: Number(r.total) })),
     estado,
     nombresTipo: NOMBRES_TIPO,
   });

@@ -24,10 +24,19 @@ function aNumero(v) {
 function aFecha(v) {
   if (v instanceof Date) return v.toISOString().slice(0, 10);
   const s = String(v || "").trim();
-  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const dmy = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
   if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   return null;
+}
+
+// "Transferencia enviada Taboada Gerardo" → tipo + contraparte
+function partirMovimientoMP(tipoCompleto) {
+  const t = String(tipoCompleto || "").trim();
+  for (const p of ["Transferencia enviada", "Transferencia programada", "Pago de impuestos", "Compra", "Pago", "Débito por"]) {
+    if (t.startsWith(p)) return { prefijo: p, contraparte: t.slice(p.length).trim() || null };
+  }
+  return { prefijo: t.split(" ")[0] || "Otro", contraparte: null };
 }
 
 function aEntero(v) {
@@ -101,15 +110,15 @@ async function parsearMisComprobantes(file, clase) {
   return filas;
 }
 
-// Movimientos de MercadoPago: nos quedamos con la plata que SALE (transferencias/pagos)
+// Estado de cuenta de MercadoPago (account statement): nos quedamos con la plata
+// que SALE. La contraparte viene embebida en el tipo ("Transferencia enviada Juan…").
 async function parsearMovimientosMP(file) {
   const rows = await leerHojas(file);
   const mapa = mapearColumnas(rows, {
-    fecha: ["fecha"],
-    total: ["monto", "importe", "valor"],
-    id: ["id", "operaci", "referencia"],
-    nombre: ["contraparte", "destinatario", "nombre", "descripci", "detalle"],
-    cuit: ["cuit", "identificaci"],
+    fecha: ["release_date", "fecha"],
+    total: ["net_amount", "monto", "importe", "valor"],
+    id: ["reference_id", "id de", "operaci", "referencia"],
+    nombre: ["transaction_type", "contraparte", "destinatario", "descripci", "detalle"],
   });
   if (!mapa) {
     throw new Error("No reconozco el formato de este export de MercadoPago. Pasámelo por el chat y ajusto el lector.");
@@ -122,18 +131,19 @@ async function parsearMovimientosMP(file) {
     const fecha = aFecha(r[idx.fecha]);
     const monto = aNumero(r[idx.total]);
     if (!fecha || monto >= 0) continue; // solo egresos
-    const contraparte = idx.nombre >= 0 ? String(r[idx.nombre] ?? "").trim() : "";
+    const tipo = String(r[idx.nombre] ?? "").trim();
+    const { contraparte } = partirMovimientoMP(tipo);
     const base = idx.id >= 0 && r[idx.id] != null && String(r[idx.id]).trim()
       ? String(r[idx.id]).trim()
-      : `${fecha}|${monto}|${contraparte}`;
+      : `${fecha}|${monto}|${tipo}`;
     vistos[base] = (vistos[base] || 0) + 1;
     filas.push({
       id: vistos[base] > 1 ? `${base}#${vistos[base]}` : base,
       fecha,
       monto: Math.abs(monto),
-      contraparte: contraparte || null,
-      cuit: idx.cuit >= 0 ? aEntero(String(r[idx.cuit] ?? "").replace(/\D/g, "")) : null,
-      detalle: null,
+      contraparte,
+      cuit: null,
+      detalle: tipo,
     });
   }
   if (!filas.length) throw new Error("No encontré egresos (montos negativos) en el archivo.");
@@ -221,9 +231,11 @@ export default function Contabilidad() {
   const totalVenta = data?.cruce?.reduce((a, r) => a + r.venta, 0) || 0;
   const totalFacturado = data?.cruce?.reduce((a, r) => a + r.facturado, 0) || 0;
   const gastosMes = data?.rubros?.reduce((a, r) => a + r.total, 0) || 0;
-  const egresosSinFactura = data?.egresos?.filter(e => !e.con_factura) || [];
-  const pvHint = {};
+  // Confirmados por Alan; los Dragonfish además se auto-detectan del orden_id
+  const pvHint = { 33: "Online", 1901: "Palermo", 1902: "La Plata", 1904: "Dot", 1905: "Abasto", 1401: "Córdoba" };
   for (const r of data?.pvLocales || []) if (!pvHint[Number(r.pv)]) pvHint[Number(r.pv)] = r.local;
+  const transferido = data?.conciliacion?.reduce((a, r) => a + r.transferido, 0) || 0;
+  const sinRespaldo = data?.conciliacion?.filter(r => r.facturado < r.transferido * 0.9) || [];
 
   const th = "text-left text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold px-3 py-2";
   const td = "px-3 py-2 text-[12px] text-ink-2 tabular-nums";
@@ -329,10 +341,11 @@ export default function Contabilidad() {
           </div>
           <Card>
             <p className="text-[11px] text-ink-3">
-              <strong>Cómo se compara</strong>: online se factura el 100%; en los locales se factura lo cobrado con
-              tarjeta (electron / chip&nbsp;&&nbsp;pin), que se toma del bruto de MP Point del reporte mensual
+              <strong>Cómo se compara</strong>: online se factura el 100%; en los locales se factura lo cobrado por
+              MP Point (tarjeta, QR), que se toma del bruto del reporte mensual
               {sinMix && <strong className="text-warn"> — todavía no hay reporte de MP Point cargado para este mes, así que el esperado está incompleto</strong>}.
-              Las cuotas y el redondeo de fechas hacen que una diferencia de hasta ±3% sea normal.
+              Como la facturación de los locales es manual y a veces facturas de fin de mes se emiten al mes
+              siguiente, el desvío de un mes suelto no alarma: lo que tiene que cerrar es el acumulado.
             </p>
           </Card>
           <Card title="Por punto de venta">
@@ -431,39 +444,67 @@ export default function Contabilidad() {
       {tab === "conciliacion" && data && (
         <>
           <div className="grid gap-3 md:grid-cols-3">
-            <Card title="Transferencias del mes"><div className="text-[24px] font-bold text-ink tabular-nums">{data.egresos.length}</div></Card>
-            <Card title="Con factura"><div className="text-[24px] font-bold text-ok tabular-nums">{data.egresos.length - egresosSinFactura.length}</div></Card>
-            <Card title="Sin factura">
-              <div className={`text-[24px] font-bold tabular-nums ${egresosSinFactura.length ? "text-bad" : "text-ok"}`}>{egresosSinFactura.length}</div>
-              {egresosSinFactura.length > 0 && <p className="text-[11px] text-ink-3 mt-1">{fmtPesosCorto(egresosSinFactura.reduce((a, e) => a + e.monto, 0))} sin respaldo</p>}
+            <Card title="Transferido a proveedores"><div className="text-[24px] font-bold text-ink tabular-nums">{fmtPesosCorto(transferido)}</div></Card>
+            <Card title="Proveedores"><div className="text-[24px] font-bold text-ink tabular-nums">{data.conciliacion.length}</div></Card>
+            <Card title="Con facturación corta">
+              <div className={`text-[24px] font-bold tabular-nums ${sinRespaldo.length ? "text-bad" : "text-ok"}`}>{sinRespaldo.length}</div>
+              {sinRespaldo.length > 0 && <p className="text-[11px] text-ink-3 mt-1">{fmtPesosCorto(sinRespaldo.reduce((a, e) => a + (e.transferido - Math.max(e.facturado, 0)), 0))} transferidos sin factura que los cubra</p>}
             </Card>
           </div>
-          <Card title="Detalle">
-            {!data.egresos.length ? (
+          <Card title="Transferencias vs. facturas, por proveedor">
+            {!data.conciliacion.length ? (
               <p className="text-[13px] text-ink-2">
-                Subí el export de <strong>Movimientos</strong> de MercadoPago en la pestaña Carga y acá vas a ver
-                cada transferencia con su factura (o la alerta de que falta).
+                Subí el <strong>estado de cuenta</strong> de MercadoPago (Dinero → Movimientos → Exportar) en la
+                pestaña Carga: acá se compara cuánto le transferiste a cada proveedor contra cuánto te facturó.
               </p>
             ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[560px]">
+                    <thead><tr><th className={th}>Proveedor</th><th className={`${th} text-right`}>Transf.</th><th className={`${th} text-right`}>Transferido</th><th className={`${th} text-right`}>Facturado</th><th className={th}>Estado</th></tr></thead>
+                    <tbody>
+                      {data.conciliacion.map(r => {
+                        const ok = r.facturado >= r.transferido * 0.9;
+                        return (
+                          <tr key={r.nombre} className="border-t border-borde">
+                            <td className={`${td} font-semibold`}>{r.nombre}</td>
+                            <td className={`${td} text-right`}>{r.transferencias}</td>
+                            <td className={`${td} text-right`}>{fmtPesos(r.transferido)}</td>
+                            <td className={`${td} text-right`}>{fmtPesos(r.facturado)}</td>
+                            <td className={td}>{ok
+                              ? <span className="text-ok font-semibold">✓ cubierto</span>
+                              : <span className="text-bad font-semibold">faltan {fmtPesosCorto(r.transferido - Math.max(r.facturado, 0))}</span>}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[11px] text-ink-3 mt-3">
+                  Se compara por total (los pagos suelen ser parciales), con facturas de hasta 20 días antes o después
+                  del mes. Las transferencias a cuentas propias o retiros de socios van a figurar "sin factura": es esperable.
+                </p>
+              </>
+            )}
+          </Card>
+          {data.otrosEgresos?.length > 0 && (
+            <Card title="Otros egresos de la cuenta MP (no transferencias)">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px]">
-                  <thead><tr><th className={th}>Fecha</th><th className={th}>Contraparte</th><th className={`${th} text-right`}>Monto</th><th className={th}>Factura</th></tr></thead>
+                <table className="w-full min-w-[420px]">
+                  <thead><tr><th className={th}>Canal</th><th className={`${th} text-right`}>Pagos</th><th className={`${th} text-right`}>Total</th></tr></thead>
                   <tbody>
-                    {data.egresos.map(e => (
-                      <tr key={e.id} className="border-t border-borde">
-                        <td className={td}>{e.fecha.slice(8, 10)}/{e.fecha.slice(5, 7)}</td>
-                        <td className={td}>{e.contraparte || "—"}{e.cuit ? <span className="text-[10px] text-ink-3 block">{fmtCuit(e.cuit)}</span> : null}</td>
-                        <td className={`${td} text-right font-semibold`}>{fmtPesos(e.monto)}</td>
-                        <td className={td}>{e.con_factura
-                          ? <span className="text-ok font-semibold">✓</span>
-                          : <span className="text-bad font-semibold">falta</span>}</td>
+                    {data.otrosEgresos.map(r => (
+                      <tr key={r.canal} className="border-t border-borde">
+                        <td className={`${td} font-semibold`}>{r.canal}</td>
+                        <td className={`${td} text-right`}>{r.pagos}</td>
+                        <td className={`${td} text-right font-semibold`}>{fmtPesos(r.total)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
-          </Card>
+            </Card>
+          )}
         </>
       )}
 
@@ -497,8 +538,8 @@ export default function Contabilidad() {
           <Uploader titulo="ARCA · Comprobantes emitidos (hasta que ande el certificado)" estado={estados.emitidos || { estado: "idle" }}
             descripcion="ARCA → Mis Comprobantes → Emitidos → período → Exportar. Cuando el web service esté activo, esta carga deja de ser necesaria."
             onFile={subir("emitidos", f => parsearMisComprobantes(f, "emitidos"), "cargarComprobantes")} />
-          <Uploader titulo="MercadoPago · Movimientos (para conciliar transferencias)" estado={estados.egresos || { estado: "idle" }}
-            descripcion="MercadoPago → Dinero → Movimientos → Exportar. Tomo solo la plata que sale (transferencias y pagos) y la cruzo contra las facturas recibidas."
+          <Uploader titulo="MercadoPago · Estado de cuenta (para conciliar transferencias)" estado={estados.egresos || { estado: "idle" }}
+            descripcion="MercadoPago → Dinero → Movimientos → Exportar (estado de cuenta). Tomo solo la plata que sale: transferencias a proveedores (se concilian contra sus facturas), pauta, envíos y servicios."
             onFile={subir("egresos", parsearMovimientosMP, "cargarEgresos")} />
         </>
       )}
