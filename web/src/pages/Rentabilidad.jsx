@@ -1081,7 +1081,7 @@ export default function Rentabilidad() {
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[20px] font-bold text-ink">Rentabilidad</h1>
-          <p className="text-[12px] text-ink-3">Solo visible para vos (en construcción)</p>
+          <p className="text-[12px] text-ink-3">Costos, márgenes e inventario del negocio</p>
         </div>
         <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "evolucion", label: "Evolución" },
                           { value: "margenes", label: "Productos" }, { value: "inventario", label: "Inventario" },

@@ -14,8 +14,7 @@ const NAV = [
   { to: "/productos", label: "Productos", icon: "▦" },
   { to: "/pedidos", label: "Pedidos", icon: "◷" },
   { to: "/finanzas", label: "Finanzas", icon: "◈" },
-  // Solo admin mientras esté en construcción
-  { to: "/rentabilidad", label: "Rentabilidad", icon: "◎", soloAdmin: true },
+  { to: "/rentabilidad", label: "Rentabilidad", icon: "◎" },
 ];
 
 function navPara(user) {
@@ -143,7 +142,7 @@ export default function App() {
             <Route path="/productos" element={<Productos />} />
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/finanzas" element={<Finanzas />} />
-            {user.rol === "admin" && <Route path="/rentabilidad" element={<Rentabilidad />} />}
+            <Route path="/rentabilidad" element={<Rentabilidad />} />
           </Routes>
         </main>
       </div>
