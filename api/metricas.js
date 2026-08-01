@@ -1551,9 +1551,9 @@ async function completitud(req, res) {
   const esperadoHasta = cerrado ? hasta : (hoy.slice(0, 7) === mes ? hoy : hasta);
   const dd = f => f ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : null;
 
-  const [ventasDias, mixRows, elecRows, egresosMax, bancoMax, recibidosMax, emitidosMax, fijosMes, ipcRow] = await Promise.all([
-    sql`SELECT local, COUNT(DISTINCT fecha)::int dias, MAX(fecha)::text ultimo
-        FROM ventas WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY local`,
+  const [syncErrores, mixRows, elecRows, egresosMax, bancoMax, recibidosMax, emitidosMax, fijosMes, ipcRow] = await Promise.all([
+    sql`SELECT local, COUNT(*)::int n FROM sync_estado
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND estado = 'error' GROUP BY local`,
     sql`SELECT local, bruto FROM mix_pagos WHERE mes = ${mes}`,
     sql`SELECT local, ROUND(SUM(monto) FILTER (WHERE medio = 'electronico'))::bigint elec
         FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY local`,
@@ -1566,20 +1566,14 @@ async function completitud(req, res) {
   ]);
 
   const items = [];
-  const diasEsperados = cerrado ? ultimoDia : Number(hoy.slice(8, 10));
 
-  // 1) Ventas por local (la ingesta automática)
-  const localesEsperados = ["Palermo", "La Plata", "Tiendanube", "Dot", "Abasto", "Córdoba"];
-  const conHuecos = [];
-  for (const l of localesEsperados) {
-    const v = ventasDias.find(x => x.local === l);
-    if (!v) { conHuecos.push(`${l}: sin datos`); continue; }
-    if (v.dias < diasEsperados) conHuecos.push(`${l}: ${diasEsperados - v.dias} día(s) sin ventas registradas`);
-  }
+  // 1) Ventas: la ingesta marca en sync_estado los días que fallaron y no se pudieron
+  // recuperar. Un día sin ventas puede ser un local cerrado (domingos): no es un hueco.
+  const errores = syncErrores.map(e => `${e.local}: ${e.n} día(s) con error de ingesta`);
   items.push({
     clave: "ventas", label: "Ventas (ingesta automática)",
-    estado: conHuecos.length ? "parcial" : "ok",
-    detalle: conHuecos.length ? conHuecos.join(" · ") : `los ${diasEsperados} días completos`,
+    estado: errores.length ? "parcial" : "ok",
+    detalle: errores.length ? errores.join(" · ") : "sin días con error",
   });
 
   // 2) Reporte de ventas MP (costo financiero locales): cobertura vs. lo electrónico real
@@ -1624,8 +1618,10 @@ async function completitud(req, res) {
     if (!u) {
       items.push({ clave, label, estado: "falta", detalle: "sin datos este mes" });
     } else if (u < esperadoHasta) {
-      const faltan = `del ${dd(u)} en adelante`;
-      items.push({ clave, label, estado: "parcial", detalle: `cargado hasta el ${dd(u)} — falta ${faltan}` });
+      const [uy, um, ud] = u.split("-").map(Number);
+      const sig = new Date(Date.UTC(uy, um - 1, ud + 1)).toISOString().slice(0, 10);
+      const queFalta = sig === esperadoHasta ? `el ${dd(sig)}` : `del ${dd(sig)} al ${dd(esperadoHasta)}`;
+      items.push({ clave, label, estado: "parcial", detalle: `cargado hasta el ${dd(u)} — falta ${queFalta}` });
     } else {
       items.push({ clave, label, estado: "ok", detalle: `hasta el ${dd(u)}` });
     }
