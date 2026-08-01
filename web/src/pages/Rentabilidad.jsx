@@ -63,7 +63,8 @@ function DetalleProducto({ producto, mes, onCerrar }) {
                 ["Costo mercadería", d.costo_mercaderia != null ? fmtPesos(d.costo_mercaderia) : "—", null],
                 ["Fábrica / unidad", d.lleva_estampa ? fmtPesos(d.costo_fabrica) : "—",
                  d.lleva_estampa ? null : "no lleva estampa"],
-                ["Costo impositivo", fmtPesos(d.impuesto_monto), `${d.impuesto_pct}% de la venta`],
+                ["Impuestos si se factura", fmtPesos(d.impuesto_monto),
+                 `IVA ${d.iva_venta_pct}% + IIBB ${d.iibb_venta_pct}% · en efectivo no aplica`],
                 ["Estructura por prenda", fmtPesos(d.estructura_unidad),
                  `promedio del punto de venta · ${d.estructura_detalle}`]].map(([l, v, extra]) => (
                 <div key={l} className="bg-surface rounded-md px-3 py-2">
@@ -88,7 +89,7 @@ function DetalleProducto({ producto, mes, onCerrar }) {
                     </span>
                   </div>
                   <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
-                    entra {fmtPesos(e.ingreso)} · impuestos −{fmtPesos(e.impuestos)} ·{" "}
+                    entra {fmtPesos(e.ingreso)} · impuestos {e.sin_factura ? "$0 (sin factura)" : `−${fmtPesos(e.impuestos)}`} ·{" "}
                     <span className={e.excedente >= 0 ? "text-ok" : "text-warn"}>
                       {e.excedente >= 0 ? "+" : ""}{fmtPesos(e.excedente)} vs. promedio del local
                     </span>
@@ -118,7 +119,9 @@ function DetalleProducto({ producto, mes, onCerrar }) {
                       </td>
                       <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesos(e.ingreso)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesos(e.costo_financiero)}</td>
-                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesos(e.impuestos)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">
+                        {e.sin_factura ? <span title="No se factura: no paga IVA ni IIBB">$0</span> : `−${fmtPesos(e.impuestos)}`}
+                      </td>
                       <td className={`py-2 text-right tabular-nums font-bold ${e.contribucion >= 0 ? "text-ok" : "text-bad"}`}>
                         {e.contribucion != null ? `${fmtPesos(e.contribucion)} (${e.margen_contribucion}%)` : "—"}
                       </td>
@@ -131,8 +134,9 @@ function DetalleProducto({ producto, mes, onCerrar }) {
               </table>
             </div>
             <p className="text-[11px] text-ink-3 mt-3">
-              <strong>Contribución</strong> = lo que entra − mercadería − fábrica − impuestos. Es lo que esa venta
-              deja para pagar la estructura: mientras sea positiva, vender conviene. La columna
+              <strong>Contribución</strong> = lo que entra − mercadería − fábrica − impuestos. El efectivo
+              resigna el 15% pero no paga IVA ni IIBB ni costo financiero (no se factura); lo facturado paga los
+              tres. Es lo que esa venta deja para pagar la estructura: mientras sea positiva, vender conviene. La columna
               <strong> vs. promedio</strong> la compara contra lo que aporta en promedio cada prenda de este punto
               de venta ({fmtPesos(d.estructura_unidad)}); si da negativa, el producto rinde por debajo del promedio
               —no que pierda plata.
@@ -754,6 +758,49 @@ function Evolucion() {
                       value={`${varMargen > 0 ? "+" : ""}${varMargen?.toFixed(1)} pts`}
                       sub={`de ${primero.margen_pct}% a ${ultimo.margen_pct}%`} />
           </div>
+
+          <Card title="Resultado de verdad · con provisiones e inflación">
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12px] min-w-[560px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                    <th className="text-left py-2 font-semibold">Mes</th>
+                    <th className="text-right py-2 font-semibold">Venta real*</th>
+                    <th className="text-right py-2 font-semibold">Resultado</th>
+                    <th className="text-right py-2 font-semibold">Prov. SAC</th>
+                    <th className="text-right py-2 font-semibold">Prov. Ganancias</th>
+                    <th className="text-right py-2 font-semibold">Neto est.</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borde">
+                  {ms.filter(m => m.completo).map(m => (
+                    <tr key={m.mes}>
+                      <td className="py-2 font-semibold text-ink capitalize">{nombreMes(m.mes)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-2">
+                        {fmtPesosCorto(m.venta_real)}{!m.ipc_conocido && <span className="text-ink-3">°</span>}
+                      </td>
+                      <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.resultado)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(m.provision_sac)}</td>
+                      <td className="py-2 text-right tabular-nums text-ink-3">−{fmtPesosCorto(m.provision_ig)}</td>
+                      <td className={`py-2 text-right tabular-nums font-bold ${m.resultado_neto >= 0 ? "text-ok" : "text-bad"}`}>
+                        {fmtPesosCorto(m.resultado_neto)} ({m.margen_neto_pct}%)
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-ink-3 mt-3">
+              *Venta a pesos de hoy, deflactada por IPC del INDEC (° = IPC de ese mes aún no publicado, queda
+              nominal). <strong>Prov. SAC</strong>: el aguinaldo se devenga todos los meses (sueldos÷12 más sus
+              cargas) aunque se pague en junio y diciembre; en los meses con SAC real el pico del F931 se
+              descuenta para no contarlo dos veces. <strong>Prov. Ganancias</strong>:{" "}
+              {data.ig_pct ? Math.round(data.ig_pct * 100) : 35}% sobre el resultado ajustado — es lo que se
+              devenga; retenciones, percepciones y anticipos ya pagados se restan al liquidar (por eso el
+              cheque final al fisco suele ser mucho menor). El <strong>neto estimado</strong> es la plata que
+              de verdad queda para los socios.
+            </p>
+          </Card>
 
           <Card title="Venta y resultado por mes">
             <div className="space-y-3">

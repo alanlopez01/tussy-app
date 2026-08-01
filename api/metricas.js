@@ -788,27 +788,69 @@ async function evolucion(req, res) {
     const d = new Date(Date.UTC(y, m - 1 - i, 1));
     meses.push(d.toISOString().slice(0, 7));
   }
-  const resultados = await Promise.all(meses.map(mes => calcularNegocio(sql, mes)));
+  const [resultados, ipcRows, cfgIgRows] = await Promise.all([
+    Promise.all(meses.map(mes => calcularNegocio(sql, mes))),
+    sql`SELECT mes, pct FROM ipc_mes`,
+    sql`SELECT valor FROM config_negocio WHERE clave = 'ig_pct'`,
+  ]);
+  const ipc = Object.fromEntries(ipcRows.map(r => [r.mes, Number(r.pct)]));
+  const igPct = Number(cfgIgRows[0]?.valor ?? 0.35);
+
+  // Deflactor a pesos del último mes con IPC conocido: acumula la inflación de los
+  // meses POSTERIORES a cada mes (venta real = venta nominal × deflactor).
+  const conVenta = resultados.filter(r => r.total.venta > 0);
+  const deflactor = {};
+  {
+    let acum = 1;
+    for (let i = conVenta.length - 1; i >= 0; i--) {
+      deflactor[conVenta[i].mes] = acum;
+      const pct = ipc[conVenta[i].mes];
+      acum *= pct != null ? 1 + pct / 100 : 1;
+    }
+  }
+
   return res.status(200).json({
-    meses: resultados
-      .filter(r => r.total.venta > 0)
-      .map(r => ({
-        mes: r.mes,
-        venta: r.total.venta,
-        mercaderia: r.total.mercaderia,
-        margen_bruto: r.total.margen_bruto,
-        margen_bruto_pct: r.total.venta > 0 ? Math.round(r.total.margen_bruto / r.total.venta * 1000) / 10 : null,
-        financiero: r.total.financiero,
-        fijos: r.total.fijos,
-        impuestos: r.total.impuestos,
-        resultado: r.total.resultado,
-        margen_pct: r.total.margen_pct,
-        datos: r.datos,
-        completo: r.datos.fijos,
-        estimado: r.datos.fijos_estimados || !r.datos.mix_pagos,
-        // Resultado de cada unidad, para ver quién mejora y quién empeora
-        por_unidad: Object.fromEntries(r.unidades.map(u => [u.local, { venta: u.venta, resultado: u.resultado, margen_pct: u.margen_pct }])),
-      })),
+    ig_pct: igPct,
+    meses: conVenta
+      .map(r => {
+        // ── Resultado "de verdad": provisiones que la caja no muestra ──
+        // SAC: el aguinaldo se devenga todos los meses aunque se pague en jun/dic.
+        // Provisión = sueldos/12 + las cargas de esa doceava parte. Cuando el mes trae
+        // el F931 real con SAC (junio), el pico de cargas se saca para no contarlo dos veces.
+        const sueldos = r.total.sueldos_totales || 0;
+        const provisionSac = Math.round(sueldos / 12 + (r.total.cargas_normales || 0) / 12);
+        const picoSac = Math.max(0, (r.total.cargas_usadas || 0) - (r.total.cargas_normales || 0));
+        // Ganancias: provisión sobre el resultado ajustado. Es el impuesto que se
+        // devenga; retenciones y anticipos ya pagados se restan al liquidar.
+        const resultadoAjustado = r.total.resultado + picoSac - provisionSac;
+        const provisionIg = Math.max(0, Math.round(resultadoAjustado * igPct));
+        const resultadoNeto = resultadoAjustado - provisionIg;
+        const defl = deflactor[r.mes] ?? 1;
+        return {
+          mes: r.mes,
+          venta: r.total.venta,
+          venta_real: Math.round(r.total.venta * defl),
+          ipc_conocido: ipc[r.mes] != null,
+          mercaderia: r.total.mercaderia,
+          margen_bruto: r.total.margen_bruto,
+          margen_bruto_pct: r.total.venta > 0 ? Math.round(r.total.margen_bruto / r.total.venta * 1000) / 10 : null,
+          financiero: r.total.financiero,
+          fijos: r.total.fijos,
+          impuestos: r.total.impuestos,
+          resultado: r.total.resultado,
+          margen_pct: r.total.margen_pct,
+          provision_sac: provisionSac,
+          pico_sac: picoSac,
+          provision_ig: provisionIg,
+          resultado_neto: resultadoNeto,
+          margen_neto_pct: r.total.venta > 0 ? Math.round(resultadoNeto / r.total.venta * 1000) / 10 : null,
+          datos: r.datos,
+          completo: r.datos.fijos,
+          estimado: r.datos.fijos_estimados || !r.datos.mix_pagos,
+          // Resultado de cada unidad, para ver quién mejora y quién empeora
+          por_unidad: Object.fromEntries(r.unidades.map(u => [u.local, { venta: u.venta, resultado: u.resultado, margen_pct: u.margen_pct }])),
+        };
+      }),
   });
 }
 
@@ -1017,7 +1059,13 @@ async function rentabilidadProducto(req, res) {
     estructuraDetalle = "promedio de los locales físicos";
   }
 
-  const impuestoPct = cfg.impuesto_producto_pct ?? 0.105;
+  // Impuestos por escenario según la operatoria real: lo que se factura paga IVA
+  // (21/121 del precio final, es el débito fiscal) e IIBB; el efectivo no se
+  // factura, así que no paga ninguno de los dos. Online factura todo, incluso
+  // las transferencias.
+  const ivaVentaPct = cfg.iva_venta_pct ?? (0.21 / 1.21);
+  const iibbVentaPct = cfg.iibb_pct ?? 0.0452;
+  const impuestoFacturadoPct = ivaVentaPct + iibbVentaPct;
 
   // Online no cobra en efectivo: su descuento equivalente es el 10% por transferencia
   const escenariosBase = esOnline
@@ -1041,7 +1089,8 @@ async function rentabilidadProducto(req, res) {
     ingreso: precioLista * (1 - (e.desc ?? e.tasa ?? 0)),
   })).map(e => {
     const ingreso = Math.round(e.ingreso);
-    const impuestos = Math.round(ingreso * impuestoPct);
+    const sinFactura = e.key === "efectivo";
+    const impuestos = sinFactura ? 0 : Math.round(ingreso * impuestoFacturadoPct);
     // CONTRIBUCIÓN = lo que esta venta deja para pagar la estructura y generar ganancia.
     // Es la métrica de decisión: mientras sea positiva, vender conviene.
     const contribucion = costoDirecto == null ? null : ingreso - costoDirecto - impuestos;
@@ -1049,7 +1098,7 @@ async function rentabilidadProducto(req, res) {
     // aporta cada prenda vendida en este punto de venta para cubrir sus fijos.
     const excedente = contribucion == null ? null : contribucion - estructuraUnidad;
     return {
-      ...e, ingreso,
+      ...e, ingreso, sin_factura: sinFactura,
       costo_financiero: Math.round(precioLista - ingreso),
       impuestos, contribucion,
       margen_contribucion: contribucion != null && ingreso > 0 ? Math.round(contribucion / ingreso * 1000) / 10 : null,
@@ -1075,8 +1124,10 @@ async function rentabilidadProducto(req, res) {
     estructura_unidad: estructuraUnidad,
     unidades_punto_venta: unidadesPV,
     estructura_detalle: estructuraDetalle,
-    impuesto_pct: Math.round(impuestoPct * 1000) / 10,
-    impuesto_monto: Math.round(precioLista * impuestoPct),
+    impuesto_pct: Math.round(impuestoFacturadoPct * 1000) / 10,
+    impuesto_monto: Math.round(precioLista * impuestoFacturadoPct),
+    iva_venta_pct: Math.round(ivaVentaPct * 1000) / 10,
+    iibb_venta_pct: Math.round(iibbVentaPct * 1000) / 10,
     escenarios,
   });
 }
@@ -1185,6 +1236,16 @@ async function calcularNegocio(sql, mes) {
   const cargasMes = impuestosReales.cargas_sociales != null
     ? impuestosReales.cargas_sociales
     : baseCargasTotal * (cfg.cargas_pct || 0);
+  // Para las provisiones de Evolución: sueldos totales (con y sin cargas, franqueros,
+  // supervisor) y cargas "normales" (sin el pico del SAC de junio/diciembre).
+  const sueldosTotales = Object.values(fijos).reduce((a, f) => {
+    const c = f.conceptos || {};
+    for (const [k, v] of Object.entries(c)) {
+      if (/sueldo|franquero|supervisor|empleado/.test(k) && !k.includes("sin_cargas")) a += Number(v) || 0;
+    }
+    return a;
+  }, 0);
+  const cargasNormales = Math.round(baseCargasTotal * (cfg.cargas_pct || 0));
 
   const fabricaPorPrenda = totalEstampadas > 0 ? fabricaMesReal / totalEstampadas : 0;
 
@@ -1298,6 +1359,9 @@ async function calcularNegocio(sql, mes) {
       },
       resultado: suma("resultado"),
       margen_pct: ventaTotal > 0 ? Math.round(suma("resultado") / ventaTotal * 1000) / 10 : null,
+      sueldos_totales: Math.round(sueldosTotales),
+      cargas_normales: cargasNormales,
+      cargas_usadas: Math.round(cargasMes),
     },
     faltan_datos: {
       mix_pagos: unidades.filter(u => u.local !== "Tiendanube" && !u.detalle_financiero).map(u => u.local),
