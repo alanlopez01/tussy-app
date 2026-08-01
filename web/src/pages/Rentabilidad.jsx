@@ -268,9 +268,9 @@ function Margenes() {
         </>
       )}
 
+      {/* La referencia de estructura del modal necesita un mes cerrado: si el rango
+          elegido cae en el mes en curso, se usa el último cerrado */}
       {detalle && (
-        {/* La referencia de estructura del modal necesita un mes cerrado: si el rango
-            elegido cae en el mes en curso, se usa el último cerrado */}
         <DetalleProducto producto={detalle}
           mes={[rango.desde.slice(0, 7), mesCerrado()].sort()[0]}
           onCerrar={() => setDetalle(null)} />
