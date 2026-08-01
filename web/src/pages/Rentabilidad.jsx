@@ -911,6 +911,123 @@ function Evolucion() {
 }
 
 // ── Tab: Inventario ──
+
+// ── Quiebres: talles que se agotan pronto, con dónde reponer ──
+function Quiebres() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    getJSON("/api/metricas?action=quiebres", 40000).then(setData).catch(() => setData(null));
+  }, []);
+  if (!data) return <Spinner texto="Buscando quiebres…" />;
+  const nombre = l => l === "Tiendanube" ? "Online" : l;
+  return (
+    <Card title={`Se agotan pronto (${data.quiebres.length})`}
+          right={<span className="text-[11px] text-ink-3">velocidad de los últimos {data.ventana_dias} días · menos de 7 días de stock</span>}>
+      {!data.quiebres.length ? (
+        <p className="text-[13px] text-ink-2 py-4 text-center">Ningún talle con venta constante está por quebrar. 👌</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[12px] min-w-[560px]">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                <th className="text-left py-2 font-semibold">Producto · talle</th>
+                <th className="text-left py-2 font-semibold">Local</th>
+                <th className="text-right py-2 font-semibold">Stock</th>
+                <th className="text-right py-2 font-semibold">Vende/día</th>
+                <th className="text-right py-2 font-semibold">Se agota en</th>
+                <th className="text-left py-2 pl-3 font-semibold">Traer de</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-borde">
+              {data.quiebres.map((q, i) => (
+                <tr key={i}>
+                  <td className="py-2 pr-2 font-semibold text-ink">{q.producto_norm}
+                    <span className="text-ink-3 font-normal"> · {q.talle || "s/t"}</span></td>
+                  <td className="py-2 text-ink-2">{nombre(q.local)}</td>
+                  <td className={`py-2 text-right tabular-nums font-bold ${q.stock === 0 ? "text-bad" : "text-ink"}`}>{q.stock}</td>
+                  <td className="py-2 text-right tabular-nums text-ink-2">{q.vel}</td>
+                  <td className={`py-2 text-right tabular-nums font-bold ${q.dias == null || q.dias < 3 ? "text-bad" : "text-warn"}`}>
+                    {q.stock === 0 ? "quebrado" : q.dias != null ? `${q.dias} días` : "—"}
+                  </td>
+                  <td className="py-2 pl-3 text-[11px] text-ink-3">
+                    {(q.donde_hay || []).length
+                      ? q.donde_hay.map(d => `${nombre(d.local)} (${d.stock})`).join(" · ")
+                      : "sin stock sobrante en otro local"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="text-[11px] text-ink-3 mt-3">
+        Solo talles con venta constante (≥1 por semana). "Traer de" lista locales con 3+ unidades y más de
+        21 días de cobertura propia: mover de ahí no genera un quiebre nuevo.
+      </p>
+    </Card>
+  );
+}
+
+
+// ── Clientes online: recompra, valor y costo de adquisición ──
+function Clientes() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    getJSON("/api/metricas?action=clientes", 40000).then(setData).catch(() => setData(null));
+  }, []);
+  if (!data) return <Spinner texto="Analizando clientes…" />;
+  const g = data.global;
+  const nombreMes = m => new Date(m + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "short", year: "2-digit" });
+  const cerrados = data.meses.filter(m => m.mes < hoyISO().slice(0, 7));
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatTile label="Clientes únicos" value={g.clientes.toLocaleString("es-AR")} sub={`${g.ordenes.toLocaleString("es-AR")} órdenes`} />
+        <StatTile label="Tasa de recompra" value={`${g.tasa_recompra}%`} sub={`${g.recompraron.toLocaleString("es-AR")} volvieron a comprar`} />
+        <StatTile label="Valor por cliente" value={fmtPesosCorto(g.ltv)} sub="venta acumulada ÷ clientes" />
+        <StatTile label="Frecuencia" value={`${g.frecuencia}`} sub="órdenes por cliente" />
+      </div>
+      <Card title="Mes a mes · nuevos vs. recurrentes">
+        <div className="overflow-x-auto">
+          <table className="w-full text-[12px] min-w-[560px]">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                <th className="text-left py-2 font-semibold">Mes</th>
+                <th className="text-right py-2 font-semibold">Clientes</th>
+                <th className="text-right py-2 font-semibold">Nuevos</th>
+                <th className="text-right py-2 font-semibold">% venta de recurrentes</th>
+                <th className="text-right py-2 font-semibold">Pauta Meta</th>
+                <th className="text-right py-2 font-semibold">Costo por cliente nuevo</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-borde">
+              {cerrados.map(m => (
+                <tr key={m.mes}>
+                  <td className="py-2 font-semibold text-ink capitalize">{nombreMes(m.mes)}</td>
+                  <td className="py-2 text-right tabular-nums text-ink-2">{m.clientes.toLocaleString("es-AR")}</td>
+                  <td className="py-2 text-right tabular-nums text-ink-2">{m.nuevos.toLocaleString("es-AR")}</td>
+                  <td className="py-2 text-right tabular-nums text-ink-2">
+                    {m.venta > 0 ? Math.round(m.venta_recurrentes / m.venta * 100) + "%" : "—"}
+                  </td>
+                  <td className="py-2 text-right tabular-nums text-ink-3">{m.pauta ? fmtPesosCorto(m.pauta) : "—"}</td>
+                  <td className="py-2 text-right tabular-nums font-bold text-ink">
+                    {m.pauta && m.nuevos ? fmtPesos(Math.round(m.pauta / m.nuevos)) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[11px] text-ink-3 mt-3">
+          El <strong>costo por cliente nuevo</strong> divide la pauta de Meta del mes (pagos reales de la cuenta
+          MP) por los clientes que compraron por primera vez. No toda la pauta va a adquisición, así que es un
+          techo: el CAC real es algo menor. La pauta solo aparece en los meses con estado de cuenta cargado.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
 function Traslados() {
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -1013,19 +1130,19 @@ function Inventario() {
 
   const colorRot = r => r == null ? "text-ink-3" : r >= 4 ? "text-ok" : r >= 2 ? "text-warn" : "text-bad";
 
-  if (sub === "traslados") {
+  if (sub === "traslados" || sub === "quiebres") {
     return (
       <div className="space-y-4">
-        <Chips opciones={[{ value: "stock", label: "Stock" }, { value: "traslados", label: "Traslados" }]}
+        <Chips opciones={[{ value: "stock", label: "Stock" }, { value: "traslados", label: "Traslados" }, { value: "quiebres", label: "Quiebres" }]}
                valor={sub} onChange={setSub} />
-        <Traslados />
+        {sub === "traslados" ? <Traslados /> : <Quiebres />}
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <Chips opciones={[{ value: "stock", label: "Stock" }, { value: "traslados", label: "Traslados" }]}
+      <Chips opciones={[{ value: "stock", label: "Stock" }, { value: "traslados", label: "Traslados" }, { value: "quiebres", label: "Quiebres" }]}
              valor={sub} onChange={setSub} />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Chips
@@ -1167,12 +1284,14 @@ export default function Rentabilidad() {
         </div>
         <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "evolucion", label: "Evolución" },
                           { value: "margenes", label: "Productos" }, { value: "inventario", label: "Inventario" },
+                          { value: "clientes", label: "Clientes" },
                           { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" },
                           { value: "carga", label: "Carga" }]}
                valor={tab} onChange={setTab} />
       </header>
       {tab === "negocio" ? <Negocio /> : tab === "evolucion" ? <Evolucion />
         : tab === "margenes" ? <Margenes /> : tab === "inventario" ? <Inventario />
+        : tab === "clientes" ? <Clientes />
         : tab === "costos" ? <Costos /> : tab === "fijos" ? <Fijos /> : <Carga />}
     </div>
   );

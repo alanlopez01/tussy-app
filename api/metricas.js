@@ -99,6 +99,19 @@ async function escribirCobrosDia(sql, fecha, local, cobros) {
   }
 }
 
+// Clientes de las órdenes de Tiendanube (para recompra/LTV); upsert idempotente
+async function escribirClientesTN(sql, clientes) {
+  if (!clientes || !clientes.length) return;
+  for (let i = 0; i < clientes.length; i += 500) {
+    const c = clientes.slice(i, i + 500);
+    await sql`INSERT INTO clientes_tn (orden_id, cliente_id, fecha, total)
+      SELECT * FROM UNNEST(
+        ${c.map(x => x.orden_id)}::text[], ${c.map(x => x.cliente_id)}::bigint[],
+        ${c.map(x => x.fecha)}::date[], ${c.map(x => x.total)}::numeric[]
+      ) ON CONFLICT (orden_id) DO UPDATE SET cliente_id = EXCLUDED.cliente_id, total = EXCLUDED.total`;
+  }
+}
+
 async function escribirDiaLocal(sql, fecha, local, filas) {
   await sql`DELETE FROM ventas WHERE fecha = ${fecha} AND local = ${local}`;
   for (let i = 0; i < filas.length; i += 500) {
@@ -195,6 +208,7 @@ async function correrIngesta() {
     }
     await escribirDiaLocal(sql, hoy, local, r.filas);
     await escribirCobrosDia(sql, hoy, local, r.cobros);
+    await escribirClientesTN(sql, r.clientes);
     await marcarSync(sql, hoy, local, true, null);
     resumen.push({ local, ok: true, filas: r.filas.length, nuevas: habiaBaseline ? Object.keys(porOrden).filter(id => !idsPrevios.has(id)).length : 0 });
   }));
@@ -341,6 +355,7 @@ async function reingestarUltimosDias(sql, dias = 7) {
       if (!r.ok) continue;
       await escribirDiaLocal(sql, dia, local, r.filas);
       await escribirCobrosDia(sql, dia, local, r.cobros);
+      await escribirClientesTN(sql, r.clientes);
       ok++;
     }
     resumen.push({ local, ok: true, dias: ok });
@@ -1535,6 +1550,173 @@ async function cargarBanco(req, res) {
   return res.status(200).json({ ok: true, recibidas: filas.length, nuevas });
 }
 
+// ── Curva horaria: cuánto vende cada franja, por local y día de semana ──
+// Para decidir horarios y franqueros con datos: promedio de venta por hora en los
+// días en que el local efectivamente abrió (un domingo cerrado no promedia como $0).
+async function curvaHoraria(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const hoy = hoyArg();
+  // La hora está completa en todas las fuentes desde el 1/7 (antes Dragonfish no la tenía)
+  const pisoDatos = "2026-07-01";
+  const desde56 = new Date(Date.now() - 3 * 3600 * 1000 - 56 * 86400000).toISOString().slice(0, 10);
+  const desde = desde56 > pisoDatos ? desde56 : pisoDatos;
+  const [porFranja, diasPorDow] = await Promise.all([
+    sql`SELECT local, EXTRACT(dow FROM fecha)::int AS dow, substr(hora, 1, 2)::int AS h,
+               ROUND(SUM(total))::bigint AS venta, COUNT(DISTINCT orden_id)::int AS ops
+        FROM ventas
+        WHERE fecha BETWEEN ${desde} AND ${hoy} AND hora IS NOT NULL AND orden_id IS NOT NULL
+        GROUP BY 1, 2, 3`,
+    sql`SELECT local, EXTRACT(dow FROM fecha)::int AS dow, COUNT(DISTINCT fecha)::int AS dias
+        FROM ventas
+        WHERE fecha BETWEEN ${desde} AND ${hoy} AND orden_id IS NOT NULL
+        GROUP BY 1, 2`,
+  ]);
+  return res.status(200).json({
+    ok: true, desde, hasta: hoy,
+    franjas: porFranja.map(r => ({ ...r, venta: Number(r.venta) })),
+    dias: diasPorDow,
+  });
+}
+
+// ── Proyección de cierre del mes + metas por local ──
+// Con la forma de los últimos meses cerrados (qué % del mes se lleva cada día) se
+// proyecta el cierre a partir de lo acumulado. La meta se carga por local.
+async function proyeccionMes(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const hoy = hoyArg();
+  const mes = hoy.slice(0, 7);
+  const diaHoy = Number(hoy.slice(8, 10));
+  // Día de referencia: el último día COMPLETO (hoy todavía está vendiendo)
+  const diaRef = Math.max(1, diaHoy - 1);
+
+  const [y, m] = mes.split("-").map(Number);
+  const mesesPrevios = [1, 2, 3].map(i => new Date(Date.UTC(y, m - 1 - i, 15)).toISOString().slice(0, 7));
+
+  const [acumRows, historicos, metas] = await Promise.all([
+    sql`SELECT local, ROUND(SUM(total))::bigint AS venta FROM ventas
+        WHERE to_char(fecha, 'YYYY-MM') = ${mes} AND fecha < ${hoy} GROUP BY 1`,
+    sql`SELECT local, to_char(fecha, 'YYYY-MM') AS mes,
+               ROUND(SUM(total) FILTER (WHERE EXTRACT(day FROM fecha)::int <= ${diaRef}))::bigint AS acum,
+               ROUND(SUM(total))::bigint AS total
+        FROM ventas WHERE to_char(fecha, 'YYYY-MM') = ANY(${mesesPrevios})
+        GROUP BY 1, 2`,
+    sql`SELECT local, monto::bigint FROM metas_mes WHERE mes = ${mes}`,
+  ]);
+
+  const locales = ["Palermo", "La Plata", "Tiendanube", "Dot", "Abasto", "Córdoba"];
+  const filas = locales.map(local => {
+    const acum = Number(acumRows.find(r => r.local === local)?.venta || 0);
+    // Share promedio del día de referencia en los meses previos con datos completos
+    const shares = historicos.filter(h => h.local === local && Number(h.total) > 0)
+      .map(h => Number(h.acum) / Number(h.total));
+    const share = shares.length ? shares.reduce((a, b) => a + b, 0) / shares.length : null;
+    const proyeccion = share && share > 0.02 ? Math.round(acum / share) : null;
+    const meta = Number(metas.find(r => r.local === local)?.monto || 0) || null;
+    return { local, acumulado: acum, proyeccion, meta,
+             vs_meta_pct: meta && proyeccion ? Math.round(proyeccion / meta * 100) : null };
+  });
+  return res.status(200).json({
+    ok: true, mes, dia: diaRef,
+    temprano: diaRef < 4,
+    locales: filas,
+    total: {
+      acumulado: filas.reduce((a, f) => a + f.acumulado, 0),
+      proyeccion: filas.every(f => f.proyeccion == null) ? null : filas.reduce((a, f) => a + (f.proyeccion || 0), 0),
+      meta: filas.some(f => f.meta) ? filas.reduce((a, f) => a + (f.meta || 0), 0) : null,
+    },
+  });
+}
+
+async function guardarMeta(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { mes, local, monto } = req.body || {};
+  if (!/^\d{4}-\d{2}$/.test(mes || "") || !local || !(Number(monto) >= 0)) {
+    return res.status(400).json({ error: "mes, local y monto requeridos" });
+  }
+  const sql = neon(process.env.DATABASE_URL);
+  await sql`INSERT INTO metas_mes (mes, local, monto) VALUES (${mes}, ${local}, ${Number(monto)})
+    ON CONFLICT (mes, local) DO UPDATE SET monto = ${Number(monto)}`;
+  return res.status(200).json({ ok: true });
+}
+
+// ── Quiebres: talles que se agotan pronto, con dónde reponer ──
+async function quiebres(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const hoy = hoyArg();
+  const desdeVel = new Date(Date.now() - 3 * 3600 * 1000 - 21 * 86400000).toISOString().slice(0, 10);
+  const filas = await sql`
+    WITH stock_actual AS (
+      SELECT s.local, s.producto_norm, s.talle, SUM(s.cantidad)::int AS stock
+      FROM stock s
+      JOIN (SELECT local, MAX(fecha) AS f FROM stock GROUP BY local) ult
+        ON ult.local = s.local AND ult.f = s.fecha
+      GROUP BY 1, 2, 3
+    ),
+    velocidad AS (
+      SELECT local, producto_norm, talle, SUM(cantidad)::numeric / 21 AS vel
+      FROM ventas
+      WHERE fecha BETWEEN ${desdeVel} AND ${hoy}
+        AND producto_norm NOT IN ('ENVIO', 'DESCUENTO', 'AJUSTE')
+      GROUP BY 1, 2, 3
+    )
+    SELECT v.local, v.producto_norm, v.talle,
+           COALESCE(sa.stock, 0) AS stock,
+           ROUND(v.vel, 2) AS vel,
+           CASE WHEN v.vel > 0 THEN ROUND(COALESCE(sa.stock, 0) / v.vel, 1) END AS dias,
+           (SELECT json_agg(json_build_object('local', s2.local, 'stock', s2.stock))
+            FROM stock_actual s2
+            LEFT JOIN velocidad v2 ON v2.local = s2.local AND v2.producto_norm = s2.producto_norm AND v2.talle = s2.talle
+            WHERE s2.producto_norm = v.producto_norm AND s2.talle = v.talle AND s2.local <> v.local
+              AND s2.stock >= 3 AND (v2.vel IS NULL OR s2.stock / v2.vel > 21)) AS donde_hay
+    FROM velocidad v
+    LEFT JOIN stock_actual sa ON sa.local = v.local AND sa.producto_norm = v.producto_norm AND sa.talle = v.talle
+    WHERE v.vel >= 0.15 AND (COALESCE(sa.stock, 0) / v.vel) < 7
+    ORDER BY (COALESCE(sa.stock, 0) / v.vel) ASC, v.vel DESC
+    LIMIT 80`;
+  return res.status(200).json({
+    ok: true, ventana_dias: 21,
+    quiebres: filas.map(r => ({ ...r, vel: Number(r.vel), dias: r.dias != null ? Number(r.dias) : null })),
+  });
+}
+
+// ── Clientes online: recompra, frecuencia, valor y costo de adquisición ──
+async function clientesOnline(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const meses = await sql`
+    WITH ordenes AS (
+      SELECT c.*, MIN(fecha) OVER (PARTITION BY cliente_id) AS primera
+      FROM clientes_tn c WHERE cliente_id IS NOT NULL
+    )
+    SELECT to_char(fecha, 'YYYY-MM') AS mes,
+           COUNT(*)::int AS ordenes,
+           COUNT(DISTINCT cliente_id)::int AS clientes,
+           COUNT(DISTINCT cliente_id) FILTER (WHERE to_char(primera, 'YYYY-MM') = to_char(fecha, 'YYYY-MM'))::int AS nuevos,
+           ROUND(SUM(total))::bigint AS venta,
+           ROUND(SUM(total) FILTER (WHERE to_char(primera, 'YYYY-MM') <> to_char(fecha, 'YYYY-MM')))::bigint AS venta_recurrentes
+    FROM ordenes GROUP BY 1 ORDER BY 1`;
+  const [glob] = await sql`
+    SELECT COUNT(DISTINCT cliente_id)::int AS clientes,
+           COUNT(*)::int AS ordenes,
+           ROUND(SUM(total))::bigint AS venta,
+           COUNT(DISTINCT cliente_id) FILTER (WHERE cliente_id IN (
+             SELECT cliente_id FROM clientes_tn WHERE cliente_id IS NOT NULL
+             GROUP BY cliente_id HAVING COUNT(*) > 1))::int AS recompraron
+    FROM clientes_tn WHERE cliente_id IS NOT NULL`;
+  const pauta = await sql`
+    SELECT to_char(fecha, 'YYYY-MM') AS mes, ROUND(SUM(monto))::bigint AS pauta
+    FROM egresos_mp WHERE detalle ILIKE '%faceb%' GROUP BY 1`;
+  return res.status(200).json({
+    ok: true,
+    meses: meses.map(r => ({ ...r, venta: Number(r.venta), venta_recurrentes: Number(r.venta_recurrentes || 0),
+      pauta: Number(pauta.find(p => p.mes === r.mes)?.pauta || 0) })),
+    global: { clientes: glob.clientes, ordenes: glob.ordenes, venta: Number(glob.venta),
+      recompraron: glob.recompraron,
+      tasa_recompra: glob.clientes ? Math.round(glob.recompraron / glob.clientes * 1000) / 10 : 0,
+      ltv: glob.clientes ? Math.round(Number(glob.venta) / glob.clientes) : 0,
+      frecuencia: glob.clientes ? Math.round(glob.ordenes / glob.clientes * 100) / 100 : 0 },
+  });
+}
+
 // ── Completitud: qué datos tiene un mes y hasta qué día llega cada fuente ──
 // Responde la pregunta "¿puedo confiar en los números de este mes?" fuente por
 // fuente: ventas por local, reportes de MP/TN, extractos, comprobantes y fijos.
@@ -1995,6 +2177,11 @@ module.exports = async function handler(req, res) {
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
     if (action === "contabilidad") return await contabilidad(req, res);
     if (action === "completitud") return await completitud(req, res);
+    if (action === "curvaHoraria") return await curvaHoraria(req, res);
+    if (action === "proyeccion") return await proyeccionMes(req, res);
+    if (action === "guardarMeta") return await guardarMeta(req, res);
+    if (action === "quiebres") return await quiebres(req, res);
+    if (action === "clientes") return await clientesOnline(req, res);
     if (action === "cargarComprobantes") return await cargarComprobantes(req, res);
     if (action === "cargarEgresos") return await cargarEgresos(req, res);
     if (action === "cargarBanco") return await cargarBanco(req, res);

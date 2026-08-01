@@ -10,6 +10,106 @@ function fechaCorta(iso) {
   return `${parseInt(d)}/${parseInt(m)}`;
 }
 
+
+// Proyección de cierre del mes por local, contra la meta (editable acá mismo).
+// La proyección usa la forma de los últimos 3 meses: qué % del mes suele estar
+// vendido a esta altura.
+function ComoVieneElMes() {
+  const [data, setData] = useState(null);
+  const [editando, setEditando] = useState(null);
+  const [valor, setValor] = useState("");
+
+  const cargar = useCallback(() => {
+    getJSON("/api/metricas?action=proyeccion", 30000).then(setData).catch(() => setData(null));
+  }, []);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  if (!data) return null;
+  const guardar = async (local) => {
+    const monto = Math.round(Number(valor.replace(/\./g, "")) || 0);
+    setEditando(null);
+    if (!monto) return;
+    try {
+      const t = localStorage.getItem("tussy_token");
+      await fetch("/api/metricas?action=guardarMeta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(t ? { "X-Tussy-Auth": t } : {}) },
+        body: JSON.stringify({ mes: data.mes, local, monto }),
+      });
+      cargar();
+    } catch { /* la recarga siguiente lo muestra */ }
+  };
+  const nombre = l => l === "Tiendanube" ? "Online" : l;
+
+  return (
+    <Card title={`Cómo viene ${new Date(data.mes + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "long" })}`}
+          right={<span className="text-[11px] text-ink-3">proyección al día {data.dia} · tocá la meta para editarla</span>}>
+      {data.temprano && (
+        <p className="text-[11px] text-warn font-medium mb-2">
+          Muy temprano en el mes: la proyección todavía es poco confiable.
+        </p>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full text-[12px] min-w-[480px]">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+              <th className="text-left py-1.5 font-semibold">Local</th>
+              <th className="text-right py-1.5 font-semibold">Acumulado</th>
+              <th className="text-right py-1.5 font-semibold">Proyección</th>
+              <th className="text-right py-1.5 font-semibold">Meta</th>
+              <th className="text-right py-1.5 font-semibold">vs. meta</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-borde">
+            {data.locales.map(l => (
+              <tr key={l.local}>
+                <td className="py-1.5 font-semibold text-ink">{nombre(l.local)}</td>
+                <td className="py-1.5 text-right tabular-nums text-ink-2">{fmtPesosCorto(l.acumulado)}</td>
+                <td className="py-1.5 text-right tabular-nums font-semibold text-ink">
+                  {l.proyeccion != null ? fmtPesosCorto(l.proyeccion) : "—"}
+                </td>
+                <td className="py-1.5 text-right tabular-nums">
+                  {editando === l.local ? (
+                    <input autoFocus value={valor} onChange={e => setValor(e.target.value)}
+                           onBlur={() => guardar(l.local)}
+                           onKeyDown={e => e.key === "Enter" && guardar(l.local)}
+                           inputMode="numeric" placeholder="monto del mes"
+                           className="w-28 rounded border border-borde bg-surface-1 px-2 py-0.5 text-right text-[12px]" />
+                  ) : (
+                    <button onClick={() => { setEditando(l.local); setValor(l.meta ? String(l.meta) : ""); }}
+                            className="text-ink-2 underline decoration-dotted underline-offset-2">
+                      {l.meta ? fmtPesosCorto(l.meta) : "fijar"}
+                    </button>
+                  )}
+                </td>
+                <td className={`py-1.5 text-right tabular-nums font-bold ${
+                  l.vs_meta_pct == null ? "text-ink-3" : l.vs_meta_pct >= 100 ? "text-ok" : l.vs_meta_pct >= 90 ? "text-warn" : "text-bad"}`}>
+                  {l.vs_meta_pct != null ? l.vs_meta_pct + "%" : "—"}
+                </td>
+              </tr>
+            ))}
+            <tr className="border-t-2 border-borde">
+              <td className="py-1.5 font-bold text-ink">TOTAL</td>
+              <td className="py-1.5 text-right tabular-nums font-bold">{fmtPesosCorto(data.total.acumulado)}</td>
+              <td className="py-1.5 text-right tabular-nums font-bold">
+                {data.total.proyeccion != null ? fmtPesosCorto(data.total.proyeccion) : "—"}
+              </td>
+              <td className="py-1.5 text-right tabular-nums font-bold">
+                {data.total.meta != null ? fmtPesosCorto(data.total.meta) : "—"}
+              </td>
+              <td className={`py-1.5 text-right tabular-nums font-bold ${
+                data.total.meta && data.total.proyeccion
+                  ? (data.total.proyeccion / data.total.meta >= 1 ? "text-ok" : "text-warn") : "text-ink-3"}`}>
+                {data.total.meta && data.total.proyeccion ? Math.round(data.total.proyeccion / data.total.meta * 100) + "%" : "—"}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
 export default function Home() {
   const [serie, setSerie] = useState(null);
   const [hoyVivo, setHoyVivo] = useState(null);
@@ -125,6 +225,8 @@ export default function Home() {
           sub={mes && mes.anterior ? `mes pasado mismas fechas: ${fmtPesosCorto(mes.anterior)}` : ""}
         />
       </div>
+
+      <ComoVieneElMes />
 
       <Card title="Ventas de hoy por local">
         {!hoy ? <Spinner /> : (
