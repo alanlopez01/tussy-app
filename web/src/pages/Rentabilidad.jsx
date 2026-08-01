@@ -407,8 +407,9 @@ function Negocio() {
           {mes === hoyISO().slice(0, 7) && (
             <Card>
               <p className="text-[12px] text-warn font-medium">
-                ⚠️ Mes en curso (día {Number(hoyISO().slice(8, 10))}): acá se comparan{" "}
-                {Number(hoyISO().slice(8, 10))} días de venta contra la estructura del mes COMPLETO, y el costo
+                ⚠️ Mes en curso (día {Number(hoyISO().slice(8, 10))}): acá se{" "}
+                {Number(hoyISO().slice(8, 10)) === 1 ? "compara 1 día" : `comparan ${Number(hoyISO().slice(8, 10))} días`}{" "}
+                de venta contra la estructura del mes COMPLETO, y el costo
                 financiero real llega con los reportes del cierre. El resultado va a verse peor de lo que es —
                 es normal. Para el día a día está Inicio; el mes se lee acá recién cuando cierra.
               </p>
