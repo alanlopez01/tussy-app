@@ -773,7 +773,9 @@ function Evolucion() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borde">
-                  {ms.filter(m => m.completo).map(m => (
+                  {/* El mes en curso queda afuera: un día de ventas contra el mes
+                      entero de fijos da un número sin sentido */}
+                  {ms.filter(m => m.completo && m.mes < hoyISO().slice(0, 7)).map(m => (
                     <tr key={m.mes}>
                       <td className="py-2 font-semibold text-ink capitalize">{nombreMes(m.mes)}</td>
                       <td className="py-2 text-right tabular-nums text-ink-2">
