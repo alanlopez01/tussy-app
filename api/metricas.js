@@ -1656,7 +1656,10 @@ async function quiebres(req, res) {
       SELECT local, producto_norm, talle, SUM(cantidad)::numeric / 21 AS vel
       FROM ventas
       WHERE fecha BETWEEN ${desdeVel} AND ${hoy}
-        AND producto_norm NOT IN ('ENVIO', 'DESCUENTO', 'AJUSTE')
+        AND producto_norm NOT IN ('ENVIO', 'DESCUENTO', 'AJUSTE', 'CAFE GRATI')
+        -- Tiendanube no tiene stock real cargado (los crudos): sin stock confiable
+        -- no se puede hablar de quiebre
+        AND local <> 'Tiendanube'
       GROUP BY 1, 2, 3
     )
     SELECT v.local, v.producto_norm, v.talle,
