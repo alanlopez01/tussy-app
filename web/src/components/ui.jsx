@@ -195,3 +195,46 @@ export function TooltipPesos({ active, payload, label, labelFormatter }) {
     </div>
   );
 }
+
+// Panel "Datos del mes": qué fuentes están completas y hasta qué día llega cada una.
+// Responde "¿puedo confiar en los números de este mes?" antes de leerlos.
+import { useEffect as _useEffect, useState as _useState } from "react";
+import { getJSON as _getJSON } from "../lib/api.js";
+
+export function DatosDelMes({ mes }) {
+  const [data, setData] = _useState(null);
+  const [abierto, setAbierto] = _useState(false);
+  _useEffect(() => {
+    setData(null);
+    _getJSON(`/api/metricas?action=completitud&mes=${mes}`, 30000).then(setData).catch(() => setData(null));
+  }, [mes]);
+
+  if (!data) return null;
+  const faltan = data.items.filter(i => i.estado !== "ok");
+  const ICONO = { ok: "✓", parcial: "◐", falta: "✗" };
+  const COLOR = { ok: "text-ok", parcial: "text-warn", falta: "text-bad" };
+
+  return (
+    <section className={`rounded-lg border p-4 ${faltan.length ? "border-warn/40 bg-surface-1" : "border-borde bg-surface-1"}`}>
+      <button onClick={() => setAbierto(!abierto)} className="w-full text-left flex items-center justify-between gap-3">
+        <span className="text-[12px] font-semibold text-ink">
+          {faltan.length === 0
+            ? <span className="text-ok">✓ Datos del mes completos ({data.total}/{data.total} fuentes)</span>
+            : <span className="text-warn">◐ Datos del mes: {data.completos}/{data.total} fuentes completas — tocá para ver qué falta</span>}
+        </span>
+        <span className="text-ink-3 text-[11px]">{abierto ? "▾" : "▸"}</span>
+      </button>
+      {(abierto || faltan.length > 0) && (
+        <div className="mt-3 space-y-1.5">
+          {(abierto ? data.items : faltan).map(i => (
+            <div key={i.clave} className="flex items-baseline gap-2 text-[12px]">
+              <span className={`font-bold shrink-0 ${COLOR[i.estado]}`}>{ICONO[i.estado]}</span>
+              <span className="font-semibold text-ink-2 shrink-0">{i.label}:</span>
+              <span className="text-ink-3">{i.detalle}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}

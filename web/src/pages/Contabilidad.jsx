@@ -4,7 +4,7 @@
 // suben ya normalizados; el WS de ARCA trae los emitidos solo cuando hay certificado.
 import { useEffect, useState } from "react";
 import { getJSON, postJSON, fmtPesos, fmtPesosCorto, hoyISO } from "../lib/api.js";
-import { Card, Spinner, BotonActualizar, Chips } from "../components/ui.jsx";
+import { Card, Spinner, BotonActualizar, Chips, DatosDelMes } from "../components/ui.jsx";
 
 const RUBROS = [
   "Mercadería / Fábrica", "Alquileres", "Servicios", "Publicidad", "Logística",
@@ -277,6 +277,8 @@ export default function Contabilidad() {
           {meses.map(m => <option key={m} value={m} className="capitalize">{mesLargo(m)}</option>)}
         </select>
       )}
+
+      {tab !== "carga" && <DatosDelMes mes={mes} />}
 
       {error && <p className="text-[12px] text-bad font-medium">{error}</p>}
       {cargando && !data && <Spinner texto="Cargando…" />}

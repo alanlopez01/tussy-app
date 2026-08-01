@@ -1535,6 +1535,118 @@ async function cargarBanco(req, res) {
   return res.status(200).json({ ok: true, recibidas: filas.length, nuevas });
 }
 
+// ── Completitud: qué datos tiene un mes y hasta qué día llega cada fuente ──
+// Responde la pregunta "¿puedo confiar en los números de este mes?" fuente por
+// fuente: ventas por local, reportes de MP/TN, extractos, comprobantes y fijos.
+async function completitud(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const mes = /^\d{4}-\d{2}$/.test(req.query.mes || "") ? req.query.mes : hoyArg().slice(0, 7);
+  const [y, m] = mes.split("-").map(Number);
+  const ultimoDia = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const desde = `${mes}-01`;
+  const hasta = `${mes}-${String(ultimoDia).padStart(2, "0")}`;
+  const hoy = hoyArg();
+  const cerrado = mes < hoy.slice(0, 7);
+  // Para el mes en curso, lo esperable es tener datos hasta ayer
+  const esperadoHasta = cerrado ? hasta : (hoy.slice(0, 7) === mes ? hoy : hasta);
+  const dd = f => f ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : null;
+
+  const [ventasDias, mixRows, elecRows, egresosMax, bancoMax, recibidosMax, emitidosMax, fijosMes, ipcRow] = await Promise.all([
+    sql`SELECT local, COUNT(DISTINCT fecha)::int dias, MAX(fecha)::text ultimo
+        FROM ventas WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY local`,
+    sql`SELECT local, bruto FROM mix_pagos WHERE mes = ${mes}`,
+    sql`SELECT local, ROUND(SUM(monto) FILTER (WHERE medio = 'electronico'))::bigint elec
+        FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY local`,
+    sql`SELECT MAX(fecha)::text u FROM egresos_mp WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    sql`SELECT MAX(fecha)::text u FROM movimientos_banco WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    sql`SELECT MAX(fecha)::text u FROM comprobantes_recibidos WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    sql`SELECT MAX(fecha)::text u FROM comprobantes_emitidos WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    leerGastosFijos(sql, mes),
+    sql`SELECT pct FROM ipc_mes WHERE mes = ${mes}`,
+  ]);
+
+  const items = [];
+  const diasEsperados = cerrado ? ultimoDia : Number(hoy.slice(8, 10));
+
+  // 1) Ventas por local (la ingesta automática)
+  const localesEsperados = ["Palermo", "La Plata", "Tiendanube", "Dot", "Abasto", "Córdoba"];
+  const conHuecos = [];
+  for (const l of localesEsperados) {
+    const v = ventasDias.find(x => x.local === l);
+    if (!v) { conHuecos.push(`${l}: sin datos`); continue; }
+    if (v.dias < diasEsperados) conHuecos.push(`${l}: ${diasEsperados - v.dias} día(s) sin ventas registradas`);
+  }
+  items.push({
+    clave: "ventas", label: "Ventas (ingesta automática)",
+    estado: conHuecos.length ? "parcial" : "ok",
+    detalle: conHuecos.length ? conHuecos.join(" · ") : `los ${diasEsperados} días completos`,
+  });
+
+  // 2) Reporte de ventas MP (costo financiero locales): cobertura vs. lo electrónico real
+  const mixLocales = mixRows.filter(r => r.local !== "Tiendanube");
+  if (!mixLocales.length) {
+    items.push({ clave: "mix_mp", label: "Reporte de ventas MercadoPago", estado: "falta",
+      detalle: "sin cargar — el costo financiero de los locales queda en $0" });
+  } else {
+    const brutoMix = mixLocales.reduce((a, r) => a + Number(r.bruto), 0);
+    const elecLoc = elecRows.filter(r => r.local !== "Tiendanube").reduce((a, r) => a + Number(r.elec || 0), 0);
+    const cobertura = elecLoc > 0 ? brutoMix / elecLoc : 1;
+    items.push({
+      clave: "mix_mp", label: "Reporte de ventas MercadoPago",
+      estado: cobertura < 0.97 ? "parcial" : "ok",
+      detalle: cobertura < 0.97
+        ? `cubre el ${Math.round(cobertura * 100)}% de lo electrónico: probablemente le falten los últimos días — re-exportalo con el mes completo`
+        : `cubre el ${Math.round(cobertura * 100)}% de lo cobrado electrónico`,
+    });
+  }
+
+  // 3) Reporte de Tiendanube (costo financiero online)
+  const mixTN = mixRows.find(r => r.local === "Tiendanube");
+  const elecTN = Number(elecRows.find(r => r.local === "Tiendanube")?.elec || 0);
+  if (!mixTN) {
+    items.push({ clave: "mix_tn", label: "Reporte de Tiendanube", estado: "falta",
+      detalle: "sin cargar — el costo financiero online usa el estimado" });
+  } else {
+    const cob = elecTN > 0 ? Number(mixTN.bruto) / elecTN : 1;
+    items.push({ clave: "mix_tn", label: "Reporte de Tiendanube",
+      estado: cob < 0.97 ? "parcial" : "ok",
+      detalle: cob < 0.97 ? `cubre el ${Math.round(cob * 100)}% de la venta online: re-exportalo con el mes completo` : `cubre el ${Math.round(cob * 100)}% de la venta online` });
+  }
+
+  // 4..7) Fuentes con "cargado hasta el día X"
+  const porFecha = [
+    ["egresos_mp", "Estado de cuenta MercadoPago", egresosMax[0]?.u],
+    ["banco", "Extracto Galicia", bancoMax[0]?.u],
+    ["recibidos", "Compras ARCA (recibidos)", recibidosMax[0]?.u],
+    ["emitidos", "Facturación ARCA (emitidos)", emitidosMax[0]?.u],
+  ];
+  for (const [clave, label, u] of porFecha) {
+    if (!u) {
+      items.push({ clave, label, estado: "falta", detalle: "sin datos este mes" });
+    } else if (u < esperadoHasta) {
+      const faltan = `del ${dd(u)} en adelante`;
+      items.push({ clave, label, estado: "parcial", detalle: `cargado hasta el ${dd(u)} — falta ${faltan}` });
+    } else {
+      items.push({ clave, label, estado: "ok", detalle: `hasta el ${dd(u)}` });
+    }
+  }
+
+  // 8) Costos fijos
+  const hayFijos = Object.keys(fijosMes).some(k => !k.startsWith("__"));
+  const estimados = Object.values(fijosMes).some(v => v.estimado);
+  items.push({ clave: "fijos", label: "Costos fijos",
+    estado: hayFijos ? (estimados ? "parcial" : "ok") : "falta",
+    detalle: hayFijos ? (estimados ? "estimados por inflación — cargá los reales en Fijos" : "cargados") : "sin cargar" });
+
+  // 9) IPC del mes (para la venta a pesos constantes)
+  items.push({ clave: "ipc", label: "IPC del mes (INDEC)",
+    estado: ipcRow.length ? "ok" : "parcial",
+    detalle: ipcRow.length ? `${Number(ipcRow[0].pct)}%` : "aún no publicado — la venta real queda nominal" });
+
+  const faltantes = items.filter(i => i.estado !== "ok").length;
+  return res.status(200).json({ ok: true, mes, cerrado, items, completos: items.length - faltantes, total: items.length });
+}
+
 // Tablero: posición de IVA, cruce vendido vs facturado, gastos por rubro y conciliación
 async function contabilidad(req, res) {
   const sql = neon(process.env.DATABASE_URL);
@@ -1886,6 +1998,7 @@ module.exports = async function handler(req, res) {
     if (action === "gastosLocales") return await gastosLocales(req, res);
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
     if (action === "contabilidad") return await contabilidad(req, res);
+    if (action === "completitud") return await completitud(req, res);
     if (action === "cargarComprobantes") return await cargarComprobantes(req, res);
     if (action === "cargarEgresos") return await cargarEgresos(req, res);
     if (action === "cargarBanco") return await cargarBanco(req, res);

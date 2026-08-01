@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getJSON, rangoDe, hoyISO, fmtPesos, fmtPesosCorto, LOCALES } from "../lib/api.js";
-import { Card, Spinner, Chips, BotonActualizar, StatTile, Paginacion } from "../components/ui.jsx";
+import { Card, Spinner, Chips, BotonActualizar, StatTile, Paginacion, DatosDelMes } from "../components/ui.jsx";
 import Carga from "./Carga.jsx";
 
 const PERIODOS = [
@@ -269,7 +269,11 @@ function Margenes() {
       )}
 
       {detalle && (
-        <DetalleProducto producto={detalle} mes={rango.desde.slice(0, 7)} onCerrar={() => setDetalle(null)} />
+        {/* La referencia de estructura del modal necesita un mes cerrado: si el rango
+            elegido cae en el mes en curso, se usa el último cerrado */}
+        <DetalleProducto producto={detalle}
+          mes={[rango.desde.slice(0, 7), mesCerrado()].sort()[0]}
+          onCerrar={() => setDetalle(null)} />
       )}
     </div>
   );
@@ -382,10 +386,14 @@ function Negocio() {
 
   useEffect(() => { setData(null); cargar(); }, [cargar]);
 
+  // Solo meses CERRADOS: el mes en curso no se muestra (días de venta contra la
+  // estructura del mes entero dan números sin sentido). Se lee cuando cierra.
   const meses = [];
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(Date.UTC(2026, new Date().getUTCMonth() - i, 1));
-    meses.push(d.toISOString().slice(0, 7));
+  {
+    const [yy, mm] = hoyISO().slice(0, 7).split("-").map(Number);
+    for (let i = 1; i <= 6; i++) {
+      meses.push(new Date(Date.UTC(yy, mm - 1 - i, 15)).toISOString().slice(0, 7));
+    }
   }
   const nombreMes = m => new Date(m + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "long", year: "numeric" });
 
@@ -401,6 +409,8 @@ function Negocio() {
         </select>
         <BotonActualizar onClick={cargar} cargando={cargando} />
       </div>
+
+      <DatosDelMes mes={mes} />
 
       {!data ? <Spinner /> : (
         <>
