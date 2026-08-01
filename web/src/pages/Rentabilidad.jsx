@@ -362,8 +362,15 @@ function Costos() {
 }
 
 // ── Tab: Resultado por unidad de negocio ──
+// Mes anterior al actual: el último cerrado. Es el default de Negocio porque el mes
+// en curso compara días de venta contra la estructura del mes entero y "da miedo".
+function mesCerrado() {
+  const [y, m] = hoyISO().slice(0, 7).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 2, 15)).toISOString().slice(0, 7);
+}
+
 function Negocio() {
-  const [mes, setMes] = useState(hoyISO().slice(0, 7));
+  const [mes, setMes] = useState(mesCerrado());
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(false);
 
@@ -397,11 +404,22 @@ function Negocio() {
 
       {!data ? <Spinner /> : (
         <>
-          {faltaMix.length > 0 && (
+          {mes === hoyISO().slice(0, 7) && (
             <Card>
               <p className="text-[12px] text-warn font-medium">
-                Sin reporte de MercadoPago de este mes para: {faltaMix.join(", ")}. El costo financiero
-                de esos locales figura en $0 hasta que se cargue.
+                ⚠️ Mes en curso (día {Number(hoyISO().slice(8, 10))}): acá se comparan{" "}
+                {Number(hoyISO().slice(8, 10))} días de venta contra la estructura del mes COMPLETO, y el costo
+                financiero real llega con los reportes del cierre. El resultado va a verse peor de lo que es —
+                es normal. Para el día a día está Inicio; el mes se lee acá recién cuando cierra.
+              </p>
+            </Card>
+          )}
+          {faltaMix.length > 0 && mes !== hoyISO().slice(0, 7) && (
+            <Card>
+              <p className="text-[12px] text-warn font-medium">
+                ⚠️ A este mes le falta el reporte de MercadoPago de: {faltaMix.join(", ")}. El costo financiero
+                de esos locales figura en $0, así que el resultado está SOBRESTIMADO. Se corrige subiendo el
+                reporte en la pestaña Carga.
               </p>
             </Card>
           )}

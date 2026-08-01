@@ -783,9 +783,10 @@ async function evolucion(req, res) {
   const n = Math.min(parseInt(req.query.meses || 6), 12);
   const hoy = hoyArg();
   const [y, m] = hoy.slice(0, 7).split("-").map(Number);
+  // La serie termina en el último mes CERRADO (el actual se filtra igual más abajo)
   const meses = [];
   for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(Date.UTC(y, m - 1 - i, 1));
+    const d = new Date(Date.UTC(y, m - 2 - i, 1));
     meses.push(d.toISOString().slice(0, 7));
   }
   const [resultados, ipcRows, cfgIgRows] = await Promise.all([
@@ -798,7 +799,10 @@ async function evolucion(req, res) {
 
   // Deflactor a pesos del último mes con IPC conocido: acumula la inflación de los
   // meses POSTERIORES a cada mes (venta real = venta nominal × deflactor).
-  const conVenta = resultados.filter(r => r.total.venta > 0);
+  // El mes en curso queda afuera: días de venta contra la estructura del mes entero
+  // dan un margen sin sentido que solo confunde.
+  const mesActual = hoyArg().slice(0, 7);
+  const conVenta = resultados.filter(r => r.total.venta > 0 && r.mes < mesActual);
   const deflactor = {};
   {
     let acum = 1;
