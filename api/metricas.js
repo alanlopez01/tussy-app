@@ -1035,10 +1035,12 @@ async function rentabilidadProducto(req, res) {
   // fijos se reparten entre menos unidades y el siguiente producto parece perder, etc.
   // La decisión correcta se toma sobre la CONTRIBUCIÓN (lo que deja para pagar fijos).
   const esOnline = localFiltro === "Tiendanube";
-  const [ventasPorLocal, gastosMesRows] = await Promise.all([
+  const [ventasPorLocal, gastosMesRows, pautaProdRows] = await Promise.all([
     sql`SELECT local, ROUND(SUM(total))::bigint AS venta, SUM(cantidad)::int AS unidades
         FROM ventas WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY local`,
     sql`SELECT local, concepto, monto FROM gastos_mes WHERE mes = ${mes}`,
+    sql`SELECT ROUND(COALESCE(SUM(monto), 0))::bigint AS p FROM egresos_mp
+        WHERE to_char(fecha, 'YYYY-MM') = ${mes} AND detalle ILIKE '%faceb%'`,
   ]);
   const ventaDe = l => Number(ventasPorLocal.find(v => v.local === l)?.venta || 0);
   const ventaLocales = ventasPorLocal.filter(v => v.local !== "Tiendanube")
@@ -1050,6 +1052,8 @@ async function rentabilidadProducto(req, res) {
     // Online: publicidad, envíos, plan y packaging sobre su propia venta
     const gv = {};
     for (const g of gastosMesRows) if (g.local === "Tiendanube") gv[g.concepto] = Number(g.monto);
+    const pautaRealProd = Number(pautaProdRows[0]?.p || 0);
+    if (pautaRealProd > 0) gv.publicidad = pautaRealProd;
     const uOnline = ventasPorLocal.find(v => v.local === "Tiendanube")?.unidades || 0;
     const costoOnline = (gv.publicidad || 0) + (gv.envios || 0)
       + (cfg.plan_tiendanube || 0) + (cfg.packaging_unidad || 0) * uOnline;
@@ -1190,7 +1194,7 @@ async function calcularNegocio(sql, mes) {
   // Fábrica por prenda estampada del mes: entra en la mercadería de cada unidad
   const totalEstampadas = ventas.reduce((a, v) => a + (v.unidades_estampadas || 0), 0);
 
-  const [mixPagos, fijos, cfgRows, gastosMes, impuestosRows, posIvaRows] = await Promise.all([
+  const [mixPagos, fijos, cfgRows, gastosMes, impuestosRows, posIvaRows, pautaRows] = await Promise.all([
     sql`SELECT local, bruto, neto, costo_pct, mix FROM mix_pagos WHERE mes = ${mes}`,
     leerGastosFijos(sql, mes),
     sql`SELECT clave, valor FROM config_negocio`,
@@ -1204,6 +1208,9 @@ async function calcularNegocio(sql, mes) {
                     FROM comprobantes_recibidos WHERE to_char(fecha, 'YYYY-MM') = ${mes}), 0) AS posicion,
           (SELECT COUNT(*) FROM comprobantes_emitidos WHERE to_char(fecha, 'YYYY-MM') = ${mes})::int AS emitidos,
           (SELECT COUNT(*) FROM comprobantes_recibidos WHERE to_char(fecha, 'YYYY-MM') = ${mes})::int AS recibidos`,
+    // Pauta real de Meta: los pagos a Facebook del estado de cuenta de MP
+    sql`SELECT ROUND(COALESCE(SUM(monto), 0))::bigint AS p FROM egresos_mp
+        WHERE to_char(fecha, 'YYYY-MM') = ${mes} AND detalle ILIKE '%faceb%'`,
   ]);
   const impuestosReales = Object.fromEntries(impuestosRows.map(r => [r.concepto, Number(r.monto)]));
   const cfg = Object.fromEntries(cfgRows.map(r => [r.clave, Number(r.valor)]));
@@ -1217,6 +1224,13 @@ async function calcularNegocio(sql, mes) {
   for (const g of gastosMes) {
     if (!varPorLocal[g.local]) varPorLocal[g.local] = {};
     varPorLocal[g.local][g.concepto] = Number(g.monto);
+  }
+  // Publicidad online: si está el estado de cuenta de MP del mes, la pauta REAL
+  // de Meta pisa el monto manual (que queda solo como respaldo)
+  const pautaReal = Number(pautaRows[0]?.p || 0);
+  if (pautaReal > 0) {
+    if (!varPorLocal["Tiendanube"]) varPorLocal["Tiendanube"] = {};
+    varPorLocal["Tiendanube"].publicidad = pautaReal;
   }
 
   const ventaTotal = ventas.reduce((a, v) => a + Number(v.venta), 0);
@@ -1548,6 +1562,58 @@ async function cargarBanco(req, res) {
     nuevas += r.length;
   }
   return res.status(200).json({ ok: true, recibidas: filas.length, nuevas });
+}
+
+// ── Facturas recibidas: listado con búsqueda (por proveedor, CUIT o número) ──
+async function facturasRecibidas(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const q = String(req.query.q || "").trim();
+  const mes = /^\d{4}-\d{2}$/.test(req.query.mes || "") ? req.query.mes : hoyArg().slice(0, 7);
+  let rows;
+  if (q) {
+    // Con búsqueda se mira TODO el historial, no solo el mes
+    const like = `%${q}%`;
+    const dig = q.replace(/\D/g, "");
+    rows = await sql`
+      SELECT fecha::text, tipo, punto_venta, numero, cuit_emisor, emisor,
+             neto::numeric, iva::numeric, total::numeric
+      FROM comprobantes_recibidos
+      WHERE emisor ILIKE ${like}
+         OR numero::text LIKE ${like}
+         OR (${dig} <> '' AND cuit_emisor::text LIKE ${"%" + dig + "%"})
+      ORDER BY fecha DESC LIMIT 300`;
+  } else {
+    rows = await sql`
+      SELECT fecha::text, tipo, punto_venta, numero, cuit_emisor, emisor,
+             neto::numeric, iva::numeric, total::numeric
+      FROM comprobantes_recibidos
+      WHERE to_char(fecha, 'YYYY-MM') = ${mes}
+      ORDER BY fecha DESC, total DESC LIMIT 300`;
+  }
+  return res.status(200).json({
+    ok: true, q: q || null, mes,
+    facturas: rows.map(r => ({ ...r, cuit_emisor: Number(r.cuit_emisor), neto: Number(r.neto), iva: Number(r.iva), total: Number(r.total) })),
+    nombresTipo: NOMBRES_TIPO,
+  });
+}
+
+// ── Liquidación declarada: lo que la contadora determina (~día 18) queda fijo ──
+async function guardarImpuestoMes(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { mes, concepto, monto, nota } = req.body || {};
+  const PERMITIDOS = ["iva", "iva_pagado", "iibb", "cargas_sociales"];
+  if (!/^\d{4}-\d{2}$/.test(mes || "") || !PERMITIDOS.includes(concepto)) {
+    return res.status(400).json({ error: "mes y concepto válidos requeridos" });
+  }
+  const sql = neon(process.env.DATABASE_URL);
+  if (monto == null || monto === "") {
+    await sql`DELETE FROM impuestos_mes WHERE mes = ${mes} AND concepto = ${concepto}`;
+  } else {
+    await sql`INSERT INTO impuestos_mes (mes, concepto, monto, nota)
+      VALUES (${mes}, ${concepto}, ${Number(monto)}, ${nota || "cargado desde la app"})
+      ON CONFLICT (mes, concepto) DO UPDATE SET monto = ${Number(monto)}, nota = ${nota || "cargado desde la app"}, actualizado_en = now()`;
+  }
+  return res.status(200).json({ ok: true });
 }
 
 // ── Curva horaria: cuánto vende cada franja, por local y día de semana ──
@@ -1882,6 +1948,14 @@ async function contabilidad(req, res) {
            COALESCE(d.facturado, 0) AS facturado, COALESCE(c.compras, 0) AS compras
     FROM deb d FULL OUTER JOIN cred c ON d.mes = c.mes
     ORDER BY 1 DESC LIMIT 6`;
+  // Liquidación de la contadora: posición declarada (F.2051) y pago real.
+  // Cuando está cargada, ese es el número oficial del mes.
+  const declaradosRows = await sql`SELECT mes, concepto, monto::numeric FROM impuestos_mes
+    WHERE concepto IN ('iva', 'iva_pagado')`;
+  const declaradoDe = (m, c) => {
+    const r = declaradosRows.find(x => x.mes === m && x.concepto === c);
+    return r ? Number(r.monto) : null;
+  };
 
   // Cruce diario del mes: venta según los sistemas vs total facturado en ARCA
   const cruce = await sql`
@@ -2115,7 +2189,13 @@ async function contabilidad(req, res) {
   return res.status(200).json({
     ok: true, mes,
     arca: arcaConfigurada(),
-    iva: iva.map(r => ({ ...r, debito: Number(r.debito), credito: Number(r.credito), posicion: Number(r.debito) - Number(r.credito), facturado: Number(r.facturado), compras: Number(r.compras) })),
+    iva: iva.map(r => ({
+      ...r, debito: Number(r.debito), credito: Number(r.credito),
+      posicion: Number(r.debito) - Number(r.credito),
+      facturado: Number(r.facturado), compras: Number(r.compras),
+      declarado: declaradoDe(r.mes, "iva"),
+      pagado: declaradoDe(r.mes, "iva_pagado"),
+    })),
     cruce: cruce.map(r => ({ ...r, venta: Number(r.venta), facturado: Number(r.facturado) })),
     mesPrev,
     facturacionLocal: facturacionLocal.map(r => {
@@ -2210,6 +2290,8 @@ module.exports = async function handler(req, res) {
     if (action === "contabilidad") return await contabilidad(req, res);
     if (action === "completitud") return await completitud(req, res);
     if (action === "confirmarCompletitud") return await confirmarCompletitud(req, res);
+    if (action === "facturasRecibidas") return await facturasRecibidas(req, res);
+    if (action === "guardarImpuestoMes") return await guardarImpuestoMes(req, res);
     if (action === "curvaHoraria") return await curvaHoraria(req, res);
     if (action === "proyeccion") return await proyeccionMes(req, res);
     if (action === "guardarMeta") return await guardarMeta(req, res);

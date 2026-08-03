@@ -196,6 +196,122 @@ function Uploader({ titulo, descripcion, onFile, estado }) {
 
 const mesLargo = m => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("es-AR", { month: "long", year: "numeric", timeZone: "UTC" });
 
+// Listado buscable de facturas recibidas: sin búsqueda muestra el mes elegido;
+// con búsqueda rastrea todo el historial (proveedor, CUIT o número).
+function FacturasRecibidas({ mes }) {
+  const [q, setQ] = useState("");
+  const [data, setData] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  const buscar = (query) => {
+    setCargando(true);
+    const qs = query ? `q=${encodeURIComponent(query)}` : `mes=${mes}`;
+    getJSON(`/api/metricas?action=facturasRecibidas&${qs}`, 30000)
+      .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
+  };
+  useEffect(() => { setQ(""); buscar(""); }, [mes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const th = "text-left text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold px-3 py-2";
+  const td = "px-3 py-2 text-[12px] text-ink-2 tabular-nums";
+  const total = (data?.facturas || []).reduce((a, f) => a + ([3, 8, 13].includes(f.tipo) ? -f.total : f.total), 0);
+
+  return (
+    <Card title={data?.q ? `Facturas que coinciden con "${data.q}" (${data?.facturas.length || 0})` : `Facturas recibidas del mes (${data?.facturas.length || 0})`}
+          right={<span className="text-[11px] text-ink-3 tabular-nums">total {fmtPesosCorto(total)}</span>}>
+      <div className="flex gap-2 mb-3">
+        <input value={q} onChange={e => setQ(e.target.value)}
+               onKeyDown={e => e.key === "Enter" && buscar(q)}
+               placeholder="Buscar por proveedor, CUIT o N° de factura (en todo el historial)…"
+               className="flex-1 rounded-md border border-borde bg-surface-1 px-3 py-2 text-[13px] text-ink" />
+        <button onClick={() => buscar(q)} className="rounded-md bg-negro text-white px-3.5 text-[12px] font-semibold">Buscar</button>
+        {data?.q && <button onClick={() => { setQ(""); buscar(""); }} className="text-[12px] font-semibold text-ink-3 underline">Limpiar</button>}
+      </div>
+      {cargando ? <Spinner /> : !data?.facturas.length ? (
+        <p className="text-[12px] text-ink-3 py-3 text-center">Sin facturas {data?.q ? "que coincidan" : "cargadas este mes"}.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px]">
+            <thead><tr>
+              <th className={th}>Fecha</th><th className={th}>Comprobante</th><th className={th}>Proveedor</th>
+              <th className={`${th} text-right`}>Neto</th><th className={`${th} text-right`}>IVA</th><th className={`${th} text-right`}>Total</th>
+            </tr></thead>
+            <tbody>
+              {data.facturas.map((f, i) => (
+                <tr key={i} className="border-t border-borde">
+                  <td className={td}>{f.fecha.slice(8, 10)}/{f.fecha.slice(5, 7)}/{f.fecha.slice(2, 4)}</td>
+                  <td className={`${td} text-[10px]`}>{data.nombresTipo?.[f.tipo] || `T${f.tipo}`} {String(f.punto_venta).padStart(4, "0")}-{String(f.numero).padStart(8, "0")}</td>
+                  <td className={td}>
+                    <div className="font-semibold text-ink">{f.emisor || "—"}</div>
+                    <div className="text-[10px] text-ink-3">{fmtCuit(f.cuit_emisor)}</div>
+                  </td>
+                  <td className={`${td} text-right`}>{fmtPesosCorto(f.neto)}</td>
+                  <td className={`${td} text-right`}>{fmtPesosCorto(f.iva)}</td>
+                  <td className={`${td} text-right font-semibold ${[3, 8, 13].includes(f.tipo) ? "text-bad" : ""}`}>
+                    {[3, 8, 13].includes(f.tipo) ? "−" : ""}{fmtPesos(f.total)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// La liquidación que determina la contadora (~día 18): queda como número oficial
+// del mes y alimenta directo la cascada de Rentabilidad.
+function LiquidacionContadora({ mes, ivaMes, onGuardado }) {
+  const [decl, setDecl] = useState("");
+  const [pag, setPag] = useState("");
+  const [estado, setEstado] = useState("idle");
+  useEffect(() => {
+    setDecl(ivaMes?.declarado != null ? String(Math.round(ivaMes.declarado)) : "");
+    setPag(ivaMes?.pagado != null ? String(Math.round(ivaMes.pagado)) : "");
+    setEstado("idle");
+  }, [mes, ivaMes?.declarado, ivaMes?.pagado]);
+
+  const guardar = async () => {
+    setEstado("guardando");
+    try {
+      await postJSON("/api/metricas?action=guardarImpuestoMes",
+        { mes, concepto: "iva", monto: decl === "" ? null : Number(decl.replace(/\./g, "")), nota: "F.2051 · cargado desde la app" });
+      await postJSON("/api/metricas?action=guardarImpuestoMes",
+        { mes, concepto: "iva_pagado", monto: pag === "" ? null : Number(pag.replace(/\./g, "")) });
+      setEstado("ok");
+      onGuardado();
+    } catch (e) { setEstado("error"); }
+  };
+
+  return (
+    <Card title={`Liquidación de la contadora · ${mesLargo(mes)}`}>
+      <div className="flex gap-3 flex-wrap items-end">
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Posición declarada (F.2051)</span>
+          <input value={decl} onChange={e => setDecl(e.target.value)} inputMode="numeric" placeholder="ej. 6917490"
+                 className="rounded-md border border-borde bg-surface-1 px-3 py-2 text-[13px] text-ink w-44 tabular-nums" />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Pagado (VEP)</span>
+          <input value={pag} onChange={e => setPag(e.target.value)} inputMode="numeric" placeholder="lo que salió del banco"
+                 className="rounded-md border border-borde bg-surface-1 px-3 py-2 text-[13px] text-ink w-44 tabular-nums" />
+        </label>
+        <button onClick={guardar} disabled={estado === "guardando"}
+                className="rounded-md bg-negro text-white px-4 py-2 text-[12px] font-semibold disabled:opacity-50">
+          {estado === "guardando" ? "Guardando…" : "Guardar"}
+        </button>
+        {estado === "ok" && <span className="text-[12px] text-ok font-semibold">✓ guardado</span>}
+        {estado === "error" && <span className="text-[12px] text-bad font-semibold">error, probá de nuevo</span>}
+      </div>
+      <p className="text-[11px] text-ink-3 mt-3">
+        La <strong>posición declarada</strong> pasa a ser el IVA oficial del mes (pisa la foto de ARCA en la
+        cascada de Rentabilidad). El <strong>pagado</strong> suele ser menor: la diferencia son retenciones y
+        percepciones que ya te descontaron durante el mes — plata que ya estaba adelantada, no un ahorro.
+      </p>
+    </Card>
+  );
+}
+
 export default function Contabilidad() {
   const [mes, setMes] = useState(hoyISO().slice(0, 7));
   const [tab, setTab] = useState("iva");
@@ -325,10 +441,11 @@ export default function Contabilidad() {
           </div>
           <Card title="Últimos meses">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px]">
+              <table className="w-full min-w-[680px]">
                 <thead><tr>
                   <th className={th}>Mes</th><th className={`${th} text-right`}>Facturado</th><th className={`${th} text-right`}>Débito</th>
                   <th className={`${th} text-right`}>Compras</th><th className={`${th} text-right`}>Crédito</th><th className={`${th} text-right`}>Posición</th>
+                  <th className={`${th} text-right`}>Declarado</th><th className={`${th} text-right`}>Dif.</th><th className={`${th} text-right`}>Pagado</th>
                 </tr></thead>
                 <tbody>
                   {data.iva.map(r => (
@@ -339,16 +456,24 @@ export default function Contabilidad() {
                       <td className={`${td} text-right`}>{fmtPesosCorto(r.compras)}</td>
                       <td className={`${td} text-right`}>{fmtPesosCorto(r.credito)}</td>
                       <td className={`${td} text-right font-bold ${r.posicion > 0 ? "text-bad" : "text-ok"}`}>{fmtPesosCorto(r.posicion)}</td>
+                      <td className={`${td} text-right font-semibold`}>{r.declarado != null ? fmtPesosCorto(r.declarado) : "—"}</td>
+                      <td className={`${td} text-right ${r.declarado != null && Math.abs(r.posicion - r.declarado) > Math.abs(r.declarado || 1) * 0.15 ? "text-warn font-semibold" : "text-ink-3"}`}>
+                        {r.declarado != null ? fmtPesosCorto(r.posicion - r.declarado) : "—"}
+                      </td>
+                      <td className={`${td} text-right`}>{r.pagado != null ? fmtPesosCorto(r.pagado) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="text-[11px] text-ink-3 mt-3">
-              La posición real de ARCA además resta retenciones y percepciones sufridas; esto es la foto
-              débito−crédito para anticipar la liquidación del contador.
+              <strong>Posición</strong> es nuestra foto débito−crédito desde ARCA; <strong>Declarado</strong> es
+              la liquidación de la contadora (el número oficial). Una diferencia chica es normal (ajustes
+              técnicos, saldos a favor arrastrados); si es grande, conviene revisarla con ella.{" "}
+              <strong>Pagado</strong> suele ser menor al declarado por las retenciones ya sufridas.
             </p>
           </Card>
+          <LiquidacionContadora mes={mes} ivaMes={ivaMes} onGuardado={() => cargar()} />
         </>
       )}
 
@@ -518,6 +643,7 @@ export default function Contabilidad() {
               </table>
             </div>
           </Card>
+          <FacturasRecibidas mes={mes} />
         </>
       )}
 

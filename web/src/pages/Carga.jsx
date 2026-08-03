@@ -103,7 +103,9 @@ export default function Carga() {
           PagoNube, las transferencias y los envíos que pagó la tienda.
         </p>
         <label className="block mb-3">
-          <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Publicidad del mes ($)</span>
+          <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">
+            Publicidad del mes ($) — respaldo: si cargaste el estado de cuenta de MP en Contabilidad, la pauta real de Meta se usa sola y este campo se ignora
+          </span>
           <input type="number" inputMode="numeric" value={publicidad} onChange={e => setPublicidad(e.target.value)}
                  className="rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[13px] text-ink w-44 tabular-nums" />
         </label>
