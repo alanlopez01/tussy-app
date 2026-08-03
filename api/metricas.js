@@ -1786,6 +1786,108 @@ async function clientesOnline(req, res) {
   });
 }
 
+// ── Flujo integral del mes: ¿dónde está la plata del resultado? ──
+// Junta las tres cajas (MercadoPago, Galicia, efectivo de Finanzas) y arma el
+// puente resultado → caja: cada peso del resultado o quedó en una cuenta, o se
+// retiró, o se volvió stock, o está comprometido en impuestos por pagar.
+async function flujoMes(req, res) {
+  const sql = neon(process.env.DATABASE_URL);
+  const mes = /^\d{4}-\d{2}$/.test(req.query.mes || "") ? req.query.mes : hoyArg().slice(0, 7);
+  const [anio, nroMes] = mes.split("-").map(Number);
+  const desde = `${mes}-01`;
+  const hasta = `${mes}-${String(new Date(Date.UTC(anio, nroMes, 0)).getUTCDate()).padStart(2, "0")}`;
+
+  // Caja de efectivo: el sistema de Finanzas (Sheets). Solo Tussy — Shato tiene
+  // su propio target y acá no se mira.
+  let finanzas = null;
+  try {
+    const params = encodeURIComponent(JSON.stringify({ mes: nroMes, anio }));
+    const r = await fetch(`${process.env.APPS_SCRIPT_URL}?action=getDashboard&params=${params}`, {
+      redirect: "follow", signal: AbortSignal.timeout(25000),
+    });
+    finanzas = await r.json();
+  } catch (e) { console.error("[flujo] finanzas:", e.message); }
+
+  const [negocio, mpFlujo, dlocal, ingresoDinero, galicia, planes, bancarios, stockFechas, sueldosGal] = await Promise.all([
+    calcularNegocio(sql, mes),
+    sql`SELECT ROUND(SUM(monto) FILTER (WHERE entrada))::bigint AS entradas,
+               ROUND(SUM(monto) FILTER (WHERE NOT entrada))::bigint AS salidas
+        FROM egresos_mp WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    sql`SELECT ROUND(COALESCE(SUM(monto), 0))::bigint AS t FROM egresos_mp
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND entrada AND (contraparte ILIKE '%dlocal%' OR detalle ILIKE '%dlocal%')`,
+    sql`SELECT ROUND(COALESCE(SUM(monto) FILTER (WHERE entrada AND detalle ILIKE 'Liquidaci%'), 0))::bigint AS liq
+        FROM egresos_mp WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    sql`SELECT ROUND(COALESCE(SUM(monto), 0))::bigint AS delta,
+               ROUND(COALESCE(SUM(monto) FILTER (WHERE monto > 0), 0))::bigint AS entradas,
+               ROUND(COALESCE(SUM(-monto) FILTER (WHERE monto < 0), 0))::bigint AS salidas
+        FROM movimientos_banco WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    sql`SELECT ROUND(COALESCE(SUM(-monto), 0))::bigint AS t FROM movimientos_banco
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND monto < 0 AND (descripcion ILIKE '%planrg%' OR comprobante ILIKE '%planrg%' OR descripcion ILIKE '%plan rg%')`,
+    sql`SELECT ROUND(COALESCE(SUM(-monto), 0))::bigint AS t FROM movimientos_banco
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND monto < 0
+          AND categoria IN ('Impuestos y sellos bancarios', 'Gastos bancarios', 'Comisiones de tarjeta')`,
+    sql`SELECT MIN(fecha)::text AS f1, MAX(fecha)::text AS f2 FROM stock
+        WHERE fecha BETWEEN ${desde} AND ${hasta}`,
+    sql`SELECT ROUND(COALESCE(SUM(-monto), 0))::bigint AS t FROM movimientos_banco
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND monto < 0 AND categoria = 'Sueldos'`,
+  ]);
+
+  // Δ stock a costo (si el mes tiene fotos al principio y al final)
+  let deltaStock = null;
+  const sf = stockFechas[0];
+  if (sf.f1 && sf.f2 && sf.f1 !== sf.f2 && sf.f1 <= `${mes}-03`) {
+    const valorEn = async f => Number((await sql`
+      SELECT ROUND(SUM(s.cantidad * (COALESCE(c.costo, 0) + COALESCE(c.estampa, 0))))::bigint AS t
+      FROM stock s LEFT JOIN LATERAL (
+        SELECT costo, estampa FROM costos_producto cp WHERE cp.producto = s.producto_norm
+        ORDER BY vigente_desde DESC LIMIT 1) c ON true
+      WHERE s.fecha = ${f} AND s.local <> 'Tiendanube'`)[0].t || 0);
+    deltaStock = (await valorEn(sf.f2)) - (await valorEn(sf.f1));
+  }
+
+  const fz = finanzas && !finanzas.error ? finanzas : null;
+  const retirosCaja = Number(fz?.porCatGasto?.["Retiros Socios"] || 0);
+  const ingresoDineroCaja = Number(fz?.porCatIngreso?.["Ingreso de dinero"] || 0);
+  // Hacerse de efectivo cuesta ~10%: por cada $90 que entran a caja salieron $100
+  const costoEfectivo = ingresoDineroCaja > 0 ? Math.round(ingresoDineroCaja / 0.9 * 0.1) : 0;
+
+  const t = negocio.total || {};
+  const impuestosDevengados = Math.round((t.detalle_impuestos?.iva || 0) + (t.detalle_impuestos?.cargas_sociales || 0));
+  const deltaMP = Number(mpFlujo[0].entradas || 0) - Number(mpFlujo[0].salidas || 0);
+  const deltaGalicia = Number(galicia[0].delta || 0);
+  const deltaCaja = fz ? Number(fz.neto || 0) : null;
+  const sinEntradasMP = !Number(mpFlujo[0].entradas);
+
+  // Puente: resultado → dónde quedó
+  const lineas = [
+    { clave: "resultado", label: "Resultado operativo del mes", monto: Math.round(t.resultado || 0) },
+    { clave: "imp_dev", label: "Impuestos del mes que se pagan el mes siguiente (IVA + cargas)", monto: impuestosDevengados },
+    { clave: "retiros", label: "Retiros de socios (caja efectivo)", monto: -retirosCaja },
+    { clave: "planes", label: "Pagos de deuda vieja AFIP (planes)", monto: -Number(planes[0].t || 0) },
+    { clave: "costo_efec", label: "Costo de hacerse de efectivo (~10%)", monto: -costoEfectivo },
+    { clave: "bancarios", label: "Costos bancarios e imp. al débito (no están en el resultado)", monto: -Number(bancarios[0].t || 0) },
+  ];
+  if (deltaStock != null) lineas.push({ clave: "stock", label: "Plata que se volvió stock (Δ inventario a costo)", monto: -deltaStock });
+  const esperado = lineas.reduce((a, l) => a + l.monto, 0);
+  const observado = (deltaCaja ?? 0) + deltaMP + deltaGalicia;
+  const sinUbicar = esperado - observado;
+
+  return res.status(200).json({
+    ok: true, mes,
+    cajas: {
+      mp: { entradas: Number(mpFlujo[0].entradas || 0), salidas: Number(mpFlujo[0].salidas || 0), delta: deltaMP,
+            liquidaciones_point: Number(ingresoDinero[0].liq || 0), dlocal: Number(dlocal[0].t || 0), sin_entradas: sinEntradasMP },
+      galicia: { entradas: Number(galicia[0].entradas || 0), salidas: Number(galicia[0].salidas || 0), delta: deltaGalicia },
+      efectivo: fz ? { ingresos: Number(fz.totalIngreso || 0), gastos: Number(fz.totalGasto || 0), delta: Number(fz.neto || 0),
+                       saldo_actual: Number(fz.saldoActual || 0),
+                       por_categoria_gasto: fz.porCatGasto || {}, por_categoria_ingreso: fz.porCatIngreso || {} } : null,
+    },
+    puente: { lineas, esperado, observado, sin_ubicar: sinUbicar, delta_stock: deltaStock,
+              nota_stock: deltaStock == null ? "sin fotos de inventario al inicio del mes (disponible desde agosto)" : null },
+    sueldos_galicia: Number(sueldosGal[0].t || 0),
+  });
+}
+
 // ── Completitud: qué datos tiene un mes y hasta qué día llega cada fuente ──
 // Responde la pregunta "¿puedo confiar en los números de este mes?" fuente por
 // fuente: ventas por local, reportes de MP/TN, extractos, comprobantes y fijos.
@@ -2062,7 +2164,7 @@ async function contabilidad(req, res) {
   // se le imput\u00f3, para poder rastrear un pago puntual.
   const egresosMes = await sql`
     SELECT id, fecha::text, contraparte, ROUND(monto)::bigint AS monto, detalle
-    FROM egresos_mp WHERE fecha BETWEEN ${desde} AND ${hasta}
+    FROM egresos_mp WHERE fecha BETWEEN ${desde} AND ${hasta} AND NOT entrada
     ORDER BY fecha DESC, monto DESC`;
   const facturasRows = await sql`
     SELECT upper(COALESCE(emisor, '')) AS nombre, fecha::text, tipo, punto_venta,
@@ -2244,11 +2346,12 @@ async function cargarEgresos(req, res) {
   for (let i = 0; i < validas.length; i += 1000) {
     const lote = validas.slice(i, i + 1000);
     const col = fn => lote.map(fn);
-    const r = await sql`INSERT INTO egresos_mp (id, fecha, contraparte, cuit, monto, detalle)
+    const r = await sql`INSERT INTO egresos_mp (id, fecha, contraparte, cuit, monto, detalle, entrada)
       SELECT * FROM unnest(
         ${col(f => String(f.id))}::text[], ${col(f => f.fecha)}::date[], ${col(f => f.contraparte || null)}::text[],
-        ${col(f => f.cuit ?? null)}::bigint[], ${col(f => f.monto)}::numeric[], ${col(f => f.detalle || null)}::text[]
-      ) AS x(id, fecha, contraparte, cuit, monto, detalle)
+        ${col(f => f.cuit ?? null)}::bigint[], ${col(f => f.monto)}::numeric[], ${col(f => f.detalle || null)}::text[],
+        ${col(f => !!f.entrada)}::boolean[]
+      ) AS x(id, fecha, contraparte, cuit, monto, detalle, entrada)
       ON CONFLICT (id) DO NOTHING RETURNING id`;
     nuevas += r.length;
   }
@@ -2293,6 +2396,7 @@ module.exports = async function handler(req, res) {
     if (action === "confirmarCompletitud") return await confirmarCompletitud(req, res);
     if (action === "facturasRecibidas") return await facturasRecibidas(req, res);
     if (action === "guardarImpuestoMes") return await guardarImpuestoMes(req, res);
+    if (action === "flujoMes") return await flujoMes(req, res);
     if (action === "curvaHoraria") return await curvaHoraria(req, res);
     if (action === "proyeccion") return await proyeccionMes(req, res);
     if (action === "guardarMeta") return await guardarMeta(req, res);

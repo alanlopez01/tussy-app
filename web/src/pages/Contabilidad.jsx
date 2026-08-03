@@ -149,7 +149,7 @@ async function parsearMovimientosMP(file) {
     if (!r || r.length === 0) continue;
     const fecha = aFecha(r[idx.fecha]);
     const monto = aNumero(r[idx.total]);
-    if (!fecha || monto >= 0) continue; // solo egresos
+    if (!fecha || !monto) continue;
     const tipo = String(r[idx.nombre] ?? "").trim();
     const { contraparte } = partirMovimientoMP(tipo);
     const base = idx.id >= 0 && r[idx.id] != null && String(r[idx.id]).trim()
@@ -160,12 +160,13 @@ async function parsearMovimientosMP(file) {
       id: vistos[base] > 1 ? `${base}#${vistos[base]}` : base,
       fecha,
       monto: Math.abs(monto),
+      entrada: monto > 0, // liquidaciones Point/QR, dLocal (PagoNube), transferencias recibidas
       contraparte,
       cuit: null,
       detalle: tipo,
     });
   }
-  if (!filas.length) throw new Error("No encontré egresos (montos negativos) en el archivo.");
+  if (!filas.length) throw new Error("No encontré movimientos en el archivo.");
   return filas;
 }
 
@@ -256,6 +257,91 @@ function FacturasRecibidas({ mes }) {
         </div>
       )}
     </Card>
+  );
+}
+
+// ¿Dónde está la plata? Puente resultado → cajas del mes.
+function Flujo({ mes }) {
+  const [data, setData] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  useEffect(() => {
+    setCargando(true); setData(null);
+    getJSON(`/api/metricas?action=flujoMes&mes=${mes}`, 45000)
+      .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
+  }, [mes]);
+
+  if (cargando) return <Spinner texto="Armando el flujo del mes…" />;
+  if (!data) return <Card><p className="text-[12px] text-bad">No pude calcular el flujo. Probá actualizar.</p></Card>;
+  const c = data.cajas, p = data.puente;
+  const fila = (label, monto, extra) => (
+    <div className="flex justify-between items-baseline gap-3 py-1.5 border-b border-borde last:border-0 text-[12px]">
+      <span className="text-ink-2">{label}{extra && <span className="text-ink-3 text-[11px]"> · {extra}</span>}</span>
+      <span className={`tabular-nums font-semibold shrink-0 ${monto >= 0 ? "text-ink" : "text-bad"}`}>{monto >= 0 ? "+" : "−"}{fmtPesosCorto(Math.abs(monto))}</span>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-4">
+        <Card title="Δ MercadoPago">
+          <div className={`text-[22px] font-bold tabular-nums ${c.mp.delta >= 0 ? "text-ok" : "text-bad"}`}>{c.mp.delta >= 0 ? "+" : ""}{fmtPesosCorto(c.mp.delta)}</div>
+          <p className="text-[11px] text-ink-3 mt-1">entró {fmtPesosCorto(c.mp.entradas)} · salió {fmtPesosCorto(c.mp.salidas)}</p>
+        </Card>
+        <Card title="Δ Galicia">
+          <div className={`text-[22px] font-bold tabular-nums ${c.galicia.delta >= 0 ? "text-ok" : "text-bad"}`}>{c.galicia.delta >= 0 ? "+" : ""}{fmtPesosCorto(c.galicia.delta)}</div>
+          <p className="text-[11px] text-ink-3 mt-1">entró {fmtPesosCorto(c.galicia.entradas)} · salió {fmtPesosCorto(c.galicia.salidas)}</p>
+        </Card>
+        <Card title="Δ Caja efectivo">
+          <div className={`text-[22px] font-bold tabular-nums ${(c.efectivo?.delta || 0) >= 0 ? "text-ok" : "text-bad"}`}>
+            {c.efectivo ? `${c.efectivo.delta >= 0 ? "+" : ""}${fmtPesosCorto(c.efectivo.delta)}` : "—"}
+          </div>
+          <p className="text-[11px] text-ink-3 mt-1">{c.efectivo ? `entró ${fmtPesosCorto(c.efectivo.ingresos)} · salió ${fmtPesosCorto(c.efectivo.gastos)}` : "sin datos de Finanzas"}</p>
+        </Card>
+        <Card title="Saldo caja efectivo hoy">
+          <div className="text-[22px] font-bold tabular-nums text-ink">{c.efectivo ? fmtPesosCorto(c.efectivo.saldo_actual) : "—"}</div>
+          <p className="text-[11px] text-ink-3 mt-1">del sistema de Finanzas (solo Tussy)</p>
+        </Card>
+      </div>
+
+      {c.mp.sin_entradas && (
+        <Card><p className="text-[12px] text-warn font-medium">
+          ⚠️ El estado de cuenta de MP de este mes se cargó con la versión vieja (solo salidas). Re-subilo en
+          Carga para tener también las entradas (liquidaciones Point/QR y PagoNube vía dLocal) y que el flujo cierre.
+        </p></Card>
+      )}
+
+      <Card title="¿Dónde está la plata del resultado?">
+        {p.lineas.map(l => fila(l.label, l.monto))}
+        <div className="flex justify-between items-baseline gap-3 py-2 border-t-2 border-borde text-[13px] font-bold">
+          <span className="text-ink">Debería haber quedado en las cajas</span>
+          <span className="tabular-nums">{p.esperado >= 0 ? "+" : "−"}{fmtPesosCorto(Math.abs(p.esperado))}</span>
+        </div>
+        <div className="flex justify-between items-baseline gap-3 py-1 text-[13px] font-bold">
+          <span className="text-ink">Quedó de verdad (Δ MP + Galicia + efectivo)</span>
+          <span className="tabular-nums">{p.observado >= 0 ? "+" : "−"}{fmtPesosCorto(Math.abs(p.observado))}</span>
+        </div>
+        <div className={`flex justify-between items-baseline gap-3 py-2 rounded-md px-3 mt-1 text-[13px] font-bold ${Math.abs(p.sin_ubicar) > 10e6 ? "bg-bad/10 text-bad" : "bg-surface text-ok"}`}>
+          <span>Sin ubicar</span>
+          <span className="tabular-nums">{fmtPesosCorto(p.sin_ubicar)}</span>
+        </div>
+        <p className="text-[11px] text-ink-3 mt-3">
+          {p.nota_stock && <>Δ stock: {p.nota_stock}. </>}
+          "Sin ubicar" junta lo que falta medir (stock, plata en tránsito de tarjetas, timing de acreditaciones) y
+          cualquier fuga real: si un mes da grande y no hay explicación, ahí hay que mirar.
+        </p>
+      </Card>
+
+      {c.efectivo && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card title="Caja efectivo · en qué se gastó">
+            {Object.entries(c.efectivo.por_categoria_gasto).sort((a, b) => b[1] - a[1]).map(([k, v]) => fila(k, -Number(v)))}
+          </Card>
+          <Card title="Caja efectivo · de dónde entró">
+            {Object.entries(c.efectivo.por_categoria_ingreso).sort((a, b) => b[1] - a[1]).map(([k, v]) => fila(k, Number(v)))}
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -402,6 +488,7 @@ export default function Contabilidad() {
         { value: "facturacion", label: "Facturación" },
         { value: "gastos", label: "Gastos" },
         { value: "conciliacion", label: "Conciliación" },
+        { value: "flujo", label: "Flujo" },
         { value: "carga", label: "Carga" },
       ]} />
 
@@ -871,6 +958,8 @@ export default function Contabilidad() {
         </>
         );
       })()}
+
+      {tab === "flujo" && <Flujo mes={mes} />}
 
       {tab === "carga" && (
         <>
