@@ -21,11 +21,19 @@ module.exports = async function handler(req, res) {
 
   const url = scriptUrl + "?action=" + action + "&params=" + encodeURIComponent(params || "{}");
 
-  try {
-    const response = await fetch(url, { redirect: "follow" });
-    const text = await response.text();
-    res.status(200).json(JSON.parse(text));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  // El Apps Script de Google a veces se cuelga o devuelve error en frío:
+  // dos reintentos con pausa suelen alcanzar para que la pantalla nunca lo vea.
+  let ultimoError = null;
+  for (let intento = 1; intento <= 3; intento++) {
+    try {
+      const response = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(30000) });
+      const text = await response.text();
+      const json = JSON.parse(text); // si Google devolvió HTML de error, esto tira y reintenta
+      return res.status(200).json(json);
+    } catch (err) {
+      ultimoError = err.message;
+      if (intento < 3) await new Promise(r => setTimeout(r, 1500 * intento));
+    }
   }
+  res.status(500).json({ error: ultimoError });
 }
