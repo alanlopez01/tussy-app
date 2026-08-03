@@ -48,13 +48,17 @@ function aEntero(v) {
 // Busca la fila de encabezados y devuelve un índice por nombre. Los patrones se
 // prueban EN ORDEN: el primero que matchea gana (así "total iva" le gana a "iva 2,5%").
 function mapearColumnas(rows, requeridas) {
+  // Sin acentos de los dos lados: así "número desde" matchea aunque el archivo
+  // venga con encoding raro o el patrón se escriba distinto
+  const limpiar = t => String(t ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    const celdas = (rows[i] || []).map(c => String(c ?? "").toLowerCase());
+    const celdas = (rows[i] || []).map(limpiar);
     const idx = {};
     for (const [clave, patrones] of Object.entries(requeridas)) {
       idx[clave] = -1;
       for (const p of patrones) {
-        const j = celdas.findIndex(c => c.includes(p));
+        const pl = limpiar(p);
+        const j = celdas.findIndex(c => c.includes(pl));
         if (j >= 0) { idx[clave] = j; break; }
       }
     }
@@ -65,7 +69,13 @@ function mapearColumnas(rows, requeridas) {
 
 async function leerHojas(file) {
   const XLSX = await import("xlsx");
-  const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
+  // Los CSV de ARCA vienen en UTF-8: hay que leerlos como texto (el navegador
+  // decodifica bien); si se leen como bytes, SheetJS asume Latin-1 y los
+  // acentos se rompen ("Número" → "NÃºmero") y no matchea ninguna columna.
+  const esTexto = /\.(csv|txt)$/i.test(file.name || "");
+  const wb = esTexto
+    ? XLSX.read(await file.text(), { type: "string", cellDates: true })
+    : XLSX.read(await file.arrayBuffer(), { cellDates: true });
   return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true });
 }
 
@@ -107,7 +117,12 @@ async function parsearMisComprobantes(file, clase) {
         : { doc_nro: docNro, receptor: String(r[idx.nombre] ?? "").trim() || null }),
     });
   }
-  if (!filas.length) throw new Error("El archivo no tiene comprobantes.");
+  if (!filas.length) {
+    const soloEncabezado = rows.length <= fila + 1;
+    throw new Error(soloEncabezado
+      ? "El export vino vacío: no hay comprobantes en el período que elegiste en ARCA."
+      : "Leí el archivo pero ninguna fila tiene fecha, tipo y número válidos. Pasámelo por el chat y lo reviso.");
+  }
   return filas;
 }
 
