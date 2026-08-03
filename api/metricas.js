@@ -1928,7 +1928,8 @@ async function contabilidad(req, res) {
   const sql = neon(process.env.DATABASE_URL);
   const mes = /^\d{4}-\d{2}$/.test(req.query.mes || "") ? req.query.mes : hoyArg().slice(0, 7);
   const desde = `${mes}-01`;
-  const hasta = `${mes}-31`;
+  const [anioMes, nroMes] = mes.split("-").map(Number);
+  const hasta = `${mes}-${String(new Date(Date.UTC(anioMes, nroMes, 0)).getUTCDate()).padStart(2, "0")}`;
 
   // Posición de IVA de los últimos 6 meses (débito emitidos − crédito recibidos)
   const iva = await sql`
