@@ -26,6 +26,7 @@ const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
 const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = require("../lib/bancos");
+const { metaConfigurada, sincronizarMeta } = require("../lib/meta");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
@@ -397,6 +398,15 @@ async function cierreDiario(req, res) {
       .then(r => console.log("[reingesta]", JSON.stringify(r)))
       .catch(e => console.error("[reingesta] error:", e))
   );
+  // Métricas de Meta: última semana (la atribución cambia retroactivamente)
+  if (metaConfigurada()) {
+    const d7 = new Date(Date.now() - 3 * 3600 * 1000 - 7 * 86400000).toISOString().slice(0, 10);
+    waitUntil(
+      sincronizarMeta(sql, { desde: d7, hasta: hoyArg() })
+        .then(r => console.log("[meta]", JSON.stringify(r)))
+        .catch(e => console.error("[meta] error:", e))
+    );
+  }
   return res.status(200).json({ ok: true, fecha: ayer, total, porLocal: rows, notificadas: enviadas });
 }
 
@@ -1778,10 +1788,31 @@ async function clientesOnline(req, res) {
   const pauta = await sql`
     SELECT to_char(fecha, 'YYYY-MM') AS mes, ROUND(SUM(monto))::bigint AS pauta
     FROM egresos_mp WHERE detalle ILIKE '%faceb%' GROUP BY 1`;
+  // Lo que Meta dice de sí mismo, para cruzarlo contra la realidad
+  const metaMes = await sql`
+    SELECT to_char(fecha, 'YYYY-MM') AS mes, ROUND(SUM(gasto))::bigint AS gasto,
+           SUM(compras)::int AS compras, ROUND(SUM(valor_compras))::bigint AS valor
+    FROM meta_insights GROUP BY 1`;
+  const mesCerrado = (() => {
+    const [y, m] = hoyArg().slice(0, 7).split("-").map(Number);
+    return new Date(Date.UTC(y, m - 2, 15)).toISOString().slice(0, 7);
+  })();
+  const campanias = await sql`
+    SELECT campania, ROUND(SUM(gasto))::bigint AS gasto, SUM(compras)::int AS compras,
+           ROUND(SUM(valor_compras))::bigint AS valor, SUM(clicks)::int AS clicks
+    FROM meta_insights WHERE to_char(fecha, 'YYYY-MM') = ${mesCerrado}
+    GROUP BY 1 HAVING SUM(gasto) > 0 ORDER BY 2 DESC`;
   return res.status(200).json({
     ok: true,
+    meta_activa: metaConfigurada(),
+    mes_campanias: mesCerrado,
+    campanias: campanias.map(c => ({ ...c, gasto: Number(c.gasto), valor: Number(c.valor),
+      roas_meta: Number(c.gasto) > 0 ? Math.round(Number(c.valor) / Number(c.gasto) * 10) / 10 : null })),
     meses: meses.map(r => ({ ...r, venta: Number(r.venta), venta_recurrentes: Number(r.venta_recurrentes || 0),
-      pauta: Number(pauta.find(p => p.mes === r.mes)?.pauta || 0) })),
+      pauta: Number(pauta.find(p => p.mes === r.mes)?.pauta || 0),
+      meta_gasto: Number(metaMes.find(p => p.mes === r.mes)?.gasto || 0),
+      meta_compras: Number(metaMes.find(p => p.mes === r.mes)?.compras || 0),
+      meta_valor: Number(metaMes.find(p => p.mes === r.mes)?.valor || 0) })),
     global: { clientes: glob.clientes, ordenes: glob.ordenes, venta: Number(glob.venta),
       recompraron: glob.recompraron,
       tasa_recompra: glob.clientes ? Math.round(glob.recompraron / glob.clientes * 1000) / 10 : 0,

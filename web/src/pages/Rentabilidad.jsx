@@ -1024,6 +1024,82 @@ function Clientes() {
           techo: el CAC real es algo menor. La pauta solo aparece en los meses con estado de cuenta cargado.
         </p>
       </Card>
+
+      {data.meta_activa && (
+        <Card title="Meta dice vs. la realidad">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] min-w-[560px]">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                  <th className="text-left py-2 font-semibold">Mes</th>
+                  <th className="text-right py-2 font-semibold">Gasto (Meta)</th>
+                  <th className="text-right py-2 font-semibold">Compras s/Meta</th>
+                  <th className="text-right py-2 font-semibold">Valor s/Meta</th>
+                  <th className="text-right py-2 font-semibold">Venta online real</th>
+                  <th className="text-right py-2 font-semibold">Meta se atribuye</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borde">
+                {cerrados.filter(m => m.meta_gasto > 0).map(m => (
+                  <tr key={m.mes}>
+                    <td className="py-2 font-semibold text-ink capitalize">{nombreMes(m.mes)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.meta_gasto)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{m.meta_compras.toLocaleString("es-AR")}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.meta_valor)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(m.venta)}</td>
+                    <td className={`py-2 text-right tabular-nums font-bold ${m.venta > 0 && m.meta_valor / m.venta > 0.6 ? "text-warn" : "text-ink"}`}>
+                      {m.venta > 0 ? Math.round(m.meta_valor / m.venta * 100) + "%" : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[11px] text-ink-3 mt-3">
+            <strong>"Meta se atribuye"</strong> = valor que Meta reclama ÷ venta online real. Meta cuenta como
+            suya cualquier compra de alguien que vio o tocó un anuncio en los últimos días, incluso si iba a
+            comprar igual — por eso un % alto no es mérito puro. La lectura sana: mirá la <strong>tendencia</strong>{" "}
+            y compará campañas entre sí, no contra la promesa del panel de Meta.
+          </p>
+        </Card>
+      )}
+
+      {data.meta_activa && data.campanias?.length > 0 && (
+        <Card title={`Campañas · ${new Date(data.mes_campanias + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "long", year: "numeric" })}`}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] min-w-[560px]">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                  <th className="text-left py-2 font-semibold">Campaña</th>
+                  <th className="text-right py-2 font-semibold">Gasto</th>
+                  <th className="text-right py-2 font-semibold">Clicks</th>
+                  <th className="text-right py-2 font-semibold">Compras</th>
+                  <th className="text-right py-2 font-semibold">Valor s/Meta</th>
+                  <th className="text-right py-2 font-semibold">ROAS s/Meta</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borde">
+                {data.campanias.map(c => (
+                  <tr key={c.campania}>
+                    <td className="py-2 pr-2 font-semibold text-ink">{c.campania}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(c.gasto)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-3">{c.clicks.toLocaleString("es-AR")}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{c.compras}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(c.valor)}</td>
+                    <td className={`py-2 text-right tabular-nums font-bold ${c.roas_meta >= 10 ? "text-ok" : c.roas_meta >= 5 ? "text-ink" : "text-bad"}`}>
+                      {c.roas_meta != null ? c.roas_meta + "x" : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[11px] text-ink-3 mt-3">
+            Para comparar campañas entre sí el ROAS de Meta sirve (todas mienten igual): las de abajo de la tabla
+            con ROAS bajo son las candidatas a cortar. Se actualiza solo todas las noches.
+          </p>
+        </Card>
+      )}
     </div>
   );
 }
