@@ -1822,7 +1822,8 @@ async function flujoMes(req, res) {
                ROUND(COALESCE(SUM(-monto) FILTER (WHERE monto < 0), 0))::bigint AS salidas
         FROM movimientos_banco WHERE fecha BETWEEN ${desde} AND ${hasta}`,
     sql`SELECT ROUND(COALESCE(SUM(-monto), 0))::bigint AS t FROM movimientos_banco
-        WHERE fecha BETWEEN ${desde} AND ${hasta} AND monto < 0 AND (descripcion ILIKE '%planrg%' OR comprobante ILIKE '%planrg%' OR descripcion ILIKE '%plan rg%')`,
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND monto < 0
+          AND descripcion ILIKE 'Deb. Autom%' AND contraparte ILIKE '%AFIP%'`,
     sql`SELECT ROUND(COALESCE(SUM(-monto), 0))::bigint AS t FROM movimientos_banco
         WHERE fecha BETWEEN ${desde} AND ${hasta} AND monto < 0
           AND categoria IN ('Impuestos y sellos bancarios', 'Gastos bancarios', 'Comisiones de tarjeta')`,
