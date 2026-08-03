@@ -199,20 +199,29 @@ export function TooltipPesos({ active, payload, label, labelFormatter }) {
 // Panel "Datos del mes": qué fuentes están completas y hasta qué día llega cada una.
 // Responde "¿puedo confiar en los números de este mes?" antes de leerlos.
 import { useEffect as _useEffect, useState as _useState } from "react";
-import { getJSON as _getJSON } from "../lib/api.js";
+import { getJSON as _getJSON, postJSON as _postJSON } from "../lib/api.js";
 
 export function DatosDelMes({ mes }) {
   const [data, setData] = _useState(null);
   const [abierto, setAbierto] = _useState(false);
-  _useEffect(() => {
-    setData(null);
-    _getJSON(`/api/metricas?action=completitud&mes=${mes}`, 30000).then(setData).catch(() => setData(null));
-  }, [mes]);
+
+  const cargar = () => _getJSON(`/api/metricas?action=completitud&mes=${mes}`, 30000)
+    .then(setData).catch(() => setData(null));
+  _useEffect(() => { setData(null); cargar(); }, [mes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data) return null;
   const faltan = data.items.filter(i => i.estado !== "ok");
   const ICONO = { ok: "✓", parcial: "◐", falta: "✗" };
   const COLOR = { ok: "text-ok", parcial: "text-warn", falta: "text-bad" };
+
+  // Cuando una fuente figura incompleta pero el dato es correcto (ej. el banco no
+  // tuvo movimientos los últimos días del mes), se puede dar por completa a mano.
+  const confirmar = async (clave, valor) => {
+    try {
+      await _postJSON("/api/metricas?action=confirmarCompletitud", { mes, clave, valor });
+      cargar();
+    } catch { /* el próximo refresh lo muestra */ }
+  };
 
   return (
     <section className={`rounded-lg border p-4 ${faltan.length ? "border-warn/40 bg-surface-1" : "border-borde bg-surface-1"}`}>
@@ -227,10 +236,23 @@ export function DatosDelMes({ mes }) {
       {(abierto || faltan.length > 0) && (
         <div className="mt-3 space-y-1.5">
           {(abierto ? data.items : faltan).map(i => (
-            <div key={i.clave} className="flex items-baseline gap-2 text-[12px]">
+            <div key={i.clave} className="flex items-baseline gap-2 text-[12px] flex-wrap">
               <span className={`font-bold shrink-0 ${COLOR[i.estado]}`}>{ICONO[i.estado]}</span>
               <span className="font-semibold text-ink-2 shrink-0">{i.label}:</span>
               <span className="text-ink-3">{i.detalle}</span>
+              {i.estado !== "ok" && (
+                <button onClick={() => confirmar(i.clave, true)}
+                        title="Usalo cuando el dato está bien igual (ej. no hubo movimientos esos días)"
+                        className="text-[11px] font-semibold text-ink-2 underline decoration-dotted underline-offset-2 shrink-0">
+                  dar por completo ✓
+                </button>
+              )}
+              {i.confirmado && (
+                <button onClick={() => confirmar(i.clave, false)}
+                        className="text-[11px] text-ink-3 underline decoration-dotted underline-offset-2 shrink-0">
+                  deshacer
+                </button>
+              )}
             </div>
           ))}
         </div>

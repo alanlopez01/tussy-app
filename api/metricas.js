@@ -20,7 +20,7 @@ const KEY_LOCAL = {
 };
 
 const { normalizarProducto } = require("../lib/normalizar");
-const { requerirSesion } = require("../lib/auth");
+const { requerirSesion, verificarToken } = require("../lib/auth");
 const { costear } = require("../lib/costeo");
 const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
@@ -1824,8 +1824,37 @@ async function completitud(req, res) {
     estado: ipcRow.length ? "ok" : "parcial",
     detalle: ipcRow.length ? `${Number(ipcRow[0].pct)}%` : "aún no publicado — la venta real queda nominal" });
 
+  // Confirmaciones manuales: cuando una fuente figura incompleta pero el dato es
+  // correcto (ej. el banco no tuvo movimientos los últimos días del mes), un socio
+  // puede darla por completa a mano. Queda registrado quién.
+  const overrides = await sql`SELECT clave, confirmado_por FROM completitud_ok WHERE mes = ${mes}`;
+  for (const it of items) {
+    const ov = overrides.find(o => o.clave === it.clave);
+    if (ov && it.estado !== "ok") {
+      it.estado = "ok";
+      it.confirmado = true;
+      it.detalle = `${it.detalle} · dado por completo${ov.confirmado_por ? ` por ${ov.confirmado_por}` : ""}`;
+    }
+  }
+
   const faltantes = items.filter(i => i.estado !== "ok").length;
   return res.status(200).json({ ok: true, mes, cerrado, items, completos: items.length - faltantes, total: items.length });
+}
+
+// Marcar (o desmarcar) una fuente del mes como completa a mano
+async function confirmarCompletitud(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { mes, clave, valor } = req.body || {};
+  if (!/^\d{4}-\d{2}$/.test(mes || "") || !clave) return res.status(400).json({ error: "mes y clave requeridos" });
+  const sql = neon(process.env.DATABASE_URL);
+  if (valor === false) {
+    await sql`DELETE FROM completitud_ok WHERE mes = ${mes} AND clave = ${clave}`;
+  } else {
+    const sesion = verificarToken(req.headers["x-tussy-auth"]);
+    await sql`INSERT INTO completitud_ok (mes, clave, confirmado_por) VALUES (${mes}, ${clave}, ${sesion?.nombre || null})
+      ON CONFLICT (mes, clave) DO NOTHING`;
+  }
+  return res.status(200).json({ ok: true });
 }
 
 // Tablero: posición de IVA, cruce vendido vs facturado, gastos por rubro y conciliación
@@ -2180,6 +2209,7 @@ module.exports = async function handler(req, res) {
     if (action === "guardarGastoLocal") return await guardarGastoLocal(req, res);
     if (action === "contabilidad") return await contabilidad(req, res);
     if (action === "completitud") return await completitud(req, res);
+    if (action === "confirmarCompletitud") return await confirmarCompletitud(req, res);
     if (action === "curvaHoraria") return await curvaHoraria(req, res);
     if (action === "proyeccion") return await proyeccionMes(req, res);
     if (action === "guardarMeta") return await guardarMeta(req, res);
