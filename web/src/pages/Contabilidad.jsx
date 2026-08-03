@@ -73,8 +73,11 @@ async function leerHojas(file) {
   // decodifica bien); si se leen como bytes, SheetJS asume Latin-1 y los
   // acentos se rompen ("Número" → "NÃºmero") y no matchea ninguna columna.
   const esTexto = /\.(csv|txt)$/i.test(file.name || "");
+  // raw:true en los CSV: que NO intente convertir "13611206,11" a número — lo
+  // interpreta con coma de miles y multiplica todo por 100. Los montos quedan
+  // como texto y los convierte aNumero, que entiende la coma decimal argentina.
   const wb = esTexto
-    ? XLSX.read(await file.text(), { type: "string", cellDates: true })
+    ? XLSX.read(await file.text(), { type: "string", raw: true })
     : XLSX.read(await file.arrayBuffer(), { cellDates: true });
   return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true });
 }
