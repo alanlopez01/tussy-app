@@ -1800,13 +1800,16 @@ async function flujoMes(req, res) {
   // Caja de efectivo: el sistema de Finanzas (Sheets). Solo Tussy — Shato tiene
   // su propio target y acá no se mira.
   let finanzas = null;
-  try {
-    const params = encodeURIComponent(JSON.stringify({ mes: nroMes, anio }));
-    const r = await fetch(`${process.env.APPS_SCRIPT_URL}?action=getDashboard&params=${params}`, {
-      redirect: "follow", signal: AbortSignal.timeout(25000),
-    });
-    finanzas = await r.json();
-  } catch (e) { console.error("[flujo] finanzas:", e.message); }
+  const params = encodeURIComponent(JSON.stringify({ mes: nroMes, anio }));
+  // El Apps Script arranca en frío a veces: un reintento alcanza
+  for (let intento = 1; intento <= 2 && !finanzas; intento++) {
+    try {
+      const r = await fetch(`${process.env.APPS_SCRIPT_URL}?action=getDashboard&params=${params}`, {
+        redirect: "follow", signal: AbortSignal.timeout(intento === 1 ? 25000 : 40000),
+      });
+      finanzas = await r.json();
+    } catch (e) { console.error(`[flujo] finanzas intento ${intento}:`, e.message); }
+  }
 
   const [negocio, mpFlujo, dlocal, ingresoDinero, galicia, planes, bancarios, stockFechas, sueldosGal] = await Promise.all([
     calcularNegocio(sql, mes),
