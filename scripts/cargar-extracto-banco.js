@@ -12,7 +12,7 @@ const { parsearGalicia } = require("../lib/bancos");
 async function main() {
   const archivo = process.argv[2];
   if (!archivo) { console.error("Uso: node scripts/cargar-extracto-banco.js <archivo.csv>"); process.exit(1); }
-  const filas = parsearGalicia(fs.readFileSync(archivo, "utf8"));
+  const { filas } = parsearGalicia(fs.readFileSync(archivo, "utf8"));
   const sql = neon(process.env.DATABASE_URL);
   let nuevas = 0;
   for (let i = 0; i < filas.length; i += 1000) {

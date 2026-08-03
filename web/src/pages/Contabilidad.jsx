@@ -167,7 +167,18 @@ async function parsearMovimientosMP(file) {
     });
   }
   if (!filas.length) throw new Error("No encontré movimientos en el archivo.");
-  return filas;
+  // Encabezado del extracto: INITIAL_BALANCE / CREDITS / DEBITS / FINAL_BALANCE
+  let saldoFinal = null;
+  for (let i = 0; i < Math.min(rows.length, 4); i++) {
+    const c0 = String((rows[i] || [])[0] ?? "").toUpperCase();
+    if (c0.includes("INITIAL_BALANCE")) {
+      const vals = rows[i + 1] || [];
+      saldoFinal = aNumero(vals[3]);
+      break;
+    }
+  }
+  const fechaCorte = filas.reduce((a, f) => f.fecha > a ? f.fecha : a, filas[0].fecha);
+  return { filas, saldo: saldoFinal != null && saldoFinal !== 0 ? { cuenta: "mp", fecha: fechaCorte, saldo: saldoFinal } : null };
 }
 
 // ── Piezas de UI ──
@@ -310,6 +321,24 @@ function Flujo({ mes }) {
         </p></Card>
       )}
 
+      {data.saldos_cierre && (
+        <Card title="La plata, al cierre del mes"
+              right={<span className="text-[11px] text-ink-3">saldos que capturan los extractos al cargarse</span>}>
+          <div className="grid gap-3 sm:grid-cols-4">
+            {[["MercadoPago", data.saldos_cierre.mp?.saldo, data.saldos_cierre.mp?.fecha],
+              ["Galicia", data.saldos_cierre.galicia?.saldo, data.saldos_cierre.galicia?.fecha],
+              ["Caja efectivo", data.saldos_cierre.efectivo?.saldo, "hoy"],
+              ["Tienda en tránsito (PagoNube)", data.saldos_cierre.en_transito_tienda || 0, "llega el mes siguiente"]].map(([l, v, f]) => (
+              <div key={l} className="bg-surface rounded-md px-3 py-2.5">
+                <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3">{l}</div>
+                <div className="text-[17px] font-bold tabular-nums text-ink mt-0.5">{v != null ? fmtPesosCorto(v) : "—"}</div>
+                {f && <div className="text-[10px] text-ink-3">{typeof f === "string" && f.includes("-") ? `al ${f.slice(8, 10)}/${f.slice(5, 7)}` : f}</div>}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card title="¿Dónde está la plata del resultado?">
         {p.lineas.map(l => fila(l.label, l.monto))}
         <div className="flex justify-between items-baseline gap-3 py-2 border-t-2 border-borde text-[13px] font-bold">
@@ -326,7 +355,12 @@ function Flujo({ mes }) {
         </div>
         <p className="text-[11px] text-ink-3 mt-3">
           {p.nota_stock && <>Δ stock: {p.nota_stock}. </>}
-          "Sin ubicar" junta lo que falta medir (stock, plata en tránsito de tarjetas, timing de acreditaciones) y
+          {data.efectivo_cruce?.rendido_a_caja != null && (
+            <>Efectivo cobrado en los locales {fmtPesosCorto(data.efectivo_cruce.cobrado_locales)} vs. rendido a la
+            caja central {fmtPesosCorto(data.efectivo_cruce.rendido_a_caja)}: la diferencia paga gastos en el
+            local o queda en las cajas de los locales — parte del "sin ubicar" vive ahí. </>
+          )}
+          "Sin ubicar" junta lo que falta medir (stock, efectivo sin rendir, timing de acreditaciones) y
           cualquier fuga real: si un mes da grande y no hay explicación, ahí hay que mirar.
         </p>
       </Card>
@@ -425,11 +459,13 @@ export default function Contabilidad() {
     try {
       // El extracto bancario lo parsea el server (misma librería que los scripts);
       // los xlsx se leen acá porque el navegador ya trae el lector.
-      const payload = clave === "banco"
-        ? { texto: await file.text() }
-        : clave === "emitidos" || clave === "recibidos"
-          ? { clase: clave, filas: await parser(file) }
-          : { filas: await parser(file) };
+      let payload;
+      if (clave === "banco") payload = { texto: await file.text() };
+      else if (clave === "emitidos" || clave === "recibidos") payload = { clase: clave, filas: await parser(file) };
+      else {
+        const r = await parser(file);
+        payload = Array.isArray(r) ? { filas: r } : r; // movimientos MP: {filas, saldo}
+      }
       const resultado = await postJSON(`/api/metricas?action=${endpoint}`, payload, 120000);
       setEstados(s => ({ ...s, [clave]: { estado: "ok", resultado } }));
       cargar();

@@ -1541,10 +1541,14 @@ async function cargarBanco(req, res) {
   const { texto } = req.body || {};
   if (typeof texto !== "string" || !texto.trim()) return res.status(400).json({ error: "texto del extracto requerido" });
   if (texto.length > 8_000_000) return res.status(400).json({ error: "archivo demasiado grande" });
-  let filas;
-  try { filas = parsearGalicia(texto); }
+  let filas, saldoGal;
+  try { const r = parsearGalicia(texto); filas = r.filas; saldoGal = r.saldo; }
   catch (e) { return res.status(400).json({ error: e.message }); }
   const sql = neon(process.env.DATABASE_URL);
+  if (saldoGal) {
+    await sql`INSERT INTO saldos_cuenta (cuenta, fecha, saldo) VALUES ('galicia', ${saldoGal.fecha}, ${saldoGal.saldo})
+      ON CONFLICT (cuenta, fecha) DO UPDATE SET saldo = ${saldoGal.saldo}`;
+  }
   const validas = filas.filter(f => f.id && f.fecha && f.monto);
   let nuevas = 0;
   for (let i = 0; i < validas.length; i += 1000) {
@@ -1811,7 +1815,7 @@ async function flujoMes(req, res) {
     } catch (e) { console.error(`[flujo] finanzas intento ${intento}:`, e.message); }
   }
 
-  const [negocio, mpFlujo, dlocal, ingresoDinero, galicia, planes, bancarios, stockFechas, sueldosGal] = await Promise.all([
+  const [negocio, mpFlujo, dlocal, ingresoDinero, galicia, planes, bancarios, stockFechas, sueldosGal, saldosRows, transfRec, tnNetoRow, efectivoCobrado] = await Promise.all([
     calcularNegocio(sql, mes),
     sql`SELECT ROUND(SUM(monto) FILTER (WHERE entrada))::bigint AS entradas,
                ROUND(SUM(monto) FILTER (WHERE NOT entrada))::bigint AS salidas
@@ -1834,6 +1838,14 @@ async function flujoMes(req, res) {
         WHERE fecha BETWEEN ${desde} AND ${hasta}`,
     sql`SELECT ROUND(COALESCE(SUM(-monto), 0))::bigint AS t FROM movimientos_banco
         WHERE fecha BETWEEN ${desde} AND ${hasta} AND monto < 0 AND categoria = 'Sueldos'`,
+    // Saldos al cierre del mes (los captura la carga de cada extracto)
+    sql`SELECT DISTINCT ON (cuenta) cuenta, fecha::text, saldo::numeric FROM saldos_cuenta
+        WHERE fecha <= ${hasta} ORDER BY cuenta, fecha DESC`,
+    sql`SELECT ROUND(COALESCE(SUM(monto), 0))::bigint AS t FROM egresos_mp
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND entrada AND detalle ILIKE 'Transferencia recibida%'`,
+    sql`SELECT neto::numeric FROM mix_pagos WHERE mes = ${mes} AND local = 'Tiendanube'`,
+    sql`SELECT ROUND(COALESCE(SUM(monto), 0))::bigint AS t FROM cobros
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND medio = 'efectivo' AND local <> 'Tiendanube'`,
   ]);
 
   // Δ stock a costo (si el mes tiene fotos al principio y al final)
@@ -1872,12 +1884,30 @@ async function flujoMes(req, res) {
     { clave: "bancarios", label: "Costos bancarios e imp. al débito (no están en el resultado)", monto: -Number(bancarios[0].t || 0) },
   ];
   if (deltaStock != null) lineas.push({ clave: "stock", label: "Plata que se volvió stock (Δ inventario a costo)", monto: -deltaStock });
+  // Venta online que PagoNube todavía no liquidó: neta de comisión, menos lo que ya
+  // entró vía dLocal y las transferencias directas de clientes
+  const tnNeto = Number(tnNetoRow[0]?.neto || 0);
+  const enTransito = Math.max(0, Math.round(tnNeto - Number(dlocal[0].t || 0) - Number(transfRec[0].t || 0)));
+  if (enTransito > 0) lineas.push({ clave: "transito", label: "Venta de la tienda aún no liquidada por PagoNube (llega el mes siguiente)", monto: -enTransito });
   const esperado = lineas.reduce((a, l) => a + l.monto, 0);
   const observado = (deltaCaja ?? 0) + deltaMP + deltaGalicia;
   const sinUbicar = esperado - observado;
 
+  const saldos = Object.fromEntries(saldosRows.map(r => [r.cuenta, { fecha: r.fecha, saldo: Number(r.saldo) }]));
   return res.status(200).json({
     ok: true, mes,
+    saldos_cierre: {
+      mp: saldos.mp || null,
+      galicia: saldos.galicia || null,
+      efectivo: fz ? { saldo: Number(fz.saldoActual || 0), nota: "saldo actual (vivo)" } : null,
+      en_transito_tienda: enTransito,
+    },
+    efectivo_cruce: {
+      cobrado_locales: Number(efectivoCobrado[0].t || 0),
+      rendido_a_caja: fz ? Object.entries(fz.porCatIngreso || {})
+        .filter(([k]) => k.toLowerCase().startsWith("local"))
+        .reduce((a, [, v]) => a + Number(v), 0) : null,
+    },
     cajas: {
       mp: { entradas: Number(mpFlujo[0].entradas || 0), salidas: Number(mpFlujo[0].salidas || 0), delta: deltaMP,
             liquidaciones_point: Number(ingresoDinero[0].liq || 0), dlocal: Number(dlocal[0].t || 0), sin_entradas: sinEntradasMP },
@@ -2341,10 +2371,14 @@ async function contabilidad(req, res) {
 // Alta de egresos de MercadoPago (transferencias a proveedores) para conciliar
 async function cargarEgresos(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
-  const { filas } = req.body || {};
+  const { filas, saldo } = req.body || {};
   if (!Array.isArray(filas) || !filas.length) return res.status(400).json({ error: "filas requeridas" });
   if (filas.length > 20000) return res.status(400).json({ error: "demasiadas filas en una carga" });
   const sql = neon(process.env.DATABASE_URL);
+  if (saldo?.cuenta && saldo?.fecha && saldo?.saldo) {
+    await sql`INSERT INTO saldos_cuenta (cuenta, fecha, saldo) VALUES (${saldo.cuenta}, ${saldo.fecha}, ${saldo.saldo})
+      ON CONFLICT (cuenta, fecha) DO UPDATE SET saldo = ${saldo.saldo}`;
+  }
   const validas = filas.filter(f => f.id && f.fecha && f.monto);
   let nuevas = 0;
   for (let i = 0; i < validas.length; i += 1000) {
