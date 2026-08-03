@@ -1862,6 +1862,51 @@ async function flujoMes(req, res) {
   }
 
   const fz = finanzas && !finanzas.error ? finanzas : null;
+
+  // Rendición de efectivo por local: cobrado (nuestros cobros, desde junio que se
+  // mide el medio de pago) vs. rendido a la caja central (categorías "Local X" de
+  // Finanzas, sumando cada mes hasta el elegido). La diferencia es el efectivo que
+  // está en el local: pagando gastos ahí o esperando rendirse.
+  const rendidoPorLocal = {};
+  {
+    const mesesRend = [];
+    for (let d = new Date(Date.UTC(2026, 5, 15)); d.toISOString().slice(0, 7) <= mes; d.setUTCMonth(d.getUTCMonth() + 1)) {
+      mesesRend.push([d.getUTCMonth() + 1, d.getUTCFullYear()]);
+    }
+    for (const [m2, a2] of mesesRend) {
+      let dash = (m2 === nroMes && a2 === anio) ? fz : null;
+      for (let intento = 1; intento <= 2 && !dash; intento++) {
+        try {
+          const r2 = await fetch(`${process.env.APPS_SCRIPT_URL}?action=getDashboard&params=${encodeURIComponent(JSON.stringify({ mes: m2, anio: a2 }))}`,
+            { redirect: "follow", signal: AbortSignal.timeout(30000) });
+          dash = await r2.json();
+        } catch (e) { console.error("[flujo] rendiciones:", e.message); }
+      }
+      for (const [k, v] of Object.entries(dash?.porCatIngreso || {})) {
+        const kk = k.toLowerCase();
+        if (kk.startsWith("local ") || kk.includes("córdoba") || kk.includes("cordoba")) {
+          const nombre = k.replace(/^local /i, "").trim();
+          rendidoPorLocal[nombre] = (rendidoPorLocal[nombre] || 0) + Number(v);
+        }
+      }
+    }
+  }
+  const [cobradoRows, declaradoRows] = await Promise.all([
+    sql`SELECT local, ROUND(SUM(monto))::bigint AS t FROM cobros
+        WHERE medio = 'efectivo' AND local <> 'Tiendanube' AND fecha BETWEEN '2026-06-01' AND ${hasta}
+        GROUP BY local`,
+    sql`SELECT DISTINCT ON (local) local, fecha::text, saldo::numeric FROM efectivo_locales
+        ORDER BY local, fecha DESC`,
+  ]);
+  const rendiciones = ["Palermo", "La Plata", "Dot", "Abasto", "Córdoba"].map(local => {
+    const cobrado = Number(cobradoRows.find(r => r.local === local)?.t || 0);
+    const rendido = Math.round(rendidoPorLocal[local] || 0);
+    const dec = declaradoRows.find(r => r.local === local);
+    return {
+      local, cobrado, rendido, pendiente: cobrado - rendido,
+      declarado: dec ? Number(dec.saldo) : null, declarado_fecha: dec?.fecha || null,
+    };
+  });
   const retirosCaja = Number(fz?.porCatGasto?.["Retiros Socios"] || 0);
   const ingresoDineroCaja = Number(fz?.porCatIngreso?.["Ingreso de dinero"] || 0);
   // Hacerse de efectivo cuesta ~10%: por cada $90 que entran a caja salieron $100
@@ -1902,6 +1947,7 @@ async function flujoMes(req, res) {
       efectivo: fz ? { saldo: Number(fz.saldoActual || 0), nota: "saldo actual (vivo)" } : null,
       en_transito_tienda: enTransito,
     },
+    rendiciones,
     efectivo_cruce: {
       cobrado_locales: Number(efectivoCobrado[0].t || 0),
       rendido_a_caja: fz ? Object.entries(fz.porCatIngreso || {})
@@ -1920,6 +1966,21 @@ async function flujoMes(req, res) {
               nota_stock: deltaStock == null ? "sin fotos de inventario al inicio del mes (disponible desde agosto)" : null },
     sueldos_galicia: Number(sueldosGal[0].t || 0),
   });
+}
+
+// Efectivo físico contado en un local (lo informan los socios; se compara
+// contra el pendiente de rendición)
+async function guardarEfectivoLocal(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST requerido" });
+  const { local, saldo } = req.body || {};
+  if (!local || !(Number(saldo) >= 0)) return res.status(400).json({ error: "local y saldo requeridos" });
+  const sql = neon(process.env.DATABASE_URL);
+  const sesion = verificarToken(req.headers["x-tussy-auth"]);
+  const hoy = hoyArg();
+  await sql`INSERT INTO efectivo_locales (local, fecha, saldo, declarado_por)
+    VALUES (${local}, ${hoy}, ${Number(saldo)}, ${sesion?.nombre || null})
+    ON CONFLICT (local, fecha) DO UPDATE SET saldo = ${Number(saldo)}, declarado_por = ${sesion?.nombre || null}`;
+  return res.status(200).json({ ok: true });
 }
 
 // ── Completitud: qué datos tiene un mes y hasta qué día llega cada fuente ──
@@ -2435,6 +2496,7 @@ module.exports = async function handler(req, res) {
     if (action === "facturasRecibidas") return await facturasRecibidas(req, res);
     if (action === "guardarImpuestoMes") return await guardarImpuestoMes(req, res);
     if (action === "flujoMes") return await flujoMes(req, res);
+    if (action === "guardarEfectivoLocal") return await guardarEfectivoLocal(req, res);
     if (action === "curvaHoraria") return await curvaHoraria(req, res);
     if (action === "proyeccion") return await proyeccionMes(req, res);
     if (action === "guardarMeta") return await guardarMeta(req, res);

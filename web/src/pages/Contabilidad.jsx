@@ -275,11 +275,24 @@ function FacturasRecibidas({ mes }) {
 function Flujo({ mes }) {
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [declEdit, setDeclEdit] = useState(null);
+  const [declValor, setDeclValor] = useState("");
+  const recargar = () => getJSON(`/api/metricas?action=flujoMes&mes=${mes}`, 60000)
+    .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
   useEffect(() => {
     setCargando(true); setData(null);
-    getJSON(`/api/metricas?action=flujoMes&mes=${mes}`, 45000)
-      .then(setData).catch(() => setData(null)).finally(() => setCargando(false));
-  }, [mes]);
+    recargar();
+  }, [mes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const guardarDeclarado = async (local) => {
+    const saldo = Math.round(Number(declValor.replace(/\./g, "")) || 0);
+    setDeclEdit(null);
+    if (!saldo) return;
+    try {
+      await postJSON("/api/metricas?action=guardarEfectivoLocal", { local, saldo });
+      recargar();
+    } catch { /* siguiente refresh */ }
+  };
 
   if (cargando) return <Spinner texto="Armando el flujo del mes…" />;
   if (!data) return <Card><p className="text-[12px] text-bad">No pude calcular el flujo. Probá actualizar.</p></Card>;
@@ -364,6 +377,60 @@ function Flujo({ mes }) {
           cualquier fuga real: si un mes da grande y no hay explicación, ahí hay que mirar.
         </p>
       </Card>
+
+      {data.rendiciones && (
+        <Card title="Efectivo en los locales · cobrado vs. rendido"
+              right={<span className="text-[11px] text-ink-3">desde junio (cuando se empezó a medir el medio de pago) · tocá "declarado" para cargar el conteo físico</span>}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] min-w-[560px]">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-[0.06em] text-ink-3 border-b border-borde">
+                  <th className="text-left py-2 font-semibold">Local</th>
+                  <th className="text-right py-2 font-semibold">Cobrado</th>
+                  <th className="text-right py-2 font-semibold">Rendido a caja</th>
+                  <th className="text-right py-2 font-semibold">Pendiente</th>
+                  <th className="text-right py-2 font-semibold">Declarado en local</th>
+                  <th className="text-right py-2 font-semibold">Dif.</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borde">
+                {data.rendiciones.map(r => (
+                  <tr key={r.local}>
+                    <td className="py-2 font-semibold text-ink">{r.local}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(r.cobrado)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-2">{fmtPesosCorto(r.rendido)}</td>
+                    <td className={`py-2 text-right tabular-nums font-bold ${r.pendiente > 5e6 ? "text-warn" : "text-ink"}`}>{fmtPesosCorto(r.pendiente)}</td>
+                    <td className="py-2 text-right tabular-nums">
+                      {declEdit === r.local ? (
+                        <input autoFocus value={declValor} onChange={e => setDeclValor(e.target.value)}
+                               onBlur={() => guardarDeclarado(r.local)}
+                               onKeyDown={e => e.key === "Enter" && guardarDeclarado(r.local)}
+                               inputMode="numeric" placeholder="conteo físico"
+                               className="w-28 rounded border border-borde bg-surface-1 px-2 py-0.5 text-right text-[12px]" />
+                      ) : (
+                        <button onClick={() => { setDeclEdit(r.local); setDeclValor(r.declarado ? String(Math.round(r.declarado)) : ""); }}
+                                className="text-ink-2 underline decoration-dotted underline-offset-2">
+                          {r.declarado != null ? `${fmtPesosCorto(r.declarado)}` : "declarar"}
+                        </button>
+                      )}
+                      {r.declarado_fecha && <div className="text-[9px] text-ink-3">al {r.declarado_fecha.slice(8, 10)}/{r.declarado_fecha.slice(5, 7)}</div>}
+                    </td>
+                    <td className={`py-2 text-right tabular-nums font-semibold ${r.declarado == null ? "text-ink-3" : Math.abs(r.pendiente - r.declarado) > 3e6 ? "text-bad" : "text-ok"}`}>
+                      {r.declarado != null ? fmtPesosCorto(r.declarado - r.pendiente) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[11px] text-ink-3 mt-3">
+            <strong>Pendiente</strong> = cobrado en efectivo − rendido a la caja central: es la plata que debería
+            estar en el local (o que pagó gastos ahí que todavía no se registraron). Cargando el{" "}
+            <strong>conteo físico</strong> la columna Dif. muestra cuánto se usó en gastos sin registrar (negativo)
+            o si sobra. La Plata y Córdoba no tienen categoría de rendición en Finanzas: su efectivo se acumula ahí.
+          </p>
+        </Card>
+      )}
 
       {c.efectivo && (
         <div className="grid gap-4 md:grid-cols-2">
