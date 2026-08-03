@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Ventas from "./pages/Ventas.jsx";
 import Productos from "./pages/Productos.jsx";
@@ -9,14 +9,16 @@ import Rentabilidad from "./pages/Rentabilidad.jsx";
 import Contabilidad from "./pages/Contabilidad.jsx";
 import Login from "./pages/Login.jsx";
 
+// Los socios ven la operación (ventas, pedidos, finanzas) y el resultado del
+// negocio; el detalle técnico (productos, contabilidad, costos) es del admin.
 const NAV = [
   { to: "/", label: "Inicio", icon: "◧" },
   { to: "/ventas", label: "Ventas", icon: "▤" },
-  { to: "/productos", label: "Productos", icon: "▦" },
+  { to: "/productos", label: "Productos", icon: "▦", soloAdmin: true },
   { to: "/pedidos", label: "Pedidos", icon: "◷" },
   { to: "/finanzas", label: "Finanzas", icon: "◈" },
   { to: "/rentabilidad", label: "Rentabilidad", icon: "◎" },
-  { to: "/contabilidad", label: "Contabilidad", icon: "▧" },
+  { to: "/contabilidad", label: "Contabilidad", icon: "▧", soloAdmin: true },
 ];
 
 function navPara(user) {
@@ -142,11 +144,11 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/ventas" element={<Ventas />} />
-            <Route path="/productos" element={<Productos />} />
+            <Route path="/productos" element={user.rol === "admin" ? <Productos /> : <Navigate to="/" replace />} />
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/finanzas" element={<Finanzas />} />
-            <Route path="/rentabilidad" element={<Rentabilidad />} />
-            <Route path="/contabilidad" element={<Contabilidad />} />
+            <Route path="/rentabilidad" element={<Rentabilidad rol={user.rol} />} />
+            <Route path="/contabilidad" element={user.rol === "admin" ? <Contabilidad /> : <Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>

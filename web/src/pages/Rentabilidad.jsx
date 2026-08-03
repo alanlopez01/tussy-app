@@ -1273,7 +1273,7 @@ function Inventario() {
   );
 }
 
-export default function Rentabilidad() {
+export default function Rentabilidad({ rol = "admin" } = {}) {
   const [tab, setTab] = useState("negocio");
   return (
     <div className="space-y-4">
@@ -1282,14 +1282,16 @@ export default function Rentabilidad() {
           <h1 className="text-[20px] font-bold text-ink">Rentabilidad</h1>
           <p className="text-[12px] text-ink-3">Costos, márgenes e inventario del negocio</p>
         </div>
-        <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "evolucion", label: "Evolución" },
-                          { value: "margenes", label: "Productos" }, { value: "inventario", label: "Inventario" },
-                          { value: "clientes", label: "Clientes" },
-                          { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" },
-                          { value: "carga", label: "Carga" }]}
-               valor={tab} onChange={setTab} />
+        {rol === "admin" && (
+          <Chips opciones={[{ value: "negocio", label: "Negocio" }, { value: "evolucion", label: "Evolución" },
+                            { value: "margenes", label: "Productos" }, { value: "inventario", label: "Inventario" },
+                            { value: "clientes", label: "Clientes" },
+                            { value: "costos", label: "Costos" }, { value: "fijos", label: "Fijos" },
+                            { value: "carga", label: "Carga" }]}
+                 valor={tab} onChange={setTab} />
+        )}
       </header>
-      {tab === "negocio" ? <Negocio /> : tab === "evolucion" ? <Evolucion />
+      {rol !== "admin" ? <Negocio /> : tab === "negocio" ? <Negocio /> : tab === "evolucion" ? <Evolucion />
         : tab === "margenes" ? <Margenes /> : tab === "inventario" ? <Inventario />
         : tab === "clientes" ? <Clientes />
         : tab === "costos" ? <Costos /> : tab === "fijos" ? <Fijos /> : <Carga />}
