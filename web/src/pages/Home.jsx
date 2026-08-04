@@ -14,7 +14,7 @@ function fechaCorta(iso) {
 // Proyección de cierre del mes por local, contra la meta (editable acá mismo).
 // La proyección usa la forma de los últimos 3 meses: qué % del mes suele estar
 // vendido a esta altura.
-function ComoVieneElMes() {
+function ComoVieneElMes({ refreshKey }) {
   const [data, setData] = useState(null);
   const [editando, setEditando] = useState(null);
   const [valor, setValor] = useState("");
@@ -22,7 +22,8 @@ function ComoVieneElMes() {
   const cargar = useCallback(() => {
     getJSON("/api/metricas?action=proyeccion", 30000).then(setData).catch(() => setData(null));
   }, []);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Se actualiza junto con el resto del Home (cada Actualizar / recarga)
+  useEffect(() => { cargar(); }, [cargar, refreshKey]);
 
   if (!data) return null;
   const guardar = async (local) => {
@@ -43,7 +44,7 @@ function ComoVieneElMes() {
 
   return (
     <Card title={`Cómo viene ${new Date(data.mes + "-15T12:00:00Z").toLocaleDateString("es-AR", { month: "long" })}`}
-          right={<span className="text-[11px] text-ink-3">proyección al día {data.dia} · tocá la meta para editarla</span>}>
+          right={<span className="text-[11px] text-ink-3">acumulado en vivo · proyección con {data.dia} día{data.dia === 1 ? "" : "s"} completo{data.dia === 1 ? "" : "s"} · tocá la meta para editarla</span>}>
       {data.temprano && (
         <p className="text-[11px] text-warn font-medium mb-2">
           Muy temprano en el mes: la proyección todavía es poco confiable.
@@ -226,7 +227,7 @@ export default function Home() {
         />
       </div>
 
-      <ComoVieneElMes />
+      <ComoVieneElMes refreshKey={serie} />
 
       <Card title="Ventas de hoy por local">
         {!hoy ? <Spinner /> : (

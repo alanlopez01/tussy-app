@@ -1672,7 +1672,11 @@ async function proyeccionMes(req, res) {
   const [y, m] = mes.split("-").map(Number);
   const mesesPrevios = [1, 2, 3].map(i => new Date(Date.UTC(y, m - 1 - i, 15)).toISOString().slice(0, 7));
 
-  const [acumRows, historicos, metas] = await Promise.all([
+  const [acumRows, acumCompletos, historicos, metas] = await Promise.all([
+    // Acumulado EN VIVO: incluye lo que va del día de hoy (se mueve con la ingesta)
+    sql`SELECT local, ROUND(SUM(total))::bigint AS venta FROM ventas
+        WHERE to_char(fecha, 'YYYY-MM') = ${mes} GROUP BY 1`,
+    // Solo días completos: la base estable para proyectar
     sql`SELECT local, ROUND(SUM(total))::bigint AS venta FROM ventas
         WHERE to_char(fecha, 'YYYY-MM') = ${mes} AND fecha < ${hoy} GROUP BY 1`,
     sql`SELECT local, to_char(fecha, 'YYYY-MM') AS mes,
@@ -1686,11 +1690,14 @@ async function proyeccionMes(req, res) {
   const locales = ["Palermo", "La Plata", "Tiendanube", "Dot", "Abasto", "Córdoba"];
   const filas = locales.map(local => {
     const acum = Number(acumRows.find(r => r.local === local)?.venta || 0);
-    // Share promedio del día de referencia en los meses previos con datos completos
+    const acumCompleto = Number(acumCompletos.find(r => r.local === local)?.venta || 0);
+    // Share promedio del día de referencia en los meses previos con datos completos.
+    // La proyección usa solo días completos (comparar medio día contra días enteros
+    // la haría saltar durante la jornada); el acumulado que se muestra sí está vivo.
     const shares = historicos.filter(h => h.local === local && Number(h.total) > 0)
       .map(h => Number(h.acum) / Number(h.total));
     const share = shares.length ? shares.reduce((a, b) => a + b, 0) / shares.length : null;
-    const proyeccion = share && share > 0.02 ? Math.round(acum / share) : null;
+    const proyeccion = share && share > 0.02 ? Math.round(acumCompleto / share) : null;
     const meta = Number(metas.find(r => r.local === local)?.monto || 0) || null;
     return { local, acumulado: acum, proyeccion, meta,
              vs_meta_pct: meta && proyeccion ? Math.round(proyeccion / meta * 100) : null };
