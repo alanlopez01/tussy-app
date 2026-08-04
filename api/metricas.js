@@ -1670,34 +1670,38 @@ async function proyeccionMes(req, res) {
   const diaRef = Math.max(1, diaHoy - 1);
 
   const [y, m] = mes.split("-").map(Number);
-  const mesesPrevios = [1, 2, 3].map(i => new Date(Date.UTC(y, m - 1 - i, 15)).toISOString().slice(0, 7));
+  const ultimoDiaMes = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const desde56 = new Date(Date.now() - 3 * 3600 * 1000 - 56 * 86400000).toISOString().slice(0, 10);
 
-  const [acumRows, acumCompletos, historicos, metas] = await Promise.all([
+  const [acumRows, acumCompletos, promediosDow, metas] = await Promise.all([
     // Acumulado EN VIVO: incluye lo que va del día de hoy (se mueve con la ingesta)
     sql`SELECT local, ROUND(SUM(total))::bigint AS venta FROM ventas
         WHERE to_char(fecha, 'YYYY-MM') = ${mes} GROUP BY 1`,
     // Solo días completos: la base estable para proyectar
     sql`SELECT local, ROUND(SUM(total))::bigint AS venta FROM ventas
         WHERE to_char(fecha, 'YYYY-MM') = ${mes} AND fecha < ${hoy} GROUP BY 1`,
-    sql`SELECT local, to_char(fecha, 'YYYY-MM') AS mes,
-               ROUND(SUM(total) FILTER (WHERE EXTRACT(day FROM fecha)::int <= ${diaRef}))::bigint AS acum,
-               ROUND(SUM(total))::bigint AS total
-        FROM ventas WHERE to_char(fecha, 'YYYY-MM') = ANY(${mesesPrevios})
+    // Venta promedio por día de SEMANA (últimas 8 semanas completas): proyectar por
+    // día de semana evita el sesgo de calendario — un mes que arranca sábado+domingo
+    // no debe inflar la proyección solo porque el finde vende más que el promedio.
+    sql`SELECT local, EXTRACT(dow FROM fecha)::int AS dow, ROUND(SUM(total) / 8)::bigint AS prom
+        FROM ventas WHERE fecha >= ${desde56} AND fecha < ${hoy}
         GROUP BY 1, 2`,
     sql`SELECT local, monto::bigint FROM metas_mes WHERE mes = ${mes}`,
   ]);
+
+  // Días que faltan del mes (incluye hoy, que todavía no terminó)
+  const diasRestantes = [];
+  for (let d = Number(hoy.slice(8, 10)); d <= ultimoDiaMes; d++) {
+    diasRestantes.push(new Date(Date.UTC(y, m - 1, d)).getUTCDay());
+  }
 
   const locales = ["Palermo", "La Plata", "Tiendanube", "Dot", "Abasto", "Córdoba"];
   const filas = locales.map(local => {
     const acum = Number(acumRows.find(r => r.local === local)?.venta || 0);
     const acumCompleto = Number(acumCompletos.find(r => r.local === local)?.venta || 0);
-    // Share promedio del día de referencia en los meses previos con datos completos.
-    // La proyección usa solo días completos (comparar medio día contra días enteros
-    // la haría saltar durante la jornada); el acumulado que se muestra sí está vivo.
-    const shares = historicos.filter(h => h.local === local && Number(h.total) > 0)
-      .map(h => Number(h.acum) / Number(h.total));
-    const share = shares.length ? shares.reduce((a, b) => a + b, 0) / shares.length : null;
-    const proyeccion = share && share > 0.02 ? Math.round(acumCompleto / share) : null;
+    const promDe = dow => Number(promediosDow.find(p => p.local === local && p.dow === dow)?.prom || 0);
+    const restante = diasRestantes.reduce((a, dow) => a + promDe(dow), 0);
+    const proyeccion = restante > 0 || acumCompleto > 0 ? Math.round(acumCompleto + restante) : null;
     const meta = Number(metas.find(r => r.local === local)?.monto || 0) || null;
     return { local, acumulado: acum, proyeccion, meta,
              vs_meta_pct: meta && proyeccion ? Math.round(proyeccion / meta * 100) : null };
