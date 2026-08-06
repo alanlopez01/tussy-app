@@ -7,7 +7,7 @@ import { getJSON, postJSON, fmtPesos, fmtPesosCorto, hoyISO } from "../lib/api.j
 import { Card, Spinner, BotonActualizar, Chips, DatosDelMes } from "../components/ui.jsx";
 
 const RUBROS = [
-  "Mercadería / Fábrica", "Alquileres", "Servicios", "Publicidad", "Logística",
+  "Mercadería / Fábrica", "Tela", "Alquileres", "Servicios", "Publicidad", "Logística",
   "Impuestos", "Honorarios", "Financiero", "Insumos", "Sueldos", "Factura",
   "Transferencias cuenta propia", "Otros", "Sin rubro",
 ];
@@ -985,6 +985,9 @@ export default function Contabilidad() {
                           <span className="text-ink-3 mr-1.5 text-[11px]">{abierto ? "▾" : "▸"}</span>
                           {r.nombre}
                           <span className="text-[11px] text-ink-3 font-normal ml-1.5">({r.transferencias})</span>
+                          {r.rubro && !r.cuentaPropia && (
+                            <span className="text-[10px] text-ink-3 font-normal ml-1.5 border border-borde rounded px-1 py-px align-middle">{r.rubro}</span>
+                          )}
                         </span>
                         <span className="w-28 text-right text-[13px] tabular-nums text-ink hidden md:inline-block">{fmtPesos(r.transferido)}</span>
                         <span className="w-28 text-right text-[13px] tabular-nums text-ink-2 hidden md:inline-block">{r.cuentaPropia ? "—" : fmtPesos(r.facturado)}</span>

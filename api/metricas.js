@@ -2300,7 +2300,7 @@ async function contabilidad(req, res) {
   // MercadoPago (con ese n\u00famero se busca el pago en la app de MP) y cada factura que
   // se le imput\u00f3, para poder rastrear un pago puntual.
   const egresosMes = await sql`
-    SELECT id, fecha::text, contraparte, ROUND(monto)::bigint AS monto, detalle
+    SELECT id, fecha::text, contraparte, cuit, ROUND(monto)::bigint AS monto, detalle
     FROM egresos_mp WHERE fecha BETWEEN ${desde} AND ${hasta} AND NOT entrada
     ORDER BY fecha DESC, monto DESC`;
   const facturasRows = await sql`
@@ -2315,6 +2315,29 @@ async function contabilidad(req, res) {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
     .replace(/[^A-Z0-9 ]/g, " ").split(/\s+/)
     .filter(w => w.length > 1 && !SUFIJOS.has(w)));
+
+  // El rubro asignado al proveedor en Gastos manda sobre la categor\u00eda gen\u00e9rica:
+  // una transferencia a IRSA es "Alquileres", no "Proveedores". Se matchea por
+  // CUIT cuando est\u00e1, y si no por nombre con la misma regla que la conciliaci\u00f3n.
+  const provRubro = (await sql`SELECT cuit, nombre, rubro FROM proveedores WHERE rubro <> 'Sin rubro'`)
+    .map(p => ({ cuit: Number(p.cuit), rubro: p.rubro, toks: tokens(p.nombre) }));
+  const rubroDe = (nombre, cuit) => {
+    if (cuit) {
+      const p = provRubro.find(x => x.cuit === Number(cuit));
+      if (p) return p.rubro;
+    }
+    const toks = tokens(nombre);
+    if (!toks.size) return null;
+    for (const p of provRubro) {
+      let inter = 0;
+      for (const w of toks) if (p.toks.has(w)) inter++;
+      if (inter >= 2 || (inter >= 1 && inter >= Math.min(toks.size, p.toks.size))) return p.rubro;
+    }
+    return null;
+  };
+  const GENERICAS = new Set(["Proveedores", "Otros", "D\u00e9bitos autom\u00e1ticos", "Cheques a proveedores"]);
+  const refinar = (categoria, contraparte, cuit) =>
+    GENERICAS.has(categoria) ? (rubroDe(contraparte, cuit) || categoria) : categoria;
 
   const porEmisor = new Map();
   for (const f of facturasRows) {
@@ -2335,8 +2358,9 @@ async function contabilidad(req, res) {
   for (const m of egresosMes) {
     if (!/^Transferencia enviada/i.test(m.detalle || "") || !m.contraparte) continue;
     const nombre = m.contraparte.trim().toUpperCase();
-    if (!porContraparte.has(nombre)) porContraparte.set(nombre, { nombre, transferido: 0, movimientos: [] });
+    if (!porContraparte.has(nombre)) porContraparte.set(nombre, { nombre, cuit: null, transferido: 0, movimientos: [] });
     const g = porContraparte.get(nombre);
+    g.cuit = g.cuit || (m.cuit ? Number(m.cuit) : null);
     g.transferido += Number(m.monto);
     g.movimientos.push({ id: m.id, fecha: m.fecha, monto: Number(m.monto) });
   }
@@ -2365,6 +2389,7 @@ async function contabilidad(req, res) {
     const cuentaPropia = esCuentaPropia(t.nombre, null);
     return {
       nombre: t.nombre, transferido: t.transferido, transferencias: t.movimientos.length,
+      rubro: rubroDe(t.nombre, t.cuit),
       facturado, porMonto, cuentaPropia, movimientos: t.movimientos,
       comprobantes: comprobantes.sort((a, b) => a.fecha.localeCompare(b.fecha)),
     };
@@ -2401,7 +2426,7 @@ async function contabilidad(req, res) {
     g.movimientos.push(mov);
   };
   for (const m of egresosMes) {
-    const categoria = categorizar(m.detalle, m.contraparte, m.cuit);
+    const categoria = refinar(categorizar(m.detalle, m.contraparte, m.cuit), m.contraparte, m.cuit);
     sumar(categoria, {
       id: m.id, fecha: m.fecha, origen: "MercadoPago",
       descripcion: m.detalle, contraparte: m.contraparte, monto: Number(m.monto),
@@ -2409,7 +2434,7 @@ async function contabilidad(req, res) {
   }
   for (const m of bancoMovs) {
     if (Number(m.monto) >= 0) continue; // los ingresos del banco no son gasto
-    sumar(m.categoria, {
+    sumar(refinar(m.categoria, m.contraparte, m.cuit), {
       id: m.id, fecha: m.fecha, origen: "Galicia",
       descripcion: m.descripcion, contraparte: m.contraparte, monto: -Number(m.monto),
     });
