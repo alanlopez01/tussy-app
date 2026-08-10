@@ -2,9 +2,17 @@
   "buildCommand": "cd web && npm ci && npm run build",
   "outputDirectory": "web/dist",
   "rewrites": [
+    { "source": "/api/cron/ingesta", "destination": "/api/metricas?action=ingesta" },
+    { "source": "/api/cron/cierre", "destination": "/api/metricas?action=cierre" },
+    { "source": "/api/cron/semanal", "destination": "/api/metricas?action=semanal" },
     { "source": "/((?!api|assets|sw\\.js|manifest\\.json|logo\\.png).*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/metricas.js": { "maxDuration": 300 }
-  }
+    "api/metricas.js": { "maxDuration": 800 }
+  },
+  "crons": [
+    { "path": "/api/cron/ingesta", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/cierre", "schedule": "5 3 * * *" },
+    { "path": "/api/cron/semanal", "schedule": "0 12 * * 1" }
+  ]
 }

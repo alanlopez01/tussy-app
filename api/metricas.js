@@ -6,8 +6,9 @@
 // GET /api/metricas?action=live&local=palermo|laplata|online|dot|abasto|cordoba[&fecha=]
 //   → ventas del día en vivo desde la fuente, agrupadas por operación
 // GET /api/metricas?action=feed[&limite=40] — últimas operaciones de todos los locales (desde la base)
-// GET /api/metricas?action=ingesta&secret=… — cron cada 5 min: ingesta del día + detección
-//   de ventas nuevas + push. Lo dispara cron-job.org.
+// GET /api/cron/ingesta — cron cada 5 min: ingesta del día + detección de ventas nuevas
+//   + push. Los tres crons (ingesta, cierre, semanal) los dispara Vercel según vercel.json
+//   y se autentican con el header Authorization: Bearer $CRON_SECRET.
 // GET /api/metricas?action=sync — (fecha, local) con errores de sincronización
 const { neon } = require("@neondatabase/serverless");
 const { waitUntil } = require("@vercel/functions");
@@ -147,12 +148,22 @@ function fuentesDelDia() {
   return fuentes;
 }
 
-async function ingesta(req, res) {
-  const secret = process.env.CRON_SECRET || "tussy2026";
-  if (req.query.secret !== secret) return res.status(401).json({ error: "secret inválido" });
+// Los crons corren en Vercel, que manda CRON_SECRET en el header Authorization.
+// Se sigue aceptando ?secret= para poder dispararlos a mano desde una terminal.
+// El literal es sólo el default de desarrollo: en producción CRON_SECRET está seteado.
+function autorizarCron(req, res) {
+  const secret = process.env.CRON_SECRET || "solo-para-desarrollo-local";
+  if (req.headers.authorization === `Bearer ${secret}`) return true;
+  if (req.query.secret === secret) return true;
+  res.status(401).json({ error: "secret inválido" });
+  return false;
+}
 
-  // cron-job.org corta a los 30s y la ingesta puede tardar más (6 fuentes, POS lentos).
-  // Respondemos al instante y el trabajo sigue de fondo hasta maxDuration (waitUntil).
+async function ingesta(req, res) {
+  if (!autorizarCron(req, res)) return;
+
+  // La ingesta puede tardar bastante (6 fuentes, POS lentos). Respondemos al instante
+  // y el trabajo sigue de fondo hasta maxDuration (waitUntil).
   // Con ?sync=1 corre en línea y devuelve el resultado completo (para debug).
   if (req.query.sync !== "1") {
     waitUntil(correrIngesta().catch(e => console.error("[ingesta] error:", e)));
@@ -364,10 +375,9 @@ async function reingestarUltimosDias(sql, dias = 7) {
   return resumen;
 }
 
-// ── Cierre del día anterior (cron diario 00:05 ARG via cron-job.org) ──
+// ── Cierre del día anterior (cron diario 00:05 ARG) ──
 async function cierreDiario(req, res) {
-  const secret = process.env.CRON_SECRET || "tussy2026";
-  if (req.query.secret !== secret) return res.status(401).json({ error: "secret inválido" });
+  if (!autorizarCron(req, res)) return;
   const sql = neon(process.env.DATABASE_URL);
   const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
   const { rows, total } = await totalesRango(sql, ayer, ayer);
@@ -412,8 +422,7 @@ async function cierreDiario(req, res) {
 
 // ── Resumen de los lunes: mes en curso desglosado (cron lunes 09:00 ARG) ──
 async function resumenSemanal(req, res) {
-  const secret = process.env.CRON_SECRET || "tussy2026";
-  if (req.query.secret !== secret) return res.status(401).json({ error: "secret inválido" });
+  if (!autorizarCron(req, res)) return;
   const sql = neon(process.env.DATABASE_URL);
   const hoy = hoyArg();
   const desde = hoy.slice(0, 8) + "01";
