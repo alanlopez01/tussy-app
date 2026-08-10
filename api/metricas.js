@@ -257,7 +257,7 @@ async function correrIngesta() {
           body: `${fmt(e.total)} · ${e.unidades} ${e.unidades === 1 ? "unidad" : "unidades"}${e.hora ? " · " + e.hora : ""}`,
           url: "/pedidos",
         }));
-    notificadas = await enviarPush(payloads);
+    notificadas = await enviarPush(payloads, { excepto: "alan" });
   }
 
   // 4) Costear modelos nuevos: los costos son por familia, así que una prenda
@@ -296,9 +296,11 @@ async function costearModelosNuevos(sql) {
   return asignados;
 }
 
-// ── Envío de push a todas las suscripciones guardadas ──
-// soloUsuario: si se pasa, solo a las suscripciones de ese usuario (ej. "alan").
-async function enviarPush(payloads, soloUsuario) {
+// ── Envío de push a las suscripciones guardadas ──
+// Preferencia de Alan: a él solo le llegan el reporte de pauta y el resumen
+// semanal; ventas sueltas y cierre diario van al resto. Por eso cada envío
+// puede filtrar con {solo: "usuario"} o {excepto: "usuario"}.
+async function enviarPush(payloads, { solo, excepto } = {}) {
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return 0;
   let enviadas = 0;
   try {
@@ -306,7 +308,9 @@ async function enviarPush(payloads, soloUsuario) {
     const opsUrl = process.env.APPS_SCRIPT_URL_OPERACIONES;
     const subsResp = await fetch(`${opsUrl}?action=getPushSubs&params=%7B%7D`, { redirect: "follow", signal: AbortSignal.timeout(10000) }).then(r => r.json()).catch(() => null);
     let subs = subsResp?.subs || [];
-    if (soloUsuario) subs = subs.filter(s => String(s.usuario || "").toLowerCase() === String(soloUsuario).toLowerCase());
+    const u = s => String(s.usuario || "").toLowerCase();
+    if (solo) subs = subs.filter(s => u(s) === String(solo).toLowerCase());
+    if (excepto) subs = subs.filter(s => u(s) !== String(excepto).toLowerCase());
     for (const sub of subs) {
       for (const p of payloads) {
         try { await webpush.sendNotification(sub.subscription, JSON.stringify(p)); enviadas++; } catch { /* sub vencida */ }
@@ -369,7 +373,7 @@ async function reportePauta(sql) {
     title: `Pauta ayer: ${k(tot.g)} → ${roas(tot.v, tot.g).toFixed(1)}x · ${tot.c} compras`,
     body: [...acciones.slice(0, 3), ...lineas].slice(0, 7).join("\n"),
     url: "/rentabilidad",
-  }], "alan");
+  }], { solo: "alan" });
   return { ok: true, campanias: rows.length, acciones: acciones.length, enviadas };
 }
 
@@ -446,7 +450,7 @@ async function cierreDiario(req, res) {
     title: `Cierre ${d}/${m} — Total ${fmtCortoPesos(total)}`,
     body: desglose || "Sin ventas registradas",
     url: "/",
-  }]);
+  }], { excepto: "alan" });
   // Aprovechamos el cierre para dejar la foto de inventario del día. El histórico
   // de fotos es lo que después permite calcular rotación sobre stock promedio.
   waitUntil(
