@@ -360,7 +360,7 @@ async function reportePauta(sql) {
     else if (r7 > 18) acciones.push(`Subirle a ${r.campania.trim()} (da ${porPeso(r7)} por $1)`);
   }
   // Transición del catálogo NEW IN: nueva (AUTO) vs vieja (ABRIL 26)
-  const nueva = rows.find(r => /NEW IN AUTO/i.test(r.campania));
+  const nueva = rows.find(r => /NEW IN AUTO|NEW IN - 2026/i.test(r.campania));
   const vieja = rows.find(r => /ABRIL 26/i.test(r.campania));
   if (nueva && vieja) {
     const rn = roas(nueva.v7, nueva.g7), rv = roas(vieja.v7, vieja.g7);
