@@ -27,7 +27,7 @@ const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
 const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = require("../lib/bancos");
-const { metaConfigurada, sincronizarMeta } = require("../lib/meta");
+const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require("../lib/meta");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
@@ -415,6 +415,12 @@ async function cierreDiario(req, res) {
       sincronizarMeta(sql, { desde: d7, hasta: hoyArg() })
         .then(r => console.log("[meta]", JSON.stringify(r)))
         .catch(e => console.error("[meta] error:", e))
+    );
+    // Y el conjunto NEW IN del catálogo de Meta se pisa con la categoría de TN
+    waitUntil(
+      actualizarConjuntoNewIn()
+        .then(r => console.log("[newin]", JSON.stringify(r)))
+        .catch(e => console.error("[newin] error:", e))
     );
   }
   return res.status(200).json({ ok: true, fecha: ayer, total, porLocal: rows, notificadas: enviadas });
