@@ -2052,7 +2052,8 @@ async function completitud(req, res) {
 
   const [syncErrores, mixRows, elecRows, egresosMax, bancoMax, recibidosMax, emitidosMax, fijosMes, ipcRow] = await Promise.all([
     sql`SELECT local, COUNT(*)::int n FROM sync_estado
-        WHERE fecha BETWEEN ${desde} AND ${hasta} AND estado = 'error' GROUP BY local`,
+        WHERE fecha BETWEEN ${desde} AND ${hasta} AND estado = 'error'
+          AND local <> 'ARCA' GROUP BY local`,
     sql`SELECT local, bruto FROM mix_pagos WHERE mes = ${mes}`,
     sql`SELECT local, ROUND(SUM(monto) FILTER (WHERE medio = 'electronico'))::bigint elec
         FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta} GROUP BY local`,
@@ -2063,6 +2064,8 @@ async function completitud(req, res) {
     leerGastosFijos(sql, mes),
     sql`SELECT pct FROM ipc_mes WHERE mes = ${mes}`,
   ]);
+  const [arcaSyncEstado] = await sql`SELECT estado, ultimo_error, actualizado_en::text act
+    FROM sync_estado WHERE local = 'ARCA' ORDER BY fecha DESC LIMIT 1`;
 
   const items = [];
 
@@ -2114,6 +2117,13 @@ async function completitud(req, res) {
     ["emitidos", "Facturación ARCA (emitidos)", emitidosMax[0]?.u],
   ];
   for (const [clave, label, u] of porFecha) {
+    // Los emitidos los trae el web service solo: si el barrido viene fallando, el
+    // hueco no se tapa cargando un archivo y hay que decir por qué.
+    if (clave === "emitidos" && arcaSyncEstado?.estado === "error") {
+      items.push({ clave, label, estado: "falta",
+        detalle: `el web service de ARCA está fallando: ${arcaSyncEstado.ultimo_error}` });
+      continue;
+    }
     if (!u) {
       items.push({ clave, label, estado: "falta", detalle: "sin datos este mes" });
     } else if (u < esperadoHasta) {
