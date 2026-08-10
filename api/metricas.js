@@ -308,7 +308,7 @@ async function enviarPush(payloads, { solo, excepto } = {}) {
     const opsUrl = process.env.APPS_SCRIPT_URL_OPERACIONES;
     const subsResp = await fetch(`${opsUrl}?action=getPushSubs&params=%7B%7D`, { redirect: "follow", signal: AbortSignal.timeout(10000) }).then(r => r.json()).catch(() => null);
     let subs = subsResp?.subs || [];
-    const u = s => String(s.usuario || "").toLowerCase();
+    const u = s => String(s.usuario || "").trim().toLowerCase();
     if (solo) subs = subs.filter(s => u(s) === String(solo).toLowerCase());
     if (excepto) subs = subs.filter(s => u(s) !== String(excepto).toLowerCase());
     for (const sub of subs) {
@@ -342,18 +342,22 @@ async function reportePauta(sql) {
 
   const num = x => Number(x) || 0;
   const roas = (v, g) => (num(g) ? num(v) / num(g) : 0);
-  const k = x => "$" + Math.round(num(x) / 1000) + "k";
+  const plata = x => {
+    const v = Math.round(num(x));
+    if (Math.abs(v) >= 1e6) return "$" + (v / 1e6).toLocaleString("es-AR", { maximumFractionDigits: 1 }) + "M";
+    return "$" + Math.round(v / 1000) + " mil";
+  };
+  const porPeso = r => "$" + r.toLocaleString("es-AR", { maximumFractionDigits: 1 });
   const tot = rows.reduce((a, r) => ({ g: a.g + num(r.g1), v: a.v + num(r.v1), c: a.c + num(r.c1) }), { g: 0, v: 0, c: 0 });
 
-  const lineas = rows.slice(0, 6).map(r =>
-    `${r.campania.replace(/PROS |CV |CATALOGO /, "").slice(0, 18)}: ${k(r.g1)} → ${roas(r.v1, r.g1).toFixed(1)}x`);
-
+  // Consejos cortos en castellano llano (iOS muestra ~4 líneas: 1 resumen + 2
+  // consejos como mucho). El detalle por campaña vive en la app.
   const acciones = [];
   for (const r of rows) {
     const r7 = roas(r.v7, r.g7);
     if (num(r.g7) < 100000) continue; // sin gasto relevante no hay señal
-    if (r7 < 8) acciones.push(`⚠️ ${r.campania.slice(0, 22)}: ${r7.toFixed(1)}x en 7d — bajar o pausar`);
-    else if (r7 > 18) acciones.push(`↑ ${r.campania.slice(0, 22)}: ${r7.toFixed(1)}x — se puede escalar`);
+    if (r7 < 8) acciones.push(`Pausar ${r.campania.trim()} (da ${porPeso(r7)} por $1)`);
+    else if (r7 > 18) acciones.push(`Subirle a ${r.campania.trim()} (da ${porPeso(r7)} por $1)`);
   }
   // Transición del catálogo NEW IN: nueva (AUTO) vs vieja (ABRIL 26)
   const nueva = rows.find(r => /NEW IN AUTO/i.test(r.campania));
@@ -361,17 +365,20 @@ async function reportePauta(sql) {
   if (nueva && vieja) {
     const rn = roas(nueva.v7, nueva.g7), rv = roas(vieja.v7, vieja.g7);
     if (num(nueva.c7) >= 30 && rn >= rv * 0.8 && num(nueva.g1) < num(vieja.g1)) {
-      acciones.unshift(`→ CATALOGO: la AUTO ya rinde ${rn.toFixed(1)}x (vieja ${rv.toFixed(1)}x) — invertir presupuestos`);
+      acciones.unshift(`Catálogo: la nueva ya rinde igual — pasale los $100 mil`);
     } else if (num(nueva.g1) > num(vieja.g1) && rn >= rv) {
-      acciones.unshift(`→ CATALOGO: la AUTO sostiene ${rn.toFixed(1)}x con el presupuesto alto — pausar la vieja`);
+      acciones.unshift(`Catálogo: la nueva sostiene — pausá la vieja`);
     }
-  } else if (nueva && !vieja && num(nueva.g1) > 0) {
-    acciones.unshift(`✓ CATALOGO AUTO sola: ${roas(nueva.v7, nueva.g7).toFixed(1)}x en 7d`);
   }
 
+  const cuerpo = [
+    `Volvieron ${porPeso(roas(tot.v, tot.g))} por cada $1 · ${tot.c} ventas`,
+    ...(acciones.length ? acciones.slice(0, 2).map(a => "• " + a) : ["Sin cambios recomendados hoy."]),
+  ].join("\n");
+
   const enviadas = await enviarPush([{
-    title: `Pauta ayer: ${k(tot.g)} → ${roas(tot.v, tot.g).toFixed(1)}x · ${tot.c} compras`,
-    body: [...acciones.slice(0, 3), ...lineas].slice(0, 7).join("\n"),
+    title: `Publicidad ayer: ${plata(tot.g)} → ${plata(tot.v)} en ventas`,
+    body: cuerpo,
     url: "/rentabilidad",
   }], { solo: "alan" });
   return { ok: true, campanias: rows.length, acciones: acciones.length, enviadas };
