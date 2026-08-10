@@ -297,14 +297,16 @@ async function costearModelosNuevos(sql) {
 }
 
 // ── Envío de push a todas las suscripciones guardadas ──
-async function enviarPush(payloads) {
+// soloUsuario: si se pasa, solo a las suscripciones de ese usuario (ej. "alan").
+async function enviarPush(payloads, soloUsuario) {
   if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return 0;
   let enviadas = 0;
   try {
     webpush.setVapidDetails("mailto:alansergio67@gmail.com", process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
     const opsUrl = process.env.APPS_SCRIPT_URL_OPERACIONES;
     const subsResp = await fetch(`${opsUrl}?action=getPushSubs&params=%7B%7D`, { redirect: "follow", signal: AbortSignal.timeout(10000) }).then(r => r.json()).catch(() => null);
-    const subs = subsResp?.subs || [];
+    let subs = subsResp?.subs || [];
+    if (soloUsuario) subs = subs.filter(s => String(s.usuario || "").toLowerCase() === String(soloUsuario).toLowerCase());
     for (const sub of subs) {
       for (const p of payloads) {
         try { await webpush.sendNotification(sub.subscription, JSON.stringify(p)); enviadas++; } catch { /* sub vencida */ }
@@ -312,6 +314,63 @@ async function enviarPush(payloads) {
     }
   } catch { /* no bloquear */ }
   return enviadas;
+}
+
+// ── Reporte diario de pauta (solo Alan) ──
+// Corre en el cierre, después de sincronizar Meta. Resume el día por campaña y
+// aplica las reglas acordadas: escalar lo que supera 18x en 7 días, revisar lo
+// que baja de 8x, y el semáforo de la transición del catálogo NEW IN
+// (vieja "ABRIL 26" vs nueva "AUTO"): avisa cuándo invertir presupuestos y
+// cuándo pausar la vieja.
+async function reportePauta(sql) {
+  const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
+  const d7 = new Date(Date.now() - 3 * 3600 * 1000 - 7 * 86400000).toISOString().slice(0, 10);
+  const rows = await sql`
+    SELECT campania,
+           ROUND(COALESCE(SUM(gasto) FILTER (WHERE fecha = ${ayer}), 0))::bigint g1,
+           COALESCE(SUM(compras) FILTER (WHERE fecha = ${ayer}), 0)::int c1,
+           ROUND(COALESCE(SUM(valor_compras) FILTER (WHERE fecha = ${ayer}), 0))::bigint v1,
+           ROUND(SUM(gasto))::bigint g7, SUM(compras)::int c7, ROUND(SUM(valor_compras))::bigint v7
+    FROM meta_insights WHERE fecha BETWEEN ${d7} AND ${ayer}
+    GROUP BY 1 HAVING COALESCE(SUM(gasto) FILTER (WHERE fecha = ${ayer}), 0) > 0
+    ORDER BY 2 DESC`;
+  if (!rows.length) return { ok: false, motivo: "sin gasto ayer" };
+
+  const num = x => Number(x) || 0;
+  const roas = (v, g) => (num(g) ? num(v) / num(g) : 0);
+  const k = x => "$" + Math.round(num(x) / 1000) + "k";
+  const tot = rows.reduce((a, r) => ({ g: a.g + num(r.g1), v: a.v + num(r.v1), c: a.c + num(r.c1) }), { g: 0, v: 0, c: 0 });
+
+  const lineas = rows.slice(0, 6).map(r =>
+    `${r.campania.replace(/PROS |CV |CATALOGO /, "").slice(0, 18)}: ${k(r.g1)} → ${roas(r.v1, r.g1).toFixed(1)}x`);
+
+  const acciones = [];
+  for (const r of rows) {
+    const r7 = roas(r.v7, r.g7);
+    if (num(r.g7) < 100000) continue; // sin gasto relevante no hay señal
+    if (r7 < 8) acciones.push(`⚠️ ${r.campania.slice(0, 22)}: ${r7.toFixed(1)}x en 7d — bajar o pausar`);
+    else if (r7 > 18) acciones.push(`↑ ${r.campania.slice(0, 22)}: ${r7.toFixed(1)}x — se puede escalar`);
+  }
+  // Transición del catálogo NEW IN: nueva (AUTO) vs vieja (ABRIL 26)
+  const nueva = rows.find(r => /NEW IN AUTO/i.test(r.campania));
+  const vieja = rows.find(r => /ABRIL 26/i.test(r.campania));
+  if (nueva && vieja) {
+    const rn = roas(nueva.v7, nueva.g7), rv = roas(vieja.v7, vieja.g7);
+    if (num(nueva.c7) >= 30 && rn >= rv * 0.8 && num(nueva.g1) < num(vieja.g1)) {
+      acciones.unshift(`→ CATALOGO: la AUTO ya rinde ${rn.toFixed(1)}x (vieja ${rv.toFixed(1)}x) — invertir presupuestos`);
+    } else if (num(nueva.g1) > num(vieja.g1) && rn >= rv) {
+      acciones.unshift(`→ CATALOGO: la AUTO sostiene ${rn.toFixed(1)}x con el presupuesto alto — pausar la vieja`);
+    }
+  } else if (nueva && !vieja && num(nueva.g1) > 0) {
+    acciones.unshift(`✓ CATALOGO AUTO sola: ${roas(nueva.v7, nueva.g7).toFixed(1)}x en 7d`);
+  }
+
+  const enviadas = await enviarPush([{
+    title: `Pauta ayer: ${k(tot.g)} → ${roas(tot.v, tot.g).toFixed(1)}x · ${tot.c} compras`,
+    body: [...acciones.slice(0, 3), ...lineas].slice(0, 7).join("\n"),
+    url: "/rentabilidad",
+  }], "alan");
+  return { ok: true, campanias: rows.length, acciones: acciones.length, enviadas };
 }
 
 // Totales por local para un rango, desde la base
@@ -413,8 +472,9 @@ async function cierreDiario(req, res) {
     const d7 = new Date(Date.now() - 3 * 3600 * 1000 - 7 * 86400000).toISOString().slice(0, 10);
     waitUntil(
       sincronizarMeta(sql, { desde: d7, hasta: hoyArg() })
-        .then(r => console.log("[meta]", JSON.stringify(r)))
-        .catch(e => console.error("[meta] error:", e))
+        .then(r => { console.log("[meta]", JSON.stringify(r)); return reportePauta(sql); })
+        .then(r => console.log("[pauta]", JSON.stringify(r)))
+        .catch(e => console.error("[meta/pauta] error:", e))
     );
     // Y el conjunto NEW IN del catálogo de Meta se pisa con la categoría de TN
     waitUntil(
