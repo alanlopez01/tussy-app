@@ -87,7 +87,7 @@ const NO_PRODUCTO = ["ENVIO", "DESCUENTO", "AJUSTE"];
 
 // Cobros del día (cómo se pagó): se reescriben junto con las ventas del día.
 async function escribirCobrosDia(sql, fecha, local, cobros) {
-  await sql`DELETE FROM cobros WHERE fecha = ${fecha} AND local = ${local}`;
+  await sql`DELETE FROM cobros WHERE fecha = ${fecha} AND local = ${local} AND COALESCE(sistema, '') <> 'erp'`;
   if (!cobros || !cobros.length) return;
   for (let i = 0; i < cobros.length; i += 500) {
     const c = cobros.slice(i, i + 500);
@@ -115,7 +115,9 @@ async function escribirClientesTN(sql, clientes) {
 }
 
 async function escribirDiaLocal(sql, fecha, local, filas) {
-  await sql`DELETE FROM ventas WHERE fecha = ${fecha} AND local = ${local}`;
+  // Las ventas del Tussy ERP entran por webhook (api/tussy-erp/ventas), no por
+  // esta ingesta: la reescritura del día jamás debe tocarlas.
+  await sql`DELETE FROM ventas WHERE fecha = ${fecha} AND local = ${local} AND sistema <> 'erp'`;
   for (let i = 0; i < filas.length; i += 500) {
     const c = filas.slice(i, i + 500);
     await sql`
