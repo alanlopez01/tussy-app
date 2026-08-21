@@ -458,13 +458,22 @@ function LiquidacionContadora({ mes, ivaMes, onGuardado }) {
     setEstado("idle");
   }, [mes, ivaMes?.declarado, ivaMes?.pagado]);
 
+  // "4.512.283,50" → 4512283; un valor no numérico corta con error visible
+  // (antes se convertía en NaN, viajaba como null y el back lo tomaba como "borrar").
+  const aMonto = s => {
+    if (s.trim() === "") return null;
+    const n = Number(s.trim().replace(/\./g, "").replace(",", "."));
+    if (Number.isNaN(n)) throw new Error("monto inválido");
+    return Math.round(n);
+  };
   const guardar = async () => {
     setEstado("guardando");
     try {
+      const montoDecl = aMonto(decl), montoPag = aMonto(pag);
       await postJSON("/api/metricas?action=guardarImpuestoMes",
-        { mes, concepto: "iva", monto: decl === "" ? null : Number(decl.replace(/\./g, "")), nota: "F.2051 · cargado desde la app" });
+        { mes, concepto: "iva", monto: montoDecl, nota: "F.2051 · cargado desde la app" });
       await postJSON("/api/metricas?action=guardarImpuestoMes",
-        { mes, concepto: "iva_pagado", monto: pag === "" ? null : Number(pag.replace(/\./g, "")) });
+        { mes, concepto: "iva_pagado", monto: montoPag });
       setEstado("ok");
       onGuardado();
     } catch (e) { setEstado("error"); }
