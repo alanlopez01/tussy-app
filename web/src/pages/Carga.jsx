@@ -42,12 +42,21 @@ export default function Carga() {
       const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-      const periodo = String(rows[1]?.[0] || "");
-      const filas = rows.slice(4)
-        .filter(r => r && r[0] != null)
+      // MP cambia el layout del export cada tanto (sep-2026 pasó de 38 a 24 columnas):
+      // ubicamos encabezados y período por nombre, no por posición fija.
+      const periodo = String(rows.slice(0, 6).flat().find(c => /desde el \d/i.test(String(c ?? ""))) || rows[1]?.[0] || "");
+      const iHdr = rows.findIndex(r => Array.isArray(r) && r.some(c => String(c ?? "").trim() === "Número de operación"));
+      if (iHdr < 0) throw new Error("No encontré los encabezados. ¿Es el export de Ventas de MercadoPago?");
+      const hdr = rows[iHdr].map(h => String(h ?? "").trim());
+      const col = n => hdr.indexOf(n);
+      const ix = { estado: col("Estado"), cobro: col("Cobro"), neto: col("Total a recibir"),
+                   medio: col("Medio de pago"), local: col("Local"), resumen: col("Resumen") };
+      if (ix.local < 0 || ix.estado < 0) throw new Error("El reporte no trae las columnas Estado/Local esperadas");
+      const filas = rows.slice(iHdr + 1)
+        .filter(r => r && r[ix.estado] != null && String(r[0] ?? "") !== "")
         .map(r => ({
-          estado: String(r[2] ?? ""), cobro: r[4] ?? 0, neto: r[8] ?? 0,
-          medio: String(r[12] ?? ""), local: String(r[37] ?? ""), resumen: String(r[7] ?? ""),
+          estado: String(r[ix.estado] ?? ""), cobro: r[ix.cobro] ?? 0, neto: r[ix.neto] ?? 0,
+          medio: String(r[ix.medio] ?? ""), local: String(r[ix.local] ?? ""), resumen: String(r[ix.resumen] ?? ""),
         }));
       if (!filas.length) throw new Error("El archivo no tiene operaciones. ¿Es el export de Ventas de MercadoPago?");
       const resultado = await postReporte({ tipo: "mp", periodo, filas });
