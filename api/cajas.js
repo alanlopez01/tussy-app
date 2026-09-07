@@ -96,13 +96,17 @@ async function movimientos(req, res) {
 async function categorias(req, res) {
   const marca = validarMarca(req.query.marca);
   const seed = CATEGORIAS_SEED[marca];
+  // Más usadas primero: el selector de la carga rápida las muestra como botones
   const usadas = await sql`
-    SELECT DISTINCT tipo, categoria FROM caja_movimientos WHERE marca = ${marca}`;
-  const out = { gasto: [...seed.gasto], ingreso: [...seed.ingreso] };
+    SELECT tipo, categoria, COUNT(*)::int usos FROM caja_movimientos
+    WHERE marca = ${marca} GROUP BY 1, 2 ORDER BY usos DESC`;
+  const out = { gasto: [], ingreso: [] };
   for (const u of usadas) {
     const lista = u.tipo === "egreso" ? out.gasto : out.ingreso;
     if (!lista.includes(u.categoria)) lista.push(u.categoria);
   }
+  for (const c of seed.gasto) if (!out.gasto.includes(c)) out.gasto.push(c);
+  for (const c of seed.ingreso) if (!out.ingreso.includes(c)) out.ingreso.push(c);
   res.status(200).json(out);
 }
 

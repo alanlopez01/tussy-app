@@ -13,18 +13,24 @@ import Login from "./pages/Login.jsx";
 // Los socios ven la operación (ventas, pedidos, finanzas) y el resultado del
 // negocio; el detalle técnico (productos, contabilidad, costos) es del admin.
 const NAV = [
-  { to: "/", label: "Inicio", icon: "◧" },
-  { to: "/ventas", label: "Ventas", icon: "▤" },
-  { to: "/productos", label: "Productos", icon: "▦", soloAdmin: true },
-  { to: "/pedidos", label: "Pedidos", icon: "◷" },
-  { to: "/finanzas", label: "Finanzas", icon: "◈" },
-  { to: "/cajas", label: "Cajas", icon: "◫", soloAdmin: true },
-  { to: "/rentabilidad", label: "Rentabilidad", icon: "◎" },
-  { to: "/contabilidad", label: "Contabilidad", icon: "▧", soloAdmin: true },
+  { titulo: "Operación", items: [
+    { to: "/", label: "Inicio", icon: "◧" },
+    { to: "/ventas", label: "Ventas", icon: "▤" },
+    { to: "/pedidos", label: "Pedidos", icon: "◷" },
+    { to: "/productos", label: "Productos", icon: "▦", soloAdmin: true },
+  ]},
+  { titulo: "Administración", items: [
+    { to: "/finanzas", label: "Finanzas", icon: "◈" },
+    { to: "/cajas", label: "Cajas", icon: "◫", soloAdmin: true },
+    { to: "/rentabilidad", label: "Rentabilidad", icon: "◎" },
+    { to: "/contabilidad", label: "Contabilidad", icon: "▧", soloAdmin: true },
+  ]},
 ];
 
 function navPara(user) {
-  return NAV.filter(item => !item.soloAdmin || user.rol === "admin");
+  return NAV
+    .map(sec => ({ ...sec, items: sec.items.filter(item => !item.soloAdmin || user.rol === "admin") }))
+    .filter(sec => sec.items.length);
 }
 
 function cerrarSesion() {
@@ -43,21 +49,26 @@ function Sidebar({ user }) {
         <img src="/logo.png" alt="Tussy" className="h-8 w-auto brightness-0 invert" />
         <div className="text-[11px] uppercase tracking-widest text-white/50 font-semibold">Métricas</div>
       </div>
-      <nav className="flex-1 px-3 space-y-1">
-        {navPara(user).map(item => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === "/"}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold transition-colors ${
-                isActive ? "bg-white/10 text-white" : "text-white/55 hover:text-white hover:bg-white/5"
-              }`
-            }
-          >
-            <span className="text-base leading-none w-5 text-center">{item.icon}</span>
-            {item.label}
-          </NavLink>
+      <nav className="flex-1 px-3 space-y-4">
+        {navPara(user).map(sec => (
+          <div key={sec.titulo} className="space-y-1">
+            <div className="px-3 pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/30">{sec.titulo}</div>
+            {sec.items.map(item => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold transition-colors ${
+                    isActive ? "bg-white/10 text-white" : "text-white/55 hover:text-white hover:bg-white/5"
+                  }`
+                }
+              >
+                <span className="text-base leading-none w-5 text-center">{item.icon}</span>
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
       <div className="px-5 py-4 flex items-center justify-between">
@@ -74,8 +85,9 @@ function Sidebar({ user }) {
 function MenuMobile({ user }) {
   const [abierto, setAbierto] = useState(false);
   const location = useLocation();
-  const items = navPara(user);
-  const actual = items.find(i => i.to === location.pathname) || items[0];
+  const secciones = navPara(user);
+  const planos = secciones.flatMap(s => s.items);
+  const actual = planos.find(i => i.to === location.pathname) || planos[0];
 
   // Cerrar al navegar y bloquear el scroll del fondo mientras está abierto
   useEffect(() => { setAbierto(false); }, [location.pathname]);
@@ -105,16 +117,21 @@ function MenuMobile({ user }) {
               <button onClick={() => setAbierto(false)} aria-label="Cerrar menú"
                       className="text-white/60 text-2xl leading-none px-2">×</button>
             </div>
-            <div className="flex-1 px-3 space-y-1 overflow-y-auto">
-              {items.map(item => (
-                <NavLink key={item.to} to={item.to} end={item.to === "/"}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold ${
-                      isActive ? "bg-white/10 text-white" : "text-white/55"
-                    }`}>
-                  <span className="text-base w-5 text-center">{item.icon}</span>
-                  {item.label}
-                </NavLink>
+            <div className="flex-1 px-3 space-y-4 overflow-y-auto">
+              {secciones.map(sec => (
+                <div key={sec.titulo} className="space-y-1">
+                  <div className="px-3 pt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/30">{sec.titulo}</div>
+                  {sec.items.map(item => (
+                    <NavLink key={item.to} to={item.to} end={item.to === "/"}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold ${
+                          isActive ? "bg-white/10 text-white" : "text-white/55"
+                        }`}>
+                      <span className="text-base w-5 text-center">{item.icon}</span>
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
               ))}
             </div>
             <div className="px-5 py-5 pb-[max(20px,env(safe-area-inset-bottom))] flex items-center justify-between border-t border-white/10">
