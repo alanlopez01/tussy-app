@@ -17,7 +17,7 @@ function aMonto(s) {
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
 }
 
-const FORM_VACIO = { id: null, tipo: "egreso", fecha: hoyISO(), categoria: "", nuevaCat: "", detalle: "", monto: "" };
+const FORM_VACIO = { id: null, tipo: "egreso", fecha: hoyISO(), categoria: "", nuevaCat: "", detalle: "", monto: "", medio: "Efectivo" };
 
 export default function Cajas() {
   const hoy = new Date();
@@ -61,7 +61,7 @@ export default function Cajas() {
     if (!categoria) { setFormError("Elegí o escribí una categoría"); return; }
     setGuardando(true);
     try {
-      const body = { marca, fecha: form.fecha, tipo: form.tipo, categoria, detalle: form.detalle, monto };
+      const body = { marca, fecha: form.fecha, tipo: form.tipo, categoria, detalle: form.detalle, monto, medio: form.medio };
       if (form.id) await postJSON("/api/cajas?action=editar", { ...body, id: form.id });
       else await postJSON("/api/cajas?action=crear", body);
       setForm(f => ({ ...FORM_VACIO, tipo: f.tipo, fecha: f.fecha }));
@@ -74,7 +74,7 @@ export default function Cajas() {
   };
 
   const editarMov = (m) => {
-    setForm({ id: m.id, tipo: m.tipo, fecha: m.fecha, categoria: m.categoria, nuevaCat: "", detalle: m.detalle || "", monto: String(m.monto).replace(".", ",") });
+    setForm({ id: m.id, tipo: m.tipo, fecha: m.fecha, categoria: m.categoria, nuevaCat: "", detalle: m.detalle || "", monto: String(m.monto).replace(".", ","), medio: m.medio || "Efectivo" });
     setFormError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -148,7 +148,7 @@ export default function Cajas() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label className="block">
               <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Fecha</span>
               <input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))} className={inputCls} />
@@ -157,6 +157,13 @@ export default function Cajas() {
               <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Monto ($)</span>
               <input type="text" inputMode="decimal" placeholder="1.234.567,89" value={form.monto}
                      onChange={e => setForm(f => ({ ...f, monto: e.target.value }))} className={`${inputCls} tabular-nums`} />
+            </label>
+            <label className="block">
+              <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Medio</span>
+              <select value={form.medio} onChange={e => setForm(f => ({ ...f, medio: e.target.value }))} className={inputCls}>
+                <option>Efectivo</option>
+                <option>Transferencia</option>
+              </select>
             </label>
           </div>
 
@@ -219,7 +226,7 @@ export default function Cajas() {
                   <div className="text-[13px] font-medium text-ink truncate">{m.detalle || m.categoria}</div>
                   <div className="text-[11px] text-ink-3">
                     {new Date(m.fecha + "T12:00:00Z").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
-                    {" · "}{m.categoria}{m.usuario ? ` · ${m.usuario}` : ""}
+                    {" · "}{m.categoria}{m.medio === "Transferencia" ? " · transf." : ""}{m.usuario ? ` · ${m.usuario}` : ""}
                   </div>
                 </div>
                 <div className={`text-[13px] font-bold tabular-nums ${m.tipo === "egreso" ? "text-bad" : "text-ok"}`}>

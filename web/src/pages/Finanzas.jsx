@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getDashboardFinanzas, fmtPesos } from "../lib/api.js";
+import { getJSON, fmtPesos } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar, BarraH } from "../components/ui.jsx";
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -17,7 +17,7 @@ export default function Finanzas() {
   const cargar = useCallback(() => {
     setCargando(true);
     setError(null);
-    getDashboardFinanzas(mes, anio, marca)
+    getJSON(`/api/cajas?action=resumen&marca=${marca}&mes=${mes}&anio=${anio}`)
       .then(setData)
       .catch(e => setError(e.message))
       .finally(() => setCargando(false));
@@ -36,7 +36,7 @@ export default function Finanzas() {
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[20px] font-bold text-ink">Finanzas</h1>
-          <p className="text-[12px] text-ink-3">Caja en efectivo · datos del Excel de finanzas</p>
+          <p className="text-[12px] text-ink-3">Caja en efectivo · se carga en Cajas</p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />
       </header>
@@ -58,8 +58,8 @@ export default function Finanzas() {
       </div>
 
       {error ? (
-        <Card><p className="text-[13px] text-bad py-6 text-center">No pude leer el Sheet de finanzas: {error}</p></Card>
-      ) : !data ? <Spinner texto="Leyendo el Sheet de finanzas…" /> : (
+        <Card><p className="text-[13px] text-bad py-6 text-center">No pude leer la caja: {error}</p></Card>
+      ) : !data ? <Spinner texto="Cargando la caja…" /> : (
         <>
           <div className="bg-negro text-white rounded-lg p-6">
             <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/50">Saldo total en caja</div>

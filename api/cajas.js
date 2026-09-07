@@ -84,7 +84,7 @@ async function movimientos(req, res) {
   const categoria = req.query.categoria || null;
 
   const filas = await sql`
-    SELECT id, fecha::text, tipo, categoria, detalle, monto::float, usuario, origen
+    SELECT id, fecha::text, tipo, categoria, detalle, monto::float, medio, usuario, origen
     FROM caja_movimientos
     WHERE marca = ${marca} AND fecha >= ${desde} AND fecha < ${hasta}
       AND (${tipo}::text IS NULL OR tipo = ${tipo})
@@ -107,7 +107,7 @@ async function categorias(req, res) {
 }
 
 async function crear(req, res, sesion) {
-  const { marca, fecha, tipo, categoria, detalle, monto } = req.body || {};
+  const { marca, fecha, tipo, categoria, detalle, monto, medio } = req.body || {};
   if (!["ingreso", "egreso"].includes(tipo)) return res.status(400).json({ error: "tipo inválido" });
   if (!categoria || !String(categoria).trim()) return res.status(400).json({ error: "falta la categoría" });
   const m = Number(monto);
@@ -116,15 +116,16 @@ async function crear(req, res, sesion) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return res.status(400).json({ error: "fecha inválida" });
 
   const [fila] = await sql`
-    INSERT INTO caja_movimientos (marca, fecha, tipo, categoria, detalle, monto, usuario)
+    INSERT INTO caja_movimientos (marca, fecha, tipo, categoria, detalle, monto, medio, usuario)
     VALUES (${validarMarca(marca)}, ${f}, ${tipo}, ${String(categoria).trim()},
-            ${detalle ? String(detalle).trim() : null}, ${m}, ${sesion.usuario})
+            ${detalle ? String(detalle).trim() : null}, ${m},
+            ${medio === "Transferencia" ? "Transferencia" : "Efectivo"}, ${sesion.usuario})
     RETURNING id`;
   res.status(200).json({ ok: true, id: fila.id });
 }
 
 async function editar(req, res, sesion) {
-  const { id, fecha, tipo, categoria, detalle, monto } = req.body || {};
+  const { id, fecha, tipo, categoria, detalle, monto, medio } = req.body || {};
   if (!id) return res.status(400).json({ error: "falta id" });
   if (!["ingreso", "egreso"].includes(tipo)) return res.status(400).json({ error: "tipo inválido" });
   const m = Number(monto);
@@ -135,7 +136,8 @@ async function editar(req, res, sesion) {
   const filas = await sql`
     UPDATE caja_movimientos
     SET fecha = ${f}, tipo = ${tipo}, categoria = ${String(categoria || "").trim()},
-        detalle = ${detalle ? String(detalle).trim() : null}, monto = ${m}, usuario = ${sesion.usuario}
+        detalle = ${detalle ? String(detalle).trim() : null}, monto = ${m},
+        medio = ${medio === "Transferencia" ? "Transferencia" : "Efectivo"}, usuario = ${sesion.usuario}
     WHERE id = ${id} RETURNING id`;
   if (!filas.length) return res.status(404).json({ error: "movimiento no encontrado" });
   res.status(200).json({ ok: true });
