@@ -9,13 +9,23 @@ const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "
 const selectCls = "rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[12px] font-semibold text-ink-2";
 const inputCls = "w-full rounded-md border border-borde bg-surface-1 px-3 py-2 text-[14px] text-ink";
 
-// "1.234.567,89" o "1234567.89" → 1234567.89 (null si vacío, NaN si inválido)
+// "1.234.567,89" → 1234567.89 (null si vacío, NaN si inválido). Los puntos son
+// siempre separador de miles porque el input formatea mientras se escribe.
 function aMonto(s) {
   const t = String(s ?? "").trim();
   if (t === "") return null;
-  const norm = t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t;
-  const n = Number(norm);
+  const n = Number(t.replace(/\./g, "").replace(",", "."));
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+}
+
+// Formatea mientras se escribe: "1500000" → "1.500.000", coma para decimales
+function formatearMiles(s) {
+  const t = String(s ?? "").replace(/[^\d,]/g, "");
+  const i = t.indexOf(",");
+  let ent = (i >= 0 ? t.slice(0, i) : t).replace(/^0+(?=\d)/, "");
+  const dec = i >= 0 ? "," + t.slice(i + 1).replace(/,/g, "").slice(0, 2) : "";
+  ent = ent.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return ent + dec;
 }
 
 function fechaLinda(iso) {
@@ -89,7 +99,7 @@ export default function Cajas() {
   };
 
   const editarMov = (m) => {
-    setForm({ id: m.id, tipo: m.tipo, fecha: m.fecha, categoria: m.categoria, nuevaCat: "", detalle: m.detalle || "", monto: String(m.monto).replace(".", ","), medio: m.medio || "Efectivo" });
+    setForm({ id: m.id, tipo: m.tipo, fecha: m.fecha, categoria: m.categoria, nuevaCat: "", detalle: m.detalle || "", monto: formatearMiles(String(m.monto).replace(".", ",")), medio: m.medio || "Efectivo" });
     setMasFechaMedio(true);
     setFormError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -168,7 +178,7 @@ export default function Cajas() {
           </div>
 
           <input ref={montoRef} type="text" inputMode="decimal" placeholder="$ 0"
-                 value={form.monto} onChange={e => setForm(f => ({ ...f, monto: e.target.value }))}
+                 value={form.monto} onChange={e => setForm(f => ({ ...f, monto: formatearMiles(e.target.value) }))}
                  className="w-full rounded-lg border-2 border-borde bg-surface-1 px-4 py-3 text-[24px] font-bold text-ink tabular-nums placeholder:text-ink-3/50" />
 
           <div>
@@ -259,11 +269,18 @@ export default function Cajas() {
         {!movs ? <Spinner texto="Cargando movimientos…" /> : porDia.length === 0 ? (
           <p className="text-[13px] text-ink-3 py-4 text-center">Sin movimientos este mes</p>
         ) : (
-          porDia.map(dia => (
-            <div key={dia.fecha}>
-              <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-ink-3 pt-3 pb-1">
-                {fechaLinda(dia.fecha)}
-              </div>
+          porDia.map(dia => {
+            const netoDia = dia.items.reduce((a, m) => a + (m.tipo === "egreso" ? -m.monto : m.monto), 0);
+            return (
+            <details key={dia.fecha} open={dia.fecha === hoyISO()} className="group">
+              <summary className="flex items-center gap-2 cursor-pointer select-none pt-3 pb-1 list-none [&::-webkit-details-marker]:hidden">
+                <span className="text-[10px] text-ink-3 transition-transform group-open:rotate-90">▶</span>
+                <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-ink-3">{fechaLinda(dia.fecha)}</span>
+                <span className="text-[11px] text-ink-3">· {dia.items.length} mov.</span>
+                <span className={`ml-auto text-[12px] font-bold tabular-nums ${netoDia >= 0 ? "text-ok" : "text-bad"}`}>
+                  {netoDia >= 0 ? "+" : "−"}{fmtPesos(Math.abs(netoDia))}
+                </span>
+              </summary>
               <ul className="divide-y divide-borde">
                 {dia.items.map(m => (
                   <li key={m.id} className="py-2.5 flex items-center gap-3">
@@ -285,8 +302,9 @@ export default function Cajas() {
                   </li>
                 ))}
               </ul>
-            </div>
-          ))
+            </details>
+            );
+          })
         )}
       </Card>
     </div>
