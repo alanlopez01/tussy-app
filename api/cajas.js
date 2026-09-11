@@ -155,6 +155,63 @@ async function borrar(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// ── Deuda Shato ↔ Tussy (solo admin) ──
+// Ledger de préstamos cruzados que vivía en la hoja "deuda" del Excel de Shato.
+// balance = prestado por Shato − prestado por Tussy (negativo: Shato le debe a Tussy).
+async function deuda(req, res) {
+  const [tot, movs] = await Promise.all([
+    sql`SELECT COALESCE(SUM(monto) FILTER (WHERE lado='shato'),0)::float s,
+               COALESCE(SUM(monto) FILTER (WHERE lado='tussy'),0)::float t
+        FROM deuda_shato`,
+    sql`SELECT id, fecha::text, lado, detalle, kilos::float, precio::float, monto::float, usuario, origen
+        FROM deuda_shato ORDER BY fecha DESC, creado_en DESC LIMIT 300`,
+  ]);
+  res.status(200).json({
+    prestado_shato: tot[0].s, prestado_tussy: tot[0].t,
+    balance: tot[0].s - tot[0].t, movimientos: movs,
+  });
+}
+
+async function deudaCrear(req, res, sesion) {
+  const { fecha, lado, detalle, kilos, precio, monto } = req.body || {};
+  if (!["shato", "tussy"].includes(lado)) return res.status(400).json({ error: "lado inválido" });
+  const m = Number(monto);
+  if (!Number.isFinite(m) || m <= 0) return res.status(400).json({ error: "monto inválido" });
+  const f = String(fecha || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return res.status(400).json({ error: "fecha inválida" });
+  const [fila] = await sql`
+    INSERT INTO deuda_shato (fecha, lado, detalle, kilos, precio, monto, usuario)
+    VALUES (${f}, ${lado}, ${detalle ? String(detalle).trim() : null},
+            ${Number(kilos) || null}, ${Number(precio) || null}, ${m}, ${sesion.usuario})
+    RETURNING id`;
+  res.status(200).json({ ok: true, id: fila.id });
+}
+
+async function deudaEditar(req, res, sesion) {
+  const { id, fecha, lado, detalle, kilos, precio, monto } = req.body || {};
+  if (!id) return res.status(400).json({ error: "falta id" });
+  if (!["shato", "tussy"].includes(lado)) return res.status(400).json({ error: "lado inválido" });
+  const m = Number(monto);
+  if (!Number.isFinite(m) || m <= 0) return res.status(400).json({ error: "monto inválido" });
+  const filas = await sql`
+    UPDATE deuda_shato
+    SET fecha = ${String(fecha || "").slice(0, 10)}, lado = ${lado},
+        detalle = ${detalle ? String(detalle).trim() : null},
+        kilos = ${Number(kilos) || null}, precio = ${Number(precio) || null},
+        monto = ${m}, usuario = ${sesion.usuario}
+    WHERE id = ${id} RETURNING id`;
+  if (!filas.length) return res.status(404).json({ error: "movimiento no encontrado" });
+  res.status(200).json({ ok: true });
+}
+
+async function deudaBorrar(req, res) {
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: "falta id" });
+  const filas = await sql`DELETE FROM deuda_shato WHERE id = ${id} RETURNING id`;
+  if (!filas.length) return res.status(404).json({ error: "movimiento no encontrado" });
+  res.status(200).json({ ok: true });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -170,12 +227,19 @@ module.exports = async function handler(req, res) {
       if (action === "resumen") return await resumen(req, res);
       if (action === "movimientos") return await movimientos(req, res);
       if (action === "categorias") return await categorias(req, res);
+      if (action === "deuda") {
+        if (sesion.rol !== "admin") return res.status(403).json({ error: "solo admin" });
+        return await deuda(req, res);
+      }
     } else if (req.method === "POST") {
       // La caja la carga solo el admin: los socios ven el resultado en Finanzas.
       if (sesion.rol !== "admin") return res.status(403).json({ error: "solo el admin puede modificar la caja" });
       if (action === "crear") return await crear(req, res, sesion);
       if (action === "editar") return await editar(req, res, sesion);
       if (action === "borrar") return await borrar(req, res);
+      if (action === "deudaCrear") return await deudaCrear(req, res, sesion);
+      if (action === "deudaEditar") return await deudaEditar(req, res, sesion);
+      if (action === "deudaBorrar") return await deudaBorrar(req, res);
     }
     res.status(400).json({ error: `acción desconocida: ${action}` });
   } catch (e) {
