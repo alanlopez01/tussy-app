@@ -212,6 +212,103 @@ async function deudaBorrar(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// ── Socios (solo admin) ──
+// Pozos declarados que se reparten por porcentaje + retiros/gastos/aportes por
+// socio. saldo = pozo×pct − gastos + aportes − retiros. Un retiro/aporte puede
+// impactar la caja de Tussy (fila linkeada vía caja_mov_id, como el Excel).
+async function sociosResumen(req, res) {
+  const [socios, movs] = await Promise.all([
+    sql`SELECT nombre, porcentaje::float FROM socios WHERE activo ORDER BY porcentaje DESC`,
+    sql`SELECT id, fecha::text, socio, tipo, descripcion, monto::float, caja_mov_id, usuario, origen
+        FROM socios_movimientos ORDER BY fecha DESC, creado_en DESC`,
+  ]);
+  const pozoTotal = movs.filter(m => m.tipo === "pozo").reduce((a, m) => a + m.monto, 0);
+  const resumen = socios.map(s => {
+    const mios = movs.filter(m => m.socio === s.nombre);
+    const suma = t => mios.filter(m => m.tipo === t).reduce((a, m) => a + m.monto, 0);
+    const corresponde = pozoTotal * s.porcentaje;
+    const retirado = suma("retiro"), gastos = suma("gasto"), aportes = suma("aporte");
+    return { socio: s.nombre, porcentaje: s.porcentaje, corresponde, retirado, gastos, aportes,
+             saldo: corresponde - gastos + aportes - retirado };
+  });
+  res.status(200).json({
+    socios: resumen, pozo_total: pozoTotal,
+    pozos: movs.filter(m => m.tipo === "pozo").slice(0, 40),
+    movimientos: movs.slice(0, 120),
+  });
+}
+
+async function socioMovCrear(req, res, sesion) {
+  const { fecha, socio, tipo, descripcion, monto, impactar_caja } = req.body || {};
+  if (!["pozo", "retiro", "gasto", "aporte"].includes(tipo)) return res.status(400).json({ error: "tipo inválido" });
+  if (tipo !== "pozo" && !socio) return res.status(400).json({ error: "falta el socio" });
+  const m = Number(monto);
+  if (!Number.isFinite(m) || m <= 0) return res.status(400).json({ error: "monto inválido" });
+  const f = String(fecha || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return res.status(400).json({ error: "fecha inválida" });
+
+  let cajaId = null;
+  if (impactar_caja && (tipo === "retiro" || tipo === "aporte")) {
+    const [c] = await sql`
+      INSERT INTO caja_movimientos (marca, fecha, tipo, categoria, detalle, monto, usuario)
+      VALUES ('tussy', ${f}, ${tipo === "retiro" ? "egreso" : "ingreso"},
+              ${tipo === "retiro" ? "Retiros Socios" : "Aporte socio"},
+              ${`${tipo === "retiro" ? "Retiro" : "Aporte"} ${socio}${descripcion ? " — " + descripcion : ""}`},
+              ${m}, ${sesion.usuario})
+      RETURNING id`;
+    cajaId = c.id;
+  }
+  const [fila] = await sql`
+    INSERT INTO socios_movimientos (fecha, socio, tipo, descripcion, monto, caja_mov_id, usuario)
+    VALUES (${f}, ${tipo === "pozo" ? null : socio}, ${tipo},
+            ${descripcion ? String(descripcion).trim() : null}, ${m}, ${cajaId}, ${sesion.usuario})
+    RETURNING id`;
+  res.status(200).json({ ok: true, id: fila.id, caja_mov_id: cajaId });
+}
+
+async function socioMovEditar(req, res, sesion) {
+  const { id, fecha, socio, tipo, descripcion, monto } = req.body || {};
+  if (!id) return res.status(400).json({ error: "falta id" });
+  const m = Number(monto);
+  if (!Number.isFinite(m) || m <= 0) return res.status(400).json({ error: "monto inválido" });
+  const f = String(fecha || "").slice(0, 10);
+  const filas = await sql`
+    UPDATE socios_movimientos
+    SET fecha = ${f}, socio = ${tipo === "pozo" ? null : socio || null},
+        descripcion = ${descripcion ? String(descripcion).trim() : null}, monto = ${m}, usuario = ${sesion.usuario}
+    WHERE id = ${id} RETURNING caja_mov_id, tipo, socio`;
+  if (!filas.length) return res.status(404).json({ error: "movimiento no encontrado" });
+  const fila = filas[0];
+  if (fila.caja_mov_id) {
+    await sql`UPDATE caja_movimientos
+      SET fecha = ${f}, monto = ${m},
+          detalle = ${`${fila.tipo === "retiro" ? "Retiro" : "Aporte"} ${fila.socio || socio}${descripcion ? " — " + descripcion : ""}`},
+          usuario = ${sesion.usuario}
+      WHERE id = ${fila.caja_mov_id}`;
+  }
+  res.status(200).json({ ok: true });
+}
+
+async function socioMovBorrar(req, res) {
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: "falta id" });
+  const filas = await sql`DELETE FROM socios_movimientos WHERE id = ${id} RETURNING caja_mov_id`;
+  if (!filas.length) return res.status(404).json({ error: "movimiento no encontrado" });
+  if (filas[0].caja_mov_id) await sql`DELETE FROM caja_movimientos WHERE id = ${filas[0].caja_mov_id}`;
+  res.status(200).json({ ok: true });
+}
+
+async function sociosPct(req, res) {
+  const lista = req.body?.socios;
+  if (!Array.isArray(lista) || !lista.length) return res.status(400).json({ error: "faltan socios" });
+  const suma = lista.reduce((a, s) => a + Number(s.porcentaje), 0);
+  if (Math.abs(suma - 1) > 0.001) return res.status(400).json({ error: `los porcentajes suman ${(suma * 100).toFixed(1)}%, deben sumar 100%` });
+  for (const s of lista) {
+    await sql`UPDATE socios SET porcentaje = ${Number(s.porcentaje)} WHERE nombre = ${String(s.nombre)}`;
+  }
+  res.status(200).json({ ok: true });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -227,9 +324,9 @@ module.exports = async function handler(req, res) {
       if (action === "resumen") return await resumen(req, res);
       if (action === "movimientos") return await movimientos(req, res);
       if (action === "categorias") return await categorias(req, res);
-      if (action === "deuda") {
+      if (action === "deuda" || action === "socios") {
         if (sesion.rol !== "admin") return res.status(403).json({ error: "solo admin" });
-        return await deuda(req, res);
+        return action === "deuda" ? await deuda(req, res) : await sociosResumen(req, res);
       }
     } else if (req.method === "POST") {
       // La caja la carga solo el admin: los socios ven el resultado en Finanzas.
@@ -240,6 +337,10 @@ module.exports = async function handler(req, res) {
       if (action === "deudaCrear") return await deudaCrear(req, res, sesion);
       if (action === "deudaEditar") return await deudaEditar(req, res, sesion);
       if (action === "deudaBorrar") return await deudaBorrar(req, res);
+      if (action === "socioMovCrear") return await socioMovCrear(req, res, sesion);
+      if (action === "socioMovEditar") return await socioMovEditar(req, res, sesion);
+      if (action === "socioMovBorrar") return await socioMovBorrar(req, res);
+      if (action === "sociosPct") return await sociosPct(req, res);
     }
     res.status(400).json({ error: `acción desconocida: ${action}` });
   } catch (e) {

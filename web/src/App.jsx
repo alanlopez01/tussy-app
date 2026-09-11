@@ -9,6 +9,7 @@ import Rentabilidad from "./pages/Rentabilidad.jsx";
 import Contabilidad from "./pages/Contabilidad.jsx";
 import Cajas from "./pages/Cajas.jsx";
 import DeudaShato from "./pages/DeudaShato.jsx";
+import Socios from "./pages/Socios.jsx";
 import RRHH from "./pages/RRHH.jsx";
 import Login from "./pages/Login.jsx";
 
@@ -25,6 +26,7 @@ const NAV = [
     // Para el admin, Finanzas es redundante con Cajas: la ven solo los socios
     { to: "/finanzas", label: "Finanzas", icon: "◈", soloSocio: true },
     { to: "/cajas", label: "Cajas", icon: "◫", soloAdmin: true },
+    { to: "/socios", label: "Socios", icon: "◑", soloAdmin: true },
     { to: "/deuda-shato", label: "Deuda Shato", icon: "⇄", soloAdmin: true },
     { to: "/rrhh", label: "RRHH", icon: "◔", soloAdmin: true },
     { to: "/rentabilidad", label: "Rentabilidad", icon: "◎" },
@@ -175,6 +177,7 @@ export default function App() {
             <Route path="/cajas" element={user.rol === "admin" ? <Cajas /> : <Navigate to="/" replace />} />
             <Route path="/rrhh" element={user.rol === "admin" ? <RRHH /> : <Navigate to="/" replace />} />
             <Route path="/deuda-shato" element={user.rol === "admin" ? <DeudaShato /> : <Navigate to="/" replace />} />
+            <Route path="/socios" element={user.rol === "admin" ? <Socios /> : <Navigate to="/" replace />} />
             <Route path="/rentabilidad" element={<Rentabilidad rol={user.rol} />} />
             <Route path="/contabilidad" element={user.rol === "admin" ? <Contabilidad /> : <Navigate to="/" replace />} />
           </Routes>
