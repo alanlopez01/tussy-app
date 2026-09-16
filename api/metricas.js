@@ -2660,7 +2660,12 @@ module.exports = async function handler(req, res) {
     if (action === "feed") return await feed(req, res);
     if (action === "operaciones") return await operaciones(req, res);
     if (action === "cierre") return await cierreDiario(req, res);
-    if (action === "alertas") return res.status(200).json(await generarAlertas(neon(process.env.DATABASE_URL)));
+    // Las alertas son de Alan: exponen costos, márgenes por producto y pauta.
+    if (action === "alertas") {
+      const sesion = verificarToken(req.headers["x-tussy-auth"]);
+      if (sesion?.rol !== "admin") return res.status(403).json({ error: "solo admin" });
+      return res.status(200).json(await generarAlertas(neon(process.env.DATABASE_URL)));
+    }
     if (action === "semanal") return await resumenSemanal(req, res);
     if (action === "modelosCostos") return await modelosCostos(req, res);
     if (action === "guardarCosto") return await guardarCosto(req, res);
