@@ -30,6 +30,7 @@ const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = requir
 const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require("../lib/meta");
 const { generarAlertas } = require("../lib/alertas");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
+const { tasasPorLocal, margenDeOperacion } = require("../lib/rentabilidad");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
 async function ventasLive(req, res) {
@@ -1529,24 +1530,76 @@ async function calcularNegocio(sql, mes) {
 // ── Feed: todas las operaciones de HOY (día argentino), desde la base ──
 async function feed(req, res) {
   const sql = neon(process.env.DATABASE_URL);
+  // El margen expone los costos de producto: es solo para el admin. Los socios
+  // ven el feed igual que siempre.
+  const esAdmin = verificarToken(req.headers["x-tussy-auth"])?.rol === "admin";
   const lim = Math.min(parseInt(req.query.limite || 100), 300);
   const hoy = hoyArg();
-  const rows = await sql`
-    SELECT fecha::text, local, orden_id,
-           MAX(hora) AS hora,
-           ROUND(SUM(total))::bigint AS total,
-           SUM(CASE WHEN producto NOT IN ('ENVIO','DESCUENTO','AJUSTE') THEN cantidad ELSE 0 END)::int AS unidades,
-           JSON_AGG(JSON_BUILD_OBJECT('producto', producto, 'cantidad', cantidad, 'talle', talle, 'color', color, 'total', ROUND(total))
-                    ORDER BY total DESC)
-             FILTER (WHERE producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')) AS items
-    FROM ventas
-    WHERE fecha = ${hoy} AND orden_id IS NOT NULL
-    GROUP BY fecha, local, orden_id
-    ORDER BY MAX(hora) DESC NULLS LAST
-    LIMIT ${lim}`;
+  const [rows, contexto] = await Promise.all([
+    sql`
+    WITH op AS (
+      SELECT v.fecha, v.local, v.orden_id,
+             MAX(v.hora) AS hora,
+             ROUND(SUM(v.total))::bigint AS total,
+             SUM(CASE WHEN v.producto NOT IN ('ENVIO','DESCUENTO','AJUSTE') THEN v.cantidad ELSE 0 END)::int AS unidades,
+             JSON_AGG(JSON_BUILD_OBJECT('producto', v.producto, 'cantidad', v.cantidad, 'talle', v.talle,
+                                        'color', v.color, 'total', ROUND(v.total))
+                      ORDER BY v.total DESC)
+               FILTER (WHERE v.producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')) AS items,
+             ROUND(SUM(CASE WHEN v.producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')
+                            THEN v.cantidad * c.costo ELSE 0 END))::bigint AS mercaderia,
+             BOOL_OR(c.costo IS NULL AND v.producto NOT IN ('ENVIO','DESCUENTO','AJUSTE')) AS falta_costo
+      FROM ventas v
+      LEFT JOIN LATERAL (
+        SELECT costo FROM costos_producto cp
+        WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
+        ORDER BY cp.vigente_desde DESC LIMIT 1
+      ) c ON true
+      WHERE v.fecha = ${hoy} AND v.orden_id IS NOT NULL
+      GROUP BY v.fecha, v.local, v.orden_id
+    ), pago AS (
+      SELECT orden_id, local, SUM(comision + financiacion)::float AS financiero_real,
+             MAX(cuotas)::int AS cuotas, MAX(medio) AS medio_mp
+      FROM pagos_mp WHERE fecha = ${hoy} AND orden_id IS NOT NULL AND estado = 'approved'
+      GROUP BY 1, 2
+    ), cob AS (
+      SELECT local, orden_id,
+             SUM(CASE WHEN medio = 'efectivo' THEN monto ELSE 0 END)::float AS efectivo,
+             SUM(CASE WHEN medio <> 'efectivo' THEN monto ELSE 0 END)::float AS electronico
+      FROM cobros WHERE fecha = ${hoy}
+      GROUP BY 1, 2
+    )
+    SELECT op.fecha::text AS fecha, op.local, op.orden_id, op.hora, op.total, op.unidades,
+           op.items, op.mercaderia, op.falta_costo,
+           p.financiero_real, p.cuotas, p.medio_mp, cob.efectivo, cob.electronico
+    FROM op
+    LEFT JOIN pago p ON p.orden_id = op.orden_id AND p.local = op.local
+    LEFT JOIN cob ON cob.orden_id = op.orden_id AND cob.local = op.local
+    ORDER BY op.hora DESC NULLS LAST
+    LIMIT ${lim}`,
+    tasasPorLocal(sql),
+  ]);
+
+  const operaciones = rows.map(r => {
+    const base = {
+      fecha: r.fecha, local: r.local, orden_id: r.orden_id, hora: r.hora,
+      total: Number(r.total), unidades: r.unidades, items: r.items || [],
+    };
+    return esAdmin ? { ...base, ...margenDeOperacion(r, contexto) } : base;
+  });
+  if (!esAdmin) return res.status(200).json({ fecha: hoy, operaciones });
+
+  const suma = campo => operaciones.reduce((a, o) => a + (o[campo] || 0), 0);
+  const total = suma("total");
   return res.status(200).json({
     fecha: hoy,
-    operaciones: rows.map(r => ({ ...r, total: Number(r.total), items: r.items || [] })),
+    resumen: {
+      total, mercaderia: suma("mercaderia"), iva: suma("iva"),
+      financiero: suma("financiero"), margen: suma("margen"),
+      margen_pct: total ? Math.round(suma("margen") / total * 1000) / 10 : 0,
+      con_dato_real: operaciones.filter(o => o.financiero_real).length,
+    },
+    operaciones,
   });
 }
 

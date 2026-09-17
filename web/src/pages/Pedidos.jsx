@@ -16,8 +16,9 @@ function esIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
-export default function Pedidos() {
+export default function Pedidos({ rol }) {
   const [ops, setOps] = useState(null);
+  const [resumen, setResumen] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [ultimaAct, setUltimaAct] = useState(null);
   const [estadoPush, setEstadoPush] = useState("verificando");
@@ -28,7 +29,7 @@ export default function Pedidos() {
   const cargar = useCallback(() => {
     setCargando(true);
     getJSON("/api/metricas?action=feed&limite=200", 30000)
-      .then(d => { setOps(d.operaciones); setUltimaAct(new Date()); })
+      .then(d => { setOps(d.operaciones); setResumen(d.resumen || null); setUltimaAct(new Date()); })
       .catch(() => {})
       .finally(() => setCargando(false));
   }, []);
@@ -92,6 +93,22 @@ export default function Pedidos() {
         <Card><p className="text-[12px] text-warn font-medium">{msgPush}</p></Card>
       )}
 
+      {resumen && rol === "admin" && (
+        <div className="bg-negro text-white rounded-lg px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">Ganancia de hoy</div>
+            <div className="text-[26px] leading-tight font-bold tabular-nums">{fmtPesos(resumen.margen)}</div>
+            <div className="text-[11px] text-white/50">{String(resumen.margen_pct).replace(".", ",")}% de lo vendido</div>
+          </div>
+          <div className="text-right text-[11px] text-white/60 tabular-nums leading-relaxed">
+            <div>Vendido <span className="text-white font-semibold">{fmtPesos(resumen.total)}</span></div>
+            <div>− Mercadería {fmtPesos(resumen.mercaderia)}</div>
+            <div>− IVA {fmtPesos(resumen.iva)}</div>
+            <div>− Comisiones {fmtPesos(resumen.financiero)}</div>
+          </div>
+        </div>
+      )}
+
       <Card title={ops ? `Hoy: ${ops.length} ventas · ${fmtPesos(totalHoy)}` : "Ventas de hoy"}>
         {!ops ? <Spinner /> : !ops.length ? (
           <p className="text-[13px] text-ink-3 py-6 text-center">Todavía no hay ventas registradas hoy.</p>
@@ -123,7 +140,13 @@ export default function Pedidos() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-[14px] font-bold text-ink tabular-nums">{fmtPesos(op.total)}</div>
-                      <div className="text-[11px] text-ink-3">{op.unidades} {op.unidades === 1 ? "unidad" : "unidades"}</div>
+                      {op.margen != null ? (
+                        <div className={`text-[12px] font-bold tabular-nums ${op.margen > 0 ? "text-ok" : "text-bad"}`}>
+                          deja {fmtPesos(op.margen)}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-ink-3">{op.unidades} {op.unidades === 1 ? "unidad" : "unidades"}</div>
+                      )}
                     </div>
                     <span className={`text-ink-3 text-[11px] shrink-0 transition-transform ${expandida ? "rotate-180" : ""}`}>▾</span>
                   </button>
@@ -147,6 +170,32 @@ export default function Pedidos() {
                           <span className="font-semibold text-ink tabular-nums">
                             {fmtPesos(op.total - (op.items || []).reduce((a, i) => a + Number(i.total || 0), 0))}
                           </span>
+                        </div>
+                      )}
+                      {op.margen != null && (
+                        <div className="border-t border-borde pt-2 mt-1 space-y-1">
+                          {[
+                            ["Vendido", op.total, "text-ink"],
+                            ["Mercadería", -op.mercaderia, "text-ink-2"],
+                            ["IVA", -op.iva, "text-ink-2"],
+                            [op.medio === "efectivo" ? "Efectivo (sin comisión)" : op.financiero_real
+                               ? `Comisión MercadoPago${op.cuotas > 1 ? ` · ${op.cuotas} cuotas` : ""}`
+                               : "Comisiones (estimadas)", -op.financiero, "text-ink-2"],
+                          ].map(([etiqueta, valor, cls]) => (
+                            <div key={etiqueta} className="flex items-center justify-between gap-3 text-[12px]">
+                              <span className="text-ink-3">{etiqueta}</span>
+                              <span className={`tabular-nums ${cls}`}>{valor < 0 ? "−" : ""}{fmtPesos(Math.abs(valor))}</span>
+                            </div>
+                          ))}
+                          <div className="flex items-center justify-between gap-3 text-[13px] border-t border-borde pt-1.5">
+                            <span className="font-semibold text-ink">Nos queda</span>
+                            <span className={`font-bold tabular-nums ${op.margen > 0 ? "text-ok" : "text-bad"}`}>
+                              {fmtPesos(op.margen)} · {String(op.margen_pct).replace(".", ",")}%
+                            </span>
+                          </div>
+                          {op.falta_costo && (
+                            <div className="text-[11px] text-warn">Algún producto no tiene costo cargado: el margen está incompleto.</div>
+                          )}
                         </div>
                       )}
                     </div>

@@ -175,7 +175,7 @@ export default function App() {
             <Route path="/ventas" element={<Ventas />} />
             <Route path="/alertas" element={user.rol === "admin" ? <Alertas /> : <Navigate to="/" replace />} />
             <Route path="/productos" element={user.rol === "admin" ? <Productos /> : <Navigate to="/" replace />} />
-            <Route path="/pedidos" element={<Pedidos />} />
+            <Route path="/pedidos" element={<Pedidos rol={user.rol} />} />
             <Route path="/finanzas" element={user.rol === "admin" ? <Navigate to="/cajas" replace /> : <Finanzas />} />
             <Route path="/cajas" element={user.rol === "admin" ? <Cajas /> : <Navigate to="/" replace />} />
             <Route path="/rrhh" element={user.rol === "admin" ? <RRHH /> : <Navigate to="/" replace />} />
