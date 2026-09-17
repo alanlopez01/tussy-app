@@ -9,6 +9,7 @@
 const { neon } = require("@neondatabase/serverless");
 const { waitUntil } = require("@vercel/functions");
 const { generarAlertas } = require("../lib/alertas");
+const { responderConIA, iaConfigurada } = require("../lib/agente");
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_AUTORIZADO = process.env.TELEGRAM_CHAT_ID;
@@ -173,6 +174,11 @@ async function ejecutarPendiente(sql, accion) {
     await limpiarPendiente(sql);
     return r.success ? `✓ <b>${accion.nombre}</b> pausada.` : `No pude pausarla: ${r.error?.message || "error"}`;
   }
+  if (accion.tipo === "activar") {
+    const r = await metaPost(accion.id, { status: "ACTIVE" });
+    await limpiarPendiente(sql);
+    return r.success ? `✓ <b>${accion.nombre}</b> activada.` : `No pude activarla: ${r.error?.message || "error"}`;
+  }
   if (accion.tipo === "presupuesto") {
     const r = await metaPost(accion.id, { daily_budget: String(Math.round(accion.monto * 100)) });
     await limpiarPendiente(sql);
@@ -192,7 +198,14 @@ const AYUDA = `<b>Qué puedo hacer</b>
 <code>/pausar tails</code> — pausa una campaña
 <code>/presupuesto kayne 80</code> — cambia el presupuesto diario (en miles)
 
-Las dos últimas te piden confirmación antes de tocar nada: respondé <b>dale</b>.`;
+Las dos últimas te piden confirmación antes de tocar nada: respondé <b>dale</b>.
+
+<b>O escribime de una</b> — sin comandos:
+<i>"¿cuánto stock de harly queda en abasto?"</i>
+<i>"¿cómo viene el mes contra agosto?"</i>
+<i>"¿qué campaña está rindiendo peor?"</i>
+
+<code>/reset</code> — olvidar la charla anterior`;
 
 async function responder(sql, texto) {
   const t = String(texto || "").trim();
@@ -221,8 +234,37 @@ async function responder(sql, texto) {
     case "/start":
     case "/ayuda":
     case "/help": return AYUDA;
-    default: return `No entendí "${t}".\n\n${AYUDA}`;
+    case "/reset":
+      await sql`DELETE FROM telegram_historial`;
+      return "Listo, arrancamos de cero.";
   }
+
+  // No es un comando: va al analista. Si no hay API key configurada, se avisa.
+  if (!iaConfigurada()) {
+    return `No entendí "${t}".\n\n${AYUDA}`;
+  }
+  const historial = await leerHistorial(sql);
+  const r = await responderConIA(sql, t, historial);
+  if (r.pendiente) await guardarPendiente(sql, r.pendiente);
+  if (r.messages) await guardarHistorial(sql, r.messages);
+  return r.texto;
+}
+
+// Historial de la charla: da contexto entre mensajes ("¿y en Abasto?").
+// Se corta solo a la media hora de silencio para no arrastrar contexto viejo.
+async function leerHistorial(sql) {
+  const [f] = await sql`SELECT mensajes FROM telegram_historial
+    WHERE actualizado_en > now() - interval '30 minutes' ORDER BY id DESC LIMIT 1`;
+  return f?.mensajes || [];
+}
+async function guardarHistorial(sql, messages) {
+  // Solo los últimos turnos, y recortando los resultados de herramientas
+  // (son grandes y ya no aportan una vez respondida la pregunta).
+  const limpios = messages
+    .filter(m => typeof m.content === "string" || !m.content.some?.(b => b.type === "tool_result" || b.type === "tool_use"))
+    .slice(-8);
+  await sql`DELETE FROM telegram_historial`;
+  await sql`INSERT INTO telegram_historial (mensajes) VALUES (${JSON.stringify(limpios)})`;
 }
 
 module.exports = async function handler(req, res) {

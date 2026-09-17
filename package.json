@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/alanlopez01/tussy-app#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.126.0",
     "@neondatabase/serverless": "^1.1.0",
     "@vercel/functions": "^3.7.6",
     "node-forge": "^1.4.0",
