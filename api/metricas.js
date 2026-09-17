@@ -31,6 +31,7 @@ const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require(".
 const { generarAlertas } = require("../lib/alertas");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 const { tasasPorLocal, margenDeOperacion } = require("../lib/rentabilidad");
+const { mpConfigurado, sincronizarPagos, cruzarConCobros } = require("../lib/mercadopago");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
 async function ventasLive(req, res) {
@@ -498,6 +499,19 @@ async function cierreDiario(req, res) {
         .catch(e => console.error("[newin] error:", e))
     );
   }
+  // Pagos de MercadoPago: el costo financiero real de cada venta. Se re-traen
+  // los últimos 7 días porque las comisiones y retenciones se ajustan después.
+  if (mpConfigurado()) {
+    waitUntil(
+      (async () => {
+        const d7 = new Date(Date.now() - 3 * 3600 * 1000 - 7 * 86400000).toISOString().slice(0, 10);
+        const r = await sincronizarPagos(sql, d7, hoyArg());
+        const c = await cruzarConCobros(sql, d7, hoyArg());
+        console.log("[mp]", JSON.stringify({ ...r, ...c }));
+      })().catch(e => console.error("[mp] error:", e))
+    );
+  }
+
   // Alertas comerciales del día: solo se avisa lo urgente, y solo a Alan.
   waitUntil(
     generarAlertas(sql)
