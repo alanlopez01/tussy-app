@@ -30,7 +30,7 @@ const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = requir
 const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require("../lib/meta");
 const { generarAlertas } = require("../lib/alertas");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
-const { tasasPorLocal, margenDeOperacion } = require("../lib/rentabilidad");
+const { contextoRentabilidad, margenDeOperacion } = require("../lib/rentabilidad");
 const { mpConfigurado, sincronizarPagos, cruzarConCobros } = require("../lib/mercadopago");
 
 // Ventas del día en vivo por local, agrupadas por operación (no toca la base)
@@ -1547,8 +1547,12 @@ async function feed(req, res) {
   // El margen expone los costos de producto: es solo para el admin. Los socios
   // ven el feed igual que siempre.
   const esAdmin = verificarToken(req.headers["x-tussy-auth"])?.rol === "admin";
-  const lim = Math.min(parseInt(req.query.limite || 100), 300);
+  const lim = Math.min(parseInt(req.query.limite || 100), 500);
+  // Por defecto el día de hoy; con desde/hasta se puede mirar cualquier período.
   const hoy = hoyArg();
+  const desde = /^\d{4}-\d{2}-\d{2}$/.test(req.query.desde || "") ? req.query.desde : hoy;
+  const hasta = /^\d{4}-\d{2}-\d{2}$/.test(req.query.hasta || "") ? req.query.hasta : desde;
+  const filtroLocal = req.query.local && req.query.local !== "todos" ? req.query.local : null;
   const [rows, contexto] = await Promise.all([
     sql`
     WITH op AS (
@@ -1569,18 +1573,20 @@ async function feed(req, res) {
         WHERE cp.producto = v.producto_norm AND cp.vigente_desde <= v.fecha
         ORDER BY cp.vigente_desde DESC LIMIT 1
       ) c ON true
-      WHERE v.fecha = ${hoy} AND v.orden_id IS NOT NULL
+      WHERE v.fecha BETWEEN ${desde} AND ${hasta} AND v.orden_id IS NOT NULL
+        AND (${filtroLocal}::text IS NULL OR v.local = ${filtroLocal})
       GROUP BY v.fecha, v.local, v.orden_id
     ), pago AS (
       SELECT orden_id, local, SUM(comision + financiacion)::float AS financiero_real,
              MAX(cuotas)::int AS cuotas, MAX(medio) AS medio_mp
-      FROM pagos_mp WHERE fecha = ${hoy} AND orden_id IS NOT NULL AND estado = 'approved'
+      FROM pagos_mp WHERE fecha BETWEEN ${desde} AND ${hasta}
+        AND orden_id IS NOT NULL AND estado = 'approved'
       GROUP BY 1, 2
     ), cob AS (
       SELECT local, orden_id,
              SUM(CASE WHEN medio = 'efectivo' THEN monto ELSE 0 END)::float AS efectivo,
              SUM(CASE WHEN medio <> 'efectivo' THEN monto ELSE 0 END)::float AS electronico
-      FROM cobros WHERE fecha = ${hoy}
+      FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta}
       GROUP BY 1, 2
     )
     SELECT op.fecha::text AS fecha, op.local, op.orden_id, op.hora, op.total, op.unidades,
@@ -1589,9 +1595,9 @@ async function feed(req, res) {
     FROM op
     LEFT JOIN pago p ON p.orden_id = op.orden_id AND p.local = op.local
     LEFT JOIN cob ON cob.orden_id = op.orden_id AND cob.local = op.local
-    ORDER BY op.hora DESC NULLS LAST
+    ORDER BY op.fecha DESC, op.hora DESC NULLS LAST
     LIMIT ${lim}`,
-    tasasPorLocal(sql),
+    contextoRentabilidad(sql),
   ]);
 
   const operaciones = rows.map(r => {
@@ -1601,17 +1607,34 @@ async function feed(req, res) {
     };
     return esAdmin ? { ...base, ...margenDeOperacion(r, contexto) } : base;
   });
-  if (!esAdmin) return res.status(200).json({ fecha: hoy, operaciones });
+  if (!esAdmin) return res.status(200).json({ fecha: hoy, desde, hasta, operaciones });
 
+  // El resumen es del período completo, aunque la lista venga recortada.
+  const [tot] = await sql`
+    SELECT COUNT(DISTINCT (fecha, local, orden_id))::int AS ops,
+           ROUND(SUM(total))::bigint AS total
+    FROM ventas
+    WHERE fecha BETWEEN ${desde} AND ${hasta} AND orden_id IS NOT NULL
+      AND (${filtroLocal}::text IS NULL OR local = ${filtroLocal})`;
   const suma = campo => operaciones.reduce((a, o) => a + (o[campo] || 0), 0);
-  const total = suma("total");
+  const mostrado = suma("total");
+  const totalPeriodo = Number(tot?.total || 0);
+  // Si la lista quedó recortada, el desglose se escala al total del período.
+  const factor = mostrado > 0 ? totalPeriodo / mostrado : 1;
+  const esc = campo => Math.round(suma(campo) * factor);
+
   return res.status(200).json({
-    fecha: hoy,
+    fecha: hoy, desde, hasta,
+    ops: tot?.ops || 0,
+    parcial: operaciones.length < (tot?.ops || 0),
     resumen: {
-      total, mercaderia: suma("mercaderia"), iva: suma("iva"),
-      financiero: suma("financiero"), margen: suma("margen"),
-      margen_pct: total ? Math.round(suma("margen") / total * 1000) / 10 : 0,
+      total: totalPeriodo,
+      mercaderia: esc("mercaderia"), iva: esc("iva"), iibb: esc("iibb"),
+      cheque: esc("cheque"), impuestos: esc("impuestos"), comisiones: esc("comisiones"),
+      financiero: esc("comisiones"), margen: esc("margen"),
+      margen_pct: totalPeriodo ? Math.round(esc("margen") / totalPeriodo * 1000) / 10 : 0,
       con_dato_real: operaciones.filter(o => o.financiero_real).length,
+      iva_origen: contexto.ivaOrigen,
     },
     operaciones,
   });

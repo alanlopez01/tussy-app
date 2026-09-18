@@ -1,9 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getJSON, LOCALES, fmtPesos } from "../lib/api.js";
-import { Card, Spinner, BotonActualizar } from "../components/ui.jsx";
+import { getJSON, LOCALES, fmtPesos, hoyISO, diasAtras, primerDiaMes } from "../lib/api.js";
+import { Card, Spinner, BotonActualizar, Chips } from "../components/ui.jsx";
 import { activarPush, pushActivo, pushSoportado } from "../lib/push.js";
 
-const REFRESH_MS = 60000; // el feed se refresca cada 1 min
+const REFRESH_MS = 60000; // el feed se refresca cada 1 min (solo mirando "hoy")
+
+function rangoDe(clave) {
+  const hoy = hoyISO();
+  if (clave === "ayer") return { desde: diasAtras(1), hasta: diasAtras(1) };
+  if (clave === "7d") return { desde: diasAtras(6), hasta: hoy };
+  if (clave === "mes") return { desde: primerDiaMes(), hasta: hoy };
+  if (clave === "mes_pasado") {
+    const [y, m] = primerDiaMes().split("-").map(Number);
+    const pm = m === 1 ? { y: y - 1, m: 12 } : { y, m: m - 1 };
+    const pad = n => String(n).padStart(2, "0");
+    const ultimo = new Date(Date.UTC(pm.y, pm.m, 0)).getUTCDate();
+    return { desde: `${pm.y}-${pad(pm.m)}-01`, hasta: `${pm.y}-${pad(pm.m)}-${pad(ultimo)}` };
+  }
+  return { desde: hoy, hasta: hoy };
+}
+const PERIODOS = [
+  { value: "hoy", label: "Hoy" }, { value: "ayer", label: "Ayer" },
+  { value: "7d", label: "7 días" }, { value: "mes", label: "Este mes" },
+  { value: "mes_pasado", label: "Mes pasado" },
+];
 
 function colorDeLocal(nombre) {
   const l = LOCALES.find(l => l.db === nombre || l.nombre === nombre);
@@ -24,21 +44,34 @@ export default function Pedidos({ rol }) {
   const [estadoPush, setEstadoPush] = useState("verificando");
   const [msgPush, setMsgPush] = useState("");
   const [abierta, setAbierta] = useState(null); // orden expandida
+  const [periodo, setPeriodo] = useState("hoy");
+  const [localFiltro, setLocalFiltro] = useState("todos");
+  const [info, setInfo] = useState(null);
   const timerRef = useRef(null);
 
   const cargar = useCallback(() => {
     setCargando(true);
-    getJSON("/api/metricas?action=feed&limite=200", 30000)
-      .then(d => { setOps(d.operaciones); setResumen(d.resumen || null); setUltimaAct(new Date()); })
+    const { desde, hasta } = rangoDe(periodo);
+    const qs = new URLSearchParams({ action: "feed", limite: "400", desde, hasta });
+    if (localFiltro !== "todos") qs.set("local", localFiltro);
+    getJSON(`/api/metricas?${qs}`, 60000)
+      .then(d => {
+        setOps(d.operaciones); setResumen(d.resumen || null);
+        setInfo({ ops: d.ops, parcial: d.parcial });
+        setUltimaAct(new Date());
+      })
       .catch(() => {})
       .finally(() => setCargando(false));
-  }, []);
+  }, [periodo, localFiltro]);
 
+  useEffect(() => { setOps(null); cargar(); }, [cargar]);
+
+  // El refresco automático solo tiene sentido mirando el día de hoy.
   useEffect(() => {
-    cargar();
-    timerRef.current = setInterval(cargar, REFRESH_MS);
+    clearInterval(timerRef.current);
+    if (periodo === "hoy") timerRef.current = setInterval(cargar, REFRESH_MS);
     return () => clearInterval(timerRef.current);
-  }, [cargar]);
+  }, [cargar, periodo]);
 
   useEffect(() => {
     pushActivo().then(a => setEstadoPush(a ? "activo" : "inactivo")).catch(() => setEstadoPush("inactivo"));
@@ -72,7 +105,7 @@ export default function Pedidos({ rol }) {
         <div>
           <h1 className="text-[20px] font-bold text-ink">Pedidos</h1>
           <p className="text-[12px] text-ink-3">
-            Todas las ventas de hoy · se actualiza cada 1 min
+            {periodo === "hoy" ? "Todas las ventas de hoy · se actualiza cada 1 min" : "Ventas del período"}
             {ultimaAct && ` · actualizado ${ultimaAct.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
           </p>
         </div>
@@ -93,23 +126,54 @@ export default function Pedidos({ rol }) {
         <Card><p className="text-[12px] text-warn font-medium">{msgPush}</p></Card>
       )}
 
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <Chips opciones={PERIODOS} valor={periodo} onChange={setPeriodo} />
+        <select value={localFiltro} onChange={e => setLocalFiltro(e.target.value)}
+                className="rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[12px] font-semibold text-ink-2">
+          <option value="todos">Todos los locales</option>
+          {LOCALES.map(l => <option key={l.db} value={l.db}>{nombreCorto(l.db)}</option>)}
+        </select>
+      </div>
+
       {resumen && rol === "admin" && (
-        <div className="bg-negro text-white rounded-lg px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">Ganancia de hoy</div>
-            <div className="text-[26px] leading-tight font-bold tabular-nums">{fmtPesos(resumen.margen)}</div>
-            <div className="text-[11px] text-white/50">{String(resumen.margen_pct).replace(".", ",")}% de lo vendido</div>
+        <div className="bg-negro text-white rounded-lg px-5 py-4">
+          <div className="flex items-start justify-between gap-6 flex-wrap">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">
+                Lo que queda {PERIODOS.find(p => p.value === periodo)?.label.toLowerCase()}
+              </div>
+              <div className="text-[28px] leading-tight font-bold tabular-nums">{fmtPesos(resumen.margen)}</div>
+              <div className="text-[11px] text-white/50">
+                {String(resumen.margen_pct).replace(".", ",")}% de {fmtPesos(resumen.total)} vendidos
+              </div>
+            </div>
+            <div className="text-[11px] tabular-nums leading-relaxed min-w-[190px]">
+              {[
+                ["Mercadería", resumen.mercaderia],
+                ["IVA", resumen.iva],
+                ["Ingresos brutos", resumen.iibb],
+                ["Impuesto al cheque", resumen.cheque],
+                ["Comisiones MercadoPago", resumen.comisiones],
+              ].map(([etiqueta, valor]) => (
+                <div key={etiqueta} className="flex justify-between gap-4 text-white/60">
+                  <span>− {etiqueta}</span>
+                  <span className="text-white/80">{fmtPesos(valor || 0)}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="text-right text-[11px] text-white/60 tabular-nums leading-relaxed">
-            <div>Vendido <span className="text-white font-semibold">{fmtPesos(resumen.total)}</span></div>
-            <div>− Mercadería {fmtPesos(resumen.mercaderia)}</div>
-            <div>− IVA {fmtPesos(resumen.iva)}</div>
-            <div>− Comisiones {fmtPesos(resumen.financiero)}</div>
+          <div className="text-[10px] text-white/40 mt-3 pt-3 border-t border-white/10">
+            Antes de alquileres, sueldos y pauta. IVA calculado sobre el valor agregado ({resumen.iva_origen}).
+            {resumen.con_dato_real > 0 && ` · ${resumen.con_dato_real} operaciones con la comisión real de MercadoPago.`}
           </div>
         </div>
       )}
 
-      <Card title={ops ? `Hoy: ${ops.length} ventas · ${fmtPesos(totalHoy)}` : "Ventas de hoy"}>
+      <Card title={ops
+        ? (info?.parcial
+            ? `Últimas ${ops.length} de ${info.ops} ventas · ${fmtPesos(resumen?.total ?? totalHoy)}`
+            : `${ops.length} ventas · ${fmtPesos(resumen?.total ?? totalHoy)}`)
+        : "Ventas"}>
         {!ops ? <Spinner /> : !ops.length ? (
           <p className="text-[13px] text-ink-3 py-6 text-center">Todavía no hay ventas registradas hoy.</p>
         ) : (
@@ -126,6 +190,9 @@ export default function Pedidos({ rol }) {
                     <span className="w-1 self-stretch rounded-full shrink-0" style={{ background: colorDeLocal(op.local) }} />
                     <div className="w-12 shrink-0">
                       <div className="text-[13px] font-semibold text-ink tabular-nums">{op.hora ? op.hora.slice(0, 5) : "—"}</div>
+                      {periodo !== "hoy" && op.fecha && (
+                        <div className="text-[10px] text-ink-3 tabular-nums">{op.fecha.slice(5).split("-").reverse().join("/")}</div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-semibold text-ink">
@@ -178,9 +245,11 @@ export default function Pedidos({ rol }) {
                             ["Vendido", op.total, "text-ink"],
                             ["Mercadería", -op.mercaderia, "text-ink-2"],
                             ["IVA", -op.iva, "text-ink-2"],
+                            ["Ingresos brutos", -op.iibb, "text-ink-2"],
+                            ["Impuesto al cheque", -op.cheque, "text-ink-2"],
                             [op.medio === "efectivo" ? "Efectivo (sin comisión)" : op.financiero_real
                                ? `Comisión MercadoPago${op.cuotas > 1 ? ` · ${op.cuotas} cuotas` : ""}`
-                               : "Comisiones (estimadas)", -op.financiero, "text-ink-2"],
+                               : "Comisiones (estimadas)", -op.comisiones, "text-ink-2"],
                           ].map(([etiqueta, valor, cls]) => (
                             <div key={etiqueta} className="flex items-center justify-between gap-3 text-[12px]">
                               <span className="text-ink-3">{etiqueta}</span>
