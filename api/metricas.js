@@ -1585,13 +1585,17 @@ async function feed(req, res) {
     ), cob AS (
       SELECT local, orden_id,
              SUM(CASE WHEN medio = 'efectivo' THEN monto ELSE 0 END)::float AS efectivo,
-             SUM(CASE WHEN medio <> 'efectivo' THEN monto ELSE 0 END)::float AS electronico
+             SUM(CASE WHEN medio <> 'efectivo' THEN monto ELSE 0 END)::float AS electronico,
+             -- La transferencia bancaria no pasa por MercadoPago: no paga comisión,
+             -- pero cae en el banco y paga impuesto al cheque.
+             SUM(CASE WHEN detalle ILIKE '%transferencia%' THEN monto ELSE 0 END)::float AS transferencia
       FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta}
       GROUP BY 1, 2
     )
     SELECT op.fecha::text AS fecha, op.local, op.orden_id, op.hora, op.total, op.unidades,
            op.items, op.mercaderia, op.falta_costo,
-           p.financiero_real, p.cuotas, p.medio_mp, cob.efectivo, cob.electronico
+           p.financiero_real, p.cuotas, p.medio_mp,
+           cob.efectivo, cob.electronico, cob.transferencia
     FROM op
     LEFT JOIN pago p ON p.orden_id = op.orden_id AND p.local = op.local
     LEFT JOIN cob ON cob.orden_id = op.orden_id AND cob.local = op.local
