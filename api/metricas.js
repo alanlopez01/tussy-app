@@ -95,12 +95,15 @@ async function escribirCobrosDia(sql, fecha, local, cobros) {
   for (let i = 0; i < cobros.length; i += 500) {
     const c = cobros.slice(i, i + 500);
     await sql`
-      INSERT INTO cobros (fecha, local, orden_id, item, medio, detalle, monto)
+      INSERT INTO cobros (fecha, local, orden_id, item, medio, detalle, monto, gateway, cuotas)
       SELECT * FROM UNNEST(
         ${c.map(f => f.fecha)}::date[], ${c.map(f => f.local)}::text[], ${c.map(f => f.orden_id)}::text[],
         ${c.map(f => f.item)}::int[], ${c.map(f => f.medio)}::text[],
-        ${c.map(f => f.detalle || null)}::text[], ${c.map(f => f.monto)}::numeric[]
-      ) ON CONFLICT (local, orden_id, item) DO NOTHING`;
+        ${c.map(f => f.detalle || null)}::text[], ${c.map(f => f.monto)}::numeric[],
+        ${c.map(f => f.gateway || null)}::text[], ${c.map(f => f.cuotas || null)}::int[]
+      ) ON CONFLICT (local, orden_id, item) DO UPDATE SET
+        gateway = COALESCE(EXCLUDED.gateway, cobros.gateway),
+        cuotas = COALESCE(EXCLUDED.cuotas, cobros.cuotas)`;
   }
 }
 
@@ -1609,14 +1612,16 @@ async function feed(req, res) {
              SUM(CASE WHEN medio <> 'efectivo' THEN monto ELSE 0 END)::float AS electronico,
              -- La transferencia bancaria no pasa por MercadoPago: no paga comisión,
              -- pero cae en el banco y paga impuesto al cheque.
-             SUM(CASE WHEN detalle ILIKE '%transferencia%' THEN monto ELSE 0 END)::float AS transferencia
+             SUM(CASE WHEN detalle ILIKE '%transferencia%' OR gateway = 'offline'
+                      THEN monto ELSE 0 END)::float AS transferencia,
+             MAX(gateway) AS gateway, MAX(cuotas)::int AS cuotas_cobro
       FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta}
       GROUP BY 1, 2
     )
     SELECT op.fecha::text AS fecha, op.local, op.orden_id, op.hora, op.total, op.unidades,
            op.items, op.mercaderia, op.falta_costo,
            p.financiero_real, p.cuotas, p.medio_mp,
-           cob.efectivo, cob.electronico, cob.transferencia
+           cob.efectivo, cob.electronico, cob.transferencia, cob.gateway, cob.cuotas_cobro
     FROM op
     LEFT JOIN pago p ON p.orden_id = op.orden_id AND p.local = op.local
     LEFT JOIN cob ON cob.orden_id = op.orden_id AND cob.local = op.local
@@ -1630,7 +1635,9 @@ async function feed(req, res) {
       fecha: r.fecha, local: r.local, orden_id: r.orden_id, hora: r.hora,
       total: Number(r.total), unidades: r.unidades, items: r.items || [],
     };
-    return esAdmin ? { ...base, ...margenDeOperacion(r, contexto) } : base;
+    // Las cuotas del cobro online mandan cuando no hay pago de MP cruzado
+    const fila = { ...r, cuotas: r.cuotas ?? r.cuotas_cobro };
+    return esAdmin ? { ...base, ...margenDeOperacion(fila, contexto) } : base;
   });
   if (!esAdmin) return res.status(200).json({ fecha: hoy, desde, hasta, operaciones });
 
