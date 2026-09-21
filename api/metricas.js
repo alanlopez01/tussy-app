@@ -196,6 +196,27 @@ async function correrIngesta() {
   }
 
   const hoy = hoyArg();
+
+  // Pagos de MercadoPago del día, cada 20 minutos: sin esto las ventas de hoy
+  // muestran la comisión estimada hasta que corre el cierre de la madrugada.
+  if (mpConfigurado()) {
+    const puedeMp = await sql`
+      INSERT INTO config_negocio (clave, valor, nota)
+      VALUES ('mp_sync_lock', EXTRACT(EPOCH FROM now()), 'última sincronización de pagos de MercadoPago')
+      ON CONFLICT (clave) DO UPDATE SET valor = EXTRACT(EPOCH FROM now())
+      WHERE config_negocio.valor < EXTRACT(EPOCH FROM now()) - 1200
+      RETURNING clave`;
+    if (puedeMp.length) {
+      waitUntil(
+        (async () => {
+          const r = await sincronizarPagos(sql, hoy, hoy);
+          const c = await cruzarConCobros(sql, hoy, hoy);
+          console.log("[mp-dia]", JSON.stringify({ ...r, ...c }));
+        })().catch(e => console.error("[mp-dia] error:", e))
+      );
+    }
+  }
+
   const eventos = [];
   const resumen = [];
 
