@@ -1641,9 +1641,12 @@ async function feed(req, res) {
         AND (${filtroLocal}::text IS NULL OR v.local = ${filtroLocal})
       GROUP BY v.fecha, v.local, v.orden_id
     ), pago AS (
+      -- Un día de margen a cada lado: una venta de las 23:50 puede tener su pago
+      -- acreditado después de medianoche, y si no entra al rango se muestra como
+      -- estimada teniendo el costo real. El cruce es por orden, así que no mezcla.
       SELECT orden_id, local, SUM(comision + financiacion)::float AS financiero_real,
              MAX(cuotas)::int AS cuotas, MAX(medio) AS medio_mp
-      FROM pagos_mp WHERE fecha BETWEEN ${desde} AND ${hasta}
+      FROM pagos_mp WHERE fecha BETWEEN ${desde}::date - 1 AND ${hasta}::date + 1
         AND orden_id IS NOT NULL AND estado = 'approved'
       GROUP BY 1, 2
     ), cob AS (
