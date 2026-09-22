@@ -2339,6 +2339,25 @@ async function completitud(req, res) {
     detalle: errores.length ? errores.join(" · ") : "sin días con error",
   });
 
+  // 1b) Días cortados a la mitad. sync_estado los da por buenos: la fuente
+  // respondió bien, pero devolvió solo hasta media tarde. Pasó el 15 y el 19 de
+  // julio en los cinco locales y no lo vio nadie. Un local que cierra a las 21
+  // y cuya última venta del día es a las 14 es un día incompleto.
+  const cortados = await sql`
+    SELECT fecha::text f, local, MAX(hora) h
+    FROM ventas
+    WHERE fecha BETWEEN ${desde} AND ${hasta} AND fecha < ${hoy}
+      AND local <> 'Tiendanube' AND hora IS NOT NULL
+    GROUP BY 1, 2 HAVING MAX(hora) < '18:00'
+    ORDER BY 1, 2`;
+  items.push({
+    clave: "dias_cortados", label: "Días con la carga incompleta",
+    estado: cortados.length ? "parcial" : "ok",
+    detalle: cortados.length
+      ? cortados.map(c => `${dd(c.f)} ${c.local} (última venta ${c.h})`).join(" · ")
+      : "ningún día quedó cortado",
+  });
+
   // 2) Reporte de ventas MP (costo financiero locales): cobertura vs. lo electrónico real
   const mixLocales = mixRows.filter(r => r.local !== "Tiendanube");
   if (!mixLocales.length) {

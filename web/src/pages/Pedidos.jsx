@@ -32,6 +32,20 @@ function colorDeLocal(nombre) {
 function nombreCorto(nombre) {
   return nombre === "Tiendanube" ? "Online" : nombre;
 }
+// De dónde sale el costo financiero de la operación. Cada canal cobra distinto y
+// conviene que la pantalla lo diga: no es lo mismo la comisión de MercadoPago que
+// el 0,5% que cobra Tiendanube por una transferencia.
+function etiquetaComision(op) {
+  if (op.medio === "efectivo") return "Efectivo (sin comisión)";
+  const cuotas = op.cuotas > 1 ? ` · ${op.cuotas} cuotas` : "";
+  if (op.origen_comision === "mercadopago") return `Comisión MercadoPago${cuotas}`;
+  if (op.origen_comision === "pagonube") return `Comisión PagoNube${cuotas}`;
+  if (op.origen_comision === "transferencia") return "Comisión Tiendanube (transferencia)";
+  if (op.origen_comision === "free") return "Sin costo de cobro";
+  if (op.origen_comision === "sin_cobro_electronico") return "Sin comisión (no pasó por MercadoPago)";
+  return "Comisiones (estimadas)";
+}
+
 function esIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
@@ -247,9 +261,7 @@ export default function Pedidos({ rol }) {
                             ["IVA", -op.iva, "text-ink-2"],
                             ["Ingresos brutos", -op.iibb, "text-ink-2"],
                             ["Impuesto al cheque", -op.cheque, "text-ink-2"],
-                            [op.medio === "efectivo" ? "Efectivo (sin comisión)" : op.financiero_real
-                               ? `Comisión MercadoPago${op.cuotas > 1 ? ` · ${op.cuotas} cuotas` : ""}`
-                               : "Comisiones (estimadas)", -op.comisiones, "text-ink-2"],
+                            [etiquetaComision(op), -op.comisiones, "text-ink-2"],
                           ].map(([etiqueta, valor, cls]) => (
                             <div key={etiqueta} className="flex items-center justify-between gap-3 text-[12px]">
                               <span className="text-ink-3">{etiqueta}</span>
@@ -264,6 +276,11 @@ export default function Pedidos({ rol }) {
                           </div>
                           {op.falta_costo && (
                             <div className="text-[11px] text-warn">Algún producto no tiene costo cargado: el margen está incompleto.</div>
+                          )}
+                          {op.origen_comision === "estimada" && (
+                            <div className="text-[11px] text-ink-3">
+                              MercadoPago todavía no informó el costo de este cobro. Se actualiza solo en cuanto lo publica.
+                            </div>
                           )}
                         </div>
                       )}
