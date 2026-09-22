@@ -167,8 +167,43 @@ function autorizarCron(req, res) {
   return false;
 }
 
+// Perro guardián de la ingesta. Un error temprano en correrIngesta la deja muda:
+// toma el candado, se cae y nadie se entera hasta que alguien mira la pantalla y
+// no ve las ventas del día. Si en horario comercial pasaron más de 90 minutos sin
+// una sincronización exitosa, avisa por push y por Telegram (una vez cada 4 horas).
+async function vigilarIngesta() {
+  const hora = horaArgNum();
+  if (hora < 11 || hora >= 23) return;
+  const sql = neon(process.env.DATABASE_URL);
+  const [{ minutos }] = await sql`
+    SELECT EXTRACT(EPOCH FROM now() - MAX(actualizado_en)) / 60 AS minutos
+    FROM sync_estado WHERE estado = 'ok' AND local <> 'ARCA'`;
+  if (minutos == null || Number(minutos) < 90) return;
+  const puede = await sql`
+    INSERT INTO config_negocio (clave, valor, descripcion)
+    VALUES ('ingesta_aviso', EXTRACT(EPOCH FROM now()), 'último aviso de ingesta caída')
+    ON CONFLICT (clave) DO UPDATE SET valor = EXTRACT(EPOCH FROM now())
+    WHERE config_negocio.valor < EXTRACT(EPOCH FROM now()) - 14400
+    RETURNING clave`;
+  if (!puede.length) return;
+  const horas = (Number(minutos) / 60).toFixed(1).replace(".", ",");
+  const texto = `La ingesta de ventas no carga nada hace ${horas} horas: los números de la app están desactualizados.`;
+  console.error("[vigilancia]", texto);
+  await enviarPush([{ title: "⚠️ Ingesta caída", body: texto, url: "/" }], { solo: "alan" });
+  if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+    await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: `⚠️ ${texto}` }),
+    }).catch(() => {});
+  }
+}
+
 async function ingesta(req, res) {
   if (!autorizarCron(req, res)) return;
+
+  // Va aparte de correrIngesta a propósito: si esa se cae, la vigilancia igual corre.
+  waitUntil(vigilarIngesta().catch(e => console.error("[vigilancia] error:", e)));
 
   // La ingesta puede tardar bastante (6 fuentes, POS lentos). Respondemos al instante
   // y el trabajo sigue de fondo hasta maxDuration (waitUntil).
