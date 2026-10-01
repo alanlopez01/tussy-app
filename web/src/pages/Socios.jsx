@@ -154,10 +154,11 @@ export default function Socios() {
               <thead>
                 <tr className="text-ink-3 text-[10px] uppercase tracking-[0.06em]">
                   <th className="text-left font-semibold py-1.5 pr-3">Mes</th>
+                  <th className="text-right font-semibold py-1.5 px-2">Pozo</th>
                   {socios.map(s => (
                     <th key={s.socio} className="text-right font-semibold py-1.5 px-2">{s.socio}</th>
                   ))}
-                  <th className="text-right font-semibold py-1.5 pl-2">Total</th>
+                  <th className="text-right font-semibold py-1.5 pl-2">Retirado</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,6 +167,9 @@ export default function Socios() {
                   return (
                     <tr key={m.mes} className="border-t border-borde">
                       <td className="py-2 pr-3 text-ink-2 capitalize whitespace-nowrap">{nombreMes(m.mes)}</td>
+                      <td className="text-right py-2 px-2 text-ink-2">
+                        {m.pozo ? fmtPesos(m.pozo) : <span className="text-ink-3">—</span>}
+                      </td>
                       {socios.map(s => {
                         const d = m.socios[s.socio] || {};
                         return (
@@ -178,6 +182,13 @@ export default function Socios() {
                       })}
                       <td className="text-right py-2 pl-2 font-bold text-ink">
                         {fmtPesos(m.total_retiros)}
+                        {m.pozo > 0 && (
+                          <div className={`text-[10px] font-semibold ${m.pozo - m.total_retiros >= 0 ? "text-ink-3" : "text-bad"}`}>
+                            {m.pozo - m.total_retiros >= 0
+                              ? `quedó ${fmtPesos(m.pozo - m.total_retiros)}`
+                              : `${fmtPesos(m.total_retiros - m.pozo)} de más`}
+                          </div>
+                        )}
                         <div className="mt-1 h-1 rounded-full bg-borde overflow-hidden">
                           <div className="h-full bg-negro" style={{ width: `${(m.total_retiros / max) * 100}%` }} />
                         </div>
@@ -189,6 +200,7 @@ export default function Socios() {
               <tfoot>
                 <tr className="border-t-2 border-ink/20 font-bold text-ink">
                   <td className="py-2 pr-3 text-[11px] uppercase tracking-[0.06em]">Acumulado</td>
+                  <td className="text-right py-2 px-2">{fmtPesos(data.pozo_total)}</td>
                   {socios.map(s => (
                     <td key={s.socio} className="text-right py-2 px-2">{fmtPesos(s.retirado)}</td>
                   ))}
@@ -200,8 +212,9 @@ export default function Socios() {
             </table>
           </div>
           <p className="mt-3 text-[11px] text-ink-3">
-            El número grande de cada mes es lo que se llevó cada socio. Abajo, en chico, los gastos
-            que se le descuentan del saldo y los aportes que puso de su bolsillo.
+            <strong className="text-ink-2">Pozo</strong> es lo que se declaró para repartir ese mes.
+            El número grande de cada socio es lo que se llevó, y abajo en chico los gastos que se le
+            descuentan del saldo y los aportes que puso de su bolsillo.
           </p>
         </Card>
       )}
