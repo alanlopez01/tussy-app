@@ -21,6 +21,13 @@ function formatearMiles(s) {
   return ent.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + dec;
 }
 
+const MESES = ["enero","febrero","marzo","abril","mayo","junio",
+               "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function nombreMes(ym) {
+  const [a, m] = String(ym).split("-");
+  return `${MESES[Number(m) - 1]} ${a}`;
+}
+
 const TIPOS = [
   { v: "retiro", l: "Retiro", ayuda: "efectivo o transferencia que se lleva el socio" },
   { v: "gasto", l: "Gasto socio", ayuda: "se descuenta de su saldo, no toca la caja" },
@@ -138,6 +145,65 @@ export default function Socios() {
             </Card>
           ))}
         </div>
+      )}
+
+      {data?.meses?.length > 0 && (
+        <Card title="Retiros mes a mes">
+          <div className="-mx-1 overflow-x-auto">
+            <table className="w-full text-[12px] tabular-nums">
+              <thead>
+                <tr className="text-ink-3 text-[10px] uppercase tracking-[0.06em]">
+                  <th className="text-left font-semibold py-1.5 pr-3">Mes</th>
+                  {socios.map(s => (
+                    <th key={s.socio} className="text-right font-semibold py-1.5 px-2">{s.socio}</th>
+                  ))}
+                  <th className="text-right font-semibold py-1.5 pl-2">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.meses.map(m => {
+                  const max = Math.max(...data.meses.map(x => x.total_retiros), 1);
+                  return (
+                    <tr key={m.mes} className="border-t border-borde">
+                      <td className="py-2 pr-3 text-ink-2 capitalize whitespace-nowrap">{nombreMes(m.mes)}</td>
+                      {socios.map(s => {
+                        const d = m.socios[s.socio] || {};
+                        return (
+                          <td key={s.socio} className="text-right py-2 px-2 text-ink">
+                            {d.retiro ? fmtPesos(d.retiro) : <span className="text-ink-3">—</span>}
+                            {d.gasto > 0 && <div className="text-[10px] text-ink-3">+{fmtPesos(d.gasto)} gastos</div>}
+                            {d.aporte > 0 && <div className="text-[10px] text-ok">−{fmtPesos(d.aporte)} aporte</div>}
+                          </td>
+                        );
+                      })}
+                      <td className="text-right py-2 pl-2 font-bold text-ink">
+                        {fmtPesos(m.total_retiros)}
+                        <div className="mt-1 h-1 rounded-full bg-borde overflow-hidden">
+                          <div className="h-full bg-negro" style={{ width: `${(m.total_retiros / max) * 100}%` }} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-ink/20 font-bold text-ink">
+                  <td className="py-2 pr-3 text-[11px] uppercase tracking-[0.06em]">Acumulado</td>
+                  {socios.map(s => (
+                    <td key={s.socio} className="text-right py-2 px-2">{fmtPesos(s.retirado)}</td>
+                  ))}
+                  <td className="text-right py-2 pl-2">
+                    {fmtPesos(socios.reduce((a, s) => a + s.retirado, 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="mt-3 text-[11px] text-ink-3">
+            El número grande de cada mes es lo que se llevó cada socio. Abajo, en chico, los gastos
+            que se le descuentan del saldo y los aportes que puso de su bolsillo.
+          </p>
+        </Card>
       )}
 
       <Card title={form.id ? "Editar movimiento" : null}>

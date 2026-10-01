@@ -217,10 +217,15 @@ async function deudaBorrar(req, res) {
 // socio. saldo = pozo×pct − gastos + aportes − retiros. Un retiro/aporte puede
 // impactar la caja de Tussy (fila linkeada vía caja_mov_id, como el Excel).
 async function sociosResumen(req, res) {
-  const [socios, movs] = await Promise.all([
+  const [socios, movs, porMes] = await Promise.all([
     sql`SELECT nombre, porcentaje::float FROM socios WHERE activo ORDER BY porcentaje DESC`,
     sql`SELECT id, fecha::text, socio, tipo, descripcion, monto::float, caja_mov_id, usuario, origen
         FROM socios_movimientos ORDER BY fecha DESC, creado_en DESC`,
+    // Mes a mes por socio: el tablero que reemplaza al que estaba en el Excel.
+    sql`SELECT to_char(fecha, 'YYYY-MM') AS mes, COALESCE(socio, '') AS socio, tipo,
+               SUM(monto)::float AS total
+        FROM socios_movimientos
+        GROUP BY 1, 2, 3 ORDER BY 1 DESC`,
   ]);
   const pozoTotal = movs.filter(m => m.tipo === "pozo").reduce((a, m) => a + m.monto, 0);
   const resumen = socios.map(s => {
@@ -231,8 +236,21 @@ async function sociosResumen(req, res) {
     return { socio: s.nombre, porcentaje: s.porcentaje, corresponde, retirado, gastos, aportes,
              saldo: corresponde - gastos + aportes - retirado };
   });
+  // Una fila por mes con lo de cada socio, de lo más nuevo a lo más viejo.
+  const meses = [...new Set(porMes.map(m => m.mes))].sort().reverse().map(mes => {
+    const delMes = porMes.filter(m => m.mes === mes);
+    const de = (socio, tipo) => delMes.find(m => m.socio === socio && m.tipo === tipo)?.total || 0;
+    const fila = { mes, pozo: de("", "pozo"), socios: {}, total_retiros: 0 };
+    for (const s of socios) {
+      const retiro = de(s.nombre, "retiro"), gasto = de(s.nombre, "gasto"), aporte = de(s.nombre, "aporte");
+      fila.socios[s.nombre] = { retiro, gasto, aporte, neto: retiro + gasto - aporte };
+      fila.total_retiros += retiro;
+    }
+    return fila;
+  });
+
   res.status(200).json({
-    socios: resumen, pozo_total: pozoTotal,
+    socios: resumen, pozo_total: pozoTotal, meses,
     pozos: movs.filter(m => m.tipo === "pozo").slice(0, 40),
     movimientos: movs.slice(0, 120),
   });
