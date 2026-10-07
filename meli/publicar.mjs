@@ -91,7 +91,7 @@ function armarBody() {
         attributes: grid?.filas?.[v.SIZE]
           ? [{ id: "SIZE_GRID_ROW_ID", value_name: grid.filas[v.SIZE] }] : [],
         seller_custom_field: v.sku || undefined,
-        picture_ids: propia ? [propia] : todas,
+        picture_ids: deLaVariacion.slice(0, 10),
       };
     }),
   };

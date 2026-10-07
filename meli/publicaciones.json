@@ -3,7 +3,7 @@
     "tn_id": 371560754,
     "tn_nombre": "REMERA OVERSIZE HOMIES",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Homies Algodón Hombre",
+    "title": "Remera Oversize Homies",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -16,7 +16,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -48,7 +55,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/foto-1-web-8cb8dc7173f07aac9117909529412268-1024-1024.jpg"
@@ -78,7 +85,7 @@
     "tn_id": 371600115,
     "tn_nombre": "REMERA OVERSIZE RAIDEN",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Raiden Algodón Hombre",
+    "title": "Remera Oversize Raiden",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -91,7 +98,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -123,7 +137,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/foto-1-1cb09c040c660887b917909628737750-1024-1024.jpg"
@@ -153,7 +167,7 @@
     "tn_id": 371655752,
     "tn_nombre": "REMERA OVERSIZE KITANA",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Kitana Algodón Hombre",
+    "title": "Remera Oversize Kitana",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -166,7 +180,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -198,7 +219,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/foto-1-3-89c572af8186098d5f17909734431179-1024-1024.jpg"
@@ -225,7 +246,7 @@
     "tn_id": 371199543,
     "tn_nombre": "CAMPERA TEJIDA BRICKELL",
     "tipo": "camperaT",
-    "title": "Campera Tejida Tussy Brickell",
+    "title": "Campera Tejida Brickell",
     "category_id": "MLA109096",
     "size_grid": "CAMPERA_PERLE_TEJIDA",
     "price_tn": 120000,
@@ -324,7 +345,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/whatsapp-image-2026-10-01-at-12-33-10-2-f6b5e4278db411ae6817908688227820-1024-1024.jpg"
       }
     ],
-    "description": "Campera tejida con capucha y cierre.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nColores disponibles: Negro, Blanco, Azul.\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo cuerpo · ancho cuerpo bajo sisa · ancho alto ruedo · largo manga\nS · 61 · 63 · 53 · 51\nM · 63 · 64 · 54 · 52\nL · 65 · 65 · 55 · 53\nXL · 67 · 66 · 56 · 54\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Campera tejida con capucha y cierre.\n\nColores: Negro, Blanco, Azul.\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo cuerpo · ancho cuerpo bajo sisa · ancho alto ruedo · largo manga\nS · 61 · 63 · 53 · 51\nM · 63 · 64 · 54 · 52\nL · 65 · 65 · 55 · 53\nXL · 67 · 66 · 56 · 54\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/foto-web-2-78f3aea8f24ee055e817908684576220-1024-1024.jpg"
@@ -345,7 +366,7 @@
     "tn_id": 371070264,
     "tn_nombre": "REMERA OVERSIZE RED DEUS",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Red Deus Algodón Hombre",
+    "title": "Remera Oversize Red Deus",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -358,7 +379,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -390,7 +418,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/img_0434-cef5f2bfbc6b0f1fbe17908150208871-1024-1024.jpg"
@@ -420,7 +448,7 @@
     "tn_id": 367376065,
     "tn_nombre": "PANTALON BAGGY TSSY ASIMOV",
     "tipo": "pantalon",
-    "title": "Pantalón Baggy Tussy Asimov",
+    "title": "Pantalón Baggy Tssy Asimov",
     "category_id": "MLA109282",
     "size_grid": "PANTALONES",
     "price_tn": 80000,
@@ -463,7 +491,7 @@
         "foto": null
       }
     ],
-    "description": "Pantalón de calce baggy.\n\nCalce baggy. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho\nS · 100 · 36\nM · 103 · 38\nL · 106 · 40\nXL · 109 · 42\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Pantalón de calce baggy.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho\nS · 100 · 36\nM · 103 · 38\nL · 106 · 40\nXL · 109 · 42\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/foto-5-f054952057e7a1d20f17894136374590-1024-1024.jpg"
@@ -484,7 +512,7 @@
     "tn_id": 367377071,
     "tn_nombre": "CAMPERA TSSY ASIMOV",
     "tipo": "campera",
-    "title": "Campera Tussy Asimov",
+    "title": "Campera Tssy Asimov",
     "category_id": "MLA109096",
     "size_grid": "CAMPERA_TSSY",
     "price_tn": 70000,
@@ -527,7 +555,7 @@
         "foto": null
       }
     ],
-    "description": "Campera con capucha y cierre.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho cintura · ancho cadera · largo manga · ancho manga\nS · 62 · 63 · 48 · 60 · 25\nM · 65 · 65 · 50 · 60 · 26\nL · 68 · 67 · 52 · 62 · 27\nXL · 71 · 69 · 54 · 62 · 28\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Campera con capucha y cierre.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho cintura · ancho cadera · largo manga · ancho manga\nS · 62 · 63 · 48 · 60 · 25\nM · 65 · 65 · 50 · 60 · 26\nL · 68 · 67 · 52 · 62 · 27\nXL · 71 · 69 · 54 · 62 · 28\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/foto-4-f09c981f26998a20d817894137881359-1024-1024.jpg"
@@ -554,7 +582,7 @@
     "tn_id": 366598896,
     "tn_nombre": "REMERA OVERSIZE HARLY",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Harly Algodón Hombre",
+    "title": "Remera Oversize Harly",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 42000,
@@ -567,7 +595,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -599,7 +634,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/web-remera-escudo-azul-3-36e3258ab9b9280fc217890572166853-1024-1024.jpg"
@@ -623,7 +658,7 @@
     "tn_id": 362365572,
     "tn_nombre": "REMERA OVERSIZE CASTLE",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Castle Algodón Hombre",
+    "title": "Remera Oversize Castle",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -636,7 +671,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -668,7 +710,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/954f0f8d-3bb9-491d-a853-bed3aef0269b-b2242b5339fb6a7f8c17873402961609-1024-1024.jpg"
@@ -689,7 +731,7 @@
     "tn_id": 362241102,
     "tn_nombre": "REMERA OVERSIZE TAILS CON BRILLOS",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Tails Algodón Hombre",
+    "title": "Remera Oversize Tails Con Brillos",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -702,7 +744,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -734,7 +783,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/remera-negra-trasero-0e8c97193cc64614da17872697559798-1024-1024.jpg"
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/foto-piso-web-3-c0f2f3a33bdb95290517873194503261-1024-1024.jpg"
@@ -770,7 +819,7 @@
     "tn_id": 331510110,
     "tn_nombre": "REMERA TSSY DIAMONDS",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Diamonds Algodón Hombre",
+    "title": "Remera Tssy Diamonds",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -783,7 +832,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -815,7 +871,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-81d1dcd167b3cf6a9217867259344487-1024-1024.jpg"
@@ -836,7 +892,7 @@
     "tn_id": 360717215,
     "tn_nombre": "BOLSO TSSY",
     "tipo": "bolso",
-    "title": "Bolso Tussy",
+    "title": "Bolso Tssy",
     "category_id": "MLA432000",
     "size_grid": null,
     "price_tn": 70000,
@@ -857,7 +913,7 @@
         "foto": null
       }
     ],
-    "description": "Bolso Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Bolso Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/05-562c190aa04511ec2917867189555426-1024-1024.jpg"
@@ -884,7 +940,7 @@
     "tn_id": 330720580,
     "tn_nombre": "REMERA OVERSIZE ROOTS",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Roots Algodón Hombre",
+    "title": "Remera Oversize Roots",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 42000,
@@ -897,7 +953,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -957,7 +1020,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/03-dd90a7fb3a04b349c917867250762415-1024-1024.jpg"
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nColores disponibles: Negro, Blanco.\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nColores: Negro, Blanco.\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-22fe039d0ec6ef03b617867250719105-1024-1024.jpg"
@@ -996,7 +1059,7 @@
     "tn_id": 353874374,
     "tn_nombre": "REMERA OVERSIZE AMBERLINE",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Amberline Algodón Hombre",
+    "title": "Remera Oversize Amberline",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -1009,7 +1072,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1069,7 +1139,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/07-8304ac1df78704a28e17867238801872-1024-1024.jpg"
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nColores disponibles: Negro, Blanco.\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nColores: Negro, Blanco.\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-686bc1fcb06b23a5df17867238679764-1024-1024.jpg"
@@ -1099,7 +1169,7 @@
     "tn_id": 358667354,
     "tn_nombre": "REMERA OVERSIZE FLYING",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Flying Algodón Hombre",
+    "title": "Remera Oversize Flying",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -1112,7 +1182,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1144,7 +1221,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-6bbc6a524bbd547d0c17867244139958-1024-1024.jpg"
@@ -1168,7 +1245,7 @@
     "tn_id": 340746093,
     "tn_nombre": "REMERA OVERSIZE FIRE FIX",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Fire Fix Algodón Hombre",
+    "title": "Remera Oversize Fire Fix",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -1181,7 +1258,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1213,7 +1297,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/03-1918498c75837396ca17867177627992-1024-1024.jpg"
@@ -1231,7 +1315,7 @@
     "tn_id": 324339938,
     "tn_nombre": "REMERA OVERSIZE BLESSED TSSY",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Blessed Algodón Hombre",
+    "title": "Remera Oversize Blessed Tssy",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -1244,7 +1328,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1276,7 +1367,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-24b023bee37f5eceb117867239882809-1024-1024.jpg"
@@ -1309,7 +1400,7 @@
     "tn_id": 289801146,
     "tn_nombre": "REMERA OVERSIZE GLOBAL",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Global Algodón Hombre",
+    "title": "Remera Oversize Global",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 42000,
@@ -1322,7 +1413,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1382,7 +1480,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/07-cbac7b2463f652fe7317867244481375-1024-1024.jpg"
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nColores disponibles: Negro, Blanco.\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nColores: Negro, Blanco.\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-5c3cd1323337c79c2b17867244365410-1024-1024.jpg"
@@ -1427,7 +1525,7 @@
     "tn_id": 356549356,
     "tn_nombre": "SWEATER ATLANTIC TSSY",
     "tipo": "sweater",
-    "title": "Sweater Tussy Atlantic",
+    "title": "Sweater Atlantic Tssy",
     "category_id": "MLA109100",
     "size_grid": "SWEATERS_2026",
     "price_tn": 105000,
@@ -1526,7 +1624,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/08-337bdcb80459d5df3a17867259655225-1024-1024.jpg"
       }
     ],
-    "description": "Sweater de punto, escote redondo.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nColores disponibles: Blanco, Negro, Azul.\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · copa hombro a hombro · largo manga\nS · 62 · 61 · 54 · 51\nM · 64 · 62 · 55 · 52\nL · 66 · 63 · 56 · 53\nXL · 68 · 64 · 57 · 54\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Sweater de punto, escote redondo.\n\nColores: Blanco, Negro, Azul.\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · copa hombro a hombro · largo manga\nS · 62 · 61 · 54 · 51\nM · 64 · 62 · 55 · 52\nL · 66 · 63 · 56 · 53\nXL · 68 · 64 · 57 · 54\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-5b906df47c2bf6816117867259519459-1024-1024.jpg"
@@ -1562,7 +1660,7 @@
     "tn_id": 359729897,
     "tn_nombre": "CAMPERA TSSY OUTSIDER",
     "tipo": "campera",
-    "title": "Campera Tussy Outsider",
+    "title": "Campera Tssy Outsider",
     "category_id": "MLA109096",
     "size_grid": "CAMPERA_TSSY",
     "price_tn": 140000,
@@ -1605,7 +1703,7 @@
         "foto": null
       }
     ],
-    "description": "Campera con capucha y cierre.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho cintura · ancho cadera · largo manga · ancho manga\nS · 62 · 63 · 48 · 60 · 25\nM · 65 · 65 · 50 · 60 · 26\nL · 68 · 67 · 52 · 62 · 27\nXL · 71 · 69 · 54 · 62 · 28\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Campera con capucha y cierre.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho cintura · ancho cadera · largo manga · ancho manga\nS · 62 · 63 · 48 · 60 · 25\nM · 65 · 65 · 50 · 60 · 26\nL · 68 · 67 · 52 · 62 · 27\nXL · 71 · 69 · 54 · 62 · 28\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-4e16d669aea2b4386417867219242719-1024-1024.jpg"
@@ -1623,7 +1721,7 @@
     "tn_id": 334572064,
     "tn_nombre": "REMERA OVERSIZE PRAYER TSSY",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Prayer Algodón Hombre",
+    "title": "Remera Oversize Prayer Tssy",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -1636,7 +1734,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1668,7 +1773,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-dec1b8439737e5d01b17867248980936-1024-1024.jpg"
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-30cf900e156538f76417867249007202-1024-1024.jpg"
@@ -1698,7 +1803,7 @@
     "tn_id": 360893207,
     "tn_nombre": "BOLSO VALHALA",
     "tipo": "bolso",
-    "title": "Bolso Tussy Valhala",
+    "title": "Bolso Valhala",
     "category_id": "MLA432000",
     "size_grid": null,
     "price_tn": 45000,
@@ -1719,7 +1824,7 @@
         "foto": null
       }
     ],
-    "description": "Bolso Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Bolso Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/03-aaaf18a7edf18a5de317867189817103-1024-1024.jpg"
@@ -1743,7 +1848,7 @@
     "tn_id": 316440050,
     "tn_nombre": "REMERA OVERSIZE ANGELS",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Angels Algodón Hombre",
+    "title": "Remera Oversize Angels",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 42000,
@@ -1756,7 +1861,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1816,7 +1928,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-ecdef8496ec9b7ac4317867239049306-1024-1024.jpg"
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nColores disponibles: Negro, Blanco.\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nColores: Negro, Blanco.\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-98fda67737e236002317867239076754-1024-1024.jpg"
@@ -1855,7 +1967,7 @@
     "tn_id": 340292939,
     "tn_nombre": "REMERA OVERSIZE VIRGIN TSSY",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Virgin Algodón Hombre",
+    "title": "Remera Oversize Virgin Tssy",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -1868,7 +1980,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1900,7 +2019,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-decf2472ae47990ce717867177951856-1024-1024.jpg"
@@ -1921,7 +2040,7 @@
     "tn_id": 345960424,
     "tn_nombre": "REMERA OVERSIZE ECLIPSE",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Eclipse Algodón Hombre",
+    "title": "Remera Oversize Eclipse",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -1934,7 +2053,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -1966,7 +2092,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-5cb973e5cad3ea0f2117867243668542-1024-1024.jpg"
@@ -1990,7 +2116,7 @@
     "tn_id": 348104837,
     "tn_nombre": "REMERA OVERSIZE VICECITY",
     "tipo": "remera",
-    "title": "Remera Oversize Tussy Vicecity Algodón Hombre",
+    "title": "Remera Oversize Vicecity",
     "category_id": "MLA109042",
     "size_grid": "REMERA_OVERSIZE",
     "price_tn": 55000,
@@ -2003,7 +2129,14 @@
       "GENDER": "Hombre",
       "GARMENT_TYPE": "Remera",
       "SLEEVE_TYPE": "Corta",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "T_SHIRT_COLLAR_TYPE": "Redondo",
+      "WEDGE_SHAPE": "Oversized",
+      "SALE_FORMAT": "Unidad",
+      "UNITS_PER_PACK": "1",
+      "IS_SPORTIVE": "No",
+      "WITH_RECYCLED_MATERIALS": "No"
     },
     "variaciones": [
       {
@@ -2035,7 +2168,7 @@
         "foto": null
       }
     ],
-    "description": "Remera de algodón con calce oversize.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Remera de calce oversize en algodón.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · largo manga · ancho manga\nS · 67 · 62 · 22 · 20\nM · 70 · 63 · 23 · 21\nL · 73 · 64 · 24 · 22\nXL · 76 · 65 · 25 · 23\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/04-5cda9558e3792e147e17867256181347-1024-1024.jpg"
@@ -2062,7 +2195,7 @@
     "tn_id": 354619056,
     "tn_nombre": "CAMPERA TSSY DIZZY",
     "tipo": "campera",
-    "title": "Campera Tussy Dizzy",
+    "title": "Campera Tssy Dizzy",
     "category_id": "MLA109096",
     "size_grid": "CAMPERA_TSSY",
     "price_tn": 140000,
@@ -2105,7 +2238,7 @@
         "foto": null
       }
     ],
-    "description": "Campera con capucha y cierre.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho cintura · ancho cadera · largo manga · ancho manga\nS · 62 · 63 · 48 · 60 · 25\nM · 65 · 65 · 50 · 60 · 26\nL · 68 · 67 · 52 · 62 · 27\nXL · 71 · 69 · 54 · 62 · 28\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Campera con capucha y cierre.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho cintura · ancho cadera · largo manga · ancho manga\nS · 62 · 63 · 48 · 60 · 25\nM · 65 · 65 · 50 · 60 · 26\nL · 68 · 67 · 52 · 62 · 27\nXL · 71 · 69 · 54 · 62 · 28\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-3d4b9f38a234e5d3c417867218704014-1024-1024.jpg"
@@ -2135,7 +2268,7 @@
     "tn_id": 356550348,
     "tn_nombre": "SWEATER WEAVES TSSY",
     "tipo": "sweater",
-    "title": "Sweater Tussy Weaves",
+    "title": "Sweater Weaves Tssy",
     "category_id": "MLA109100",
     "size_grid": "SWEATERS_2026",
     "price_tn": 105000,
@@ -2206,7 +2339,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/03-72383981018201a30c17867261548547-1024-1024.jpg"
       }
     ],
-    "description": "Sweater de punto, escote redondo.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nColores disponibles: Negro, Azul.\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · ancho · copa hombro a hombro · largo manga\nS · 62 · 61 · 54 · 51\nM · 64 · 62 · 55 · 52\nL · 66 · 63 · 56 · 53\nXL · 68 · 64 · 57 · 54\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Sweater de punto, escote redondo.\n\nColores: Negro, Azul.\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · ancho · copa hombro a hombro · largo manga\nS · 62 · 61 · 54 · 51\nM · 64 · 62 · 55 · 52\nL · 66 · 63 · 56 · 53\nXL · 68 · 64 · 57 · 54\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-3a59e68ecbad9ddb6d17867261524352-1024-1024.jpg"
@@ -2233,7 +2366,7 @@
     "tn_id": 353684702,
     "tn_nombre": "BUZO OVERSIZE BLUE JAYS",
     "tipo": "buzo",
-    "title": "Buzo Canguro Tussy Blue Jays Frisa",
+    "title": "Buzo Oversize Blue Jays",
     "category_id": "MLA109085",
     "size_grid": "BUZO_CANGURO",
     "price_tn": 95000,
@@ -2244,7 +2377,10 @@
       "BRAND": "Tussy",
       "MODEL": "BUZO OVERSIZE BLUE JAYS",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "SALE_FORMAT": "Unidad",
+      "IS_SPORTIVE": "No"
     },
     "variaciones": [
       {
@@ -2276,7 +2412,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-e787eaf3f46ab5cd9c17867195826995-1024-1024.jpg"
       }
     ],
-    "description": "Buzo canguro con capucha y bolsillo delantero.\n\nCalce oversize. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.\n\nTalles: S, M, L, XL.\n\nMEDIDAS (cm)\nTalle · largo · sisa · manga\nS · 64 · 65 · 53\nM · 66 · 67 · 55\nL · 68 · 69 · 57\nXL · 70 · 71 · 59\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Buzo canguro con capucha y bolsillo delantero.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nMEDIDAS APROXIMADAS (prenda apoyada, en cm)\nTalle · largo · sisa · manga\nS · 64 · 65 · 53\nM · 66 · 67 · 55\nL · 68 · 69 · 57\nXL · 70 · 71 · 59\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-bd6371c9031643791917867195857771-1024-1024.jpg"
@@ -2306,7 +2442,7 @@
     "tn_id": 360899990,
     "tn_nombre": "BOLSO TRAVEL",
     "tipo": "bolso",
-    "title": "Bolso Tussy Travel",
+    "title": "Bolso Travel",
     "category_id": "MLA432000",
     "size_grid": null,
     "price_tn": 100000,
@@ -2327,7 +2463,7 @@
         "foto": null
       }
     ],
-    "description": "Bolso Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Bolso Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/img_0146-b77fb6c804c4fd3cf417867347562947-1024-1024.jpg"
@@ -2363,7 +2499,7 @@
     "tn_id": 361082736,
     "tn_nombre": "MOCHILA TSSY",
     "tipo": "mochila",
-    "title": "Mochila Tussy",
+    "title": "Mochila Tssy",
     "category_id": "MLA120350",
     "size_grid": null,
     "price_tn": 60000,
@@ -2384,7 +2520,7 @@
         "foto": null
       }
     ],
-    "description": "Mochila Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Mochila Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/aa551190-1b76-4e15-9cab-e223020c128f-48a1864568aac7b62517867320450604-1024-1024.jpg"
@@ -2405,7 +2541,7 @@
     "tn_id": 360840326,
     "tn_nombre": "BOLSO SQUARE",
     "tipo": "bolso",
-    "title": "Bolso Tussy Square",
+    "title": "Bolso Square",
     "category_id": "MLA432000",
     "size_grid": null,
     "price_tn": 45000,
@@ -2426,7 +2562,7 @@
         "foto": null
       }
     ],
-    "description": "Bolso Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Bolso Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/04-bb2405b12e2567406d17867188895975-1024-1024.jpg"
@@ -2453,7 +2589,7 @@
     "tn_id": 360893707,
     "tn_nombre": "BOLSO BELT",
     "tipo": "bolso",
-    "title": "Bolso Tussy Belt",
+    "title": "Bolso Belt",
     "category_id": "MLA432000",
     "size_grid": null,
     "price_tn": 45000,
@@ -2474,7 +2610,7 @@
         "foto": null
       }
     ],
-    "description": "Bolso Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Bolso Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/05-cc73d6aa448f2ca07b17867188665353-1024-1024.jpg"
@@ -2501,7 +2637,7 @@
     "tn_id": 360895946,
     "tn_nombre": "BOLSO CHEW",
     "tipo": "bolso",
-    "title": "Bolso Tussy Chew",
+    "title": "Bolso Chew",
     "category_id": "MLA432000",
     "size_grid": null,
     "price_tn": 45000,
@@ -2529,7 +2665,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/06-4b0b5df30eb8dd2db217867189195623-1024-1024.jpg"
       }
     ],
-    "description": "Bolso Tussy.\n\nColores disponibles: Negro, Crudo.\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Bolso Tussy.\n\nColores: Negro, Crudo.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/04-0f6e5db8308e49642a17867189148320-1024-1024.jpg"
@@ -2565,7 +2701,7 @@
     "tn_id": 361674741,
     "tn_nombre": "BOLSO POCKET",
     "tipo": "bolso",
-    "title": "Bolso Tussy Pocket",
+    "title": "Bolso Pocket",
     "category_id": "MLA432000",
     "size_grid": null,
     "price_tn": 45000,
@@ -2586,7 +2722,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/img_0158-4119bad564c79116d617870748095278-1024-1024.jpg"
       }
     ],
-    "description": "Bolso Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Bolso Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/img_0158-4119bad564c79116d617870748095278-1024-1024.jpg"
@@ -2628,7 +2764,7 @@
     "tn_id": 317118241,
     "tn_nombre": "GORRA SCOUT",
     "tipo": "gorra",
-    "title": "Gorra Tussy Scout",
+    "title": "Gorra Scout",
     "category_id": "MLA67460",
     "size_grid": null,
     "price_tn": 38000,
@@ -2649,7 +2785,7 @@
         "foto": null
       }
     ],
-    "description": "Gorra Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Gorra Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/03-e6f3a70ec25e40602e17867220477060-1024-1024.jpg"
@@ -2667,7 +2803,7 @@
     "tn_id": 250444728,
     "tn_nombre": "BOXER STRIPE",
     "tipo": "boxer",
-    "title": "Boxer Tussy Stripe",
+    "title": "Boxer Stripe",
     "category_id": "MLA429740",
     "size_grid": null,
     "price_tn": 19000,
@@ -2678,7 +2814,9 @@
       "BRAND": "Tussy",
       "MODEL": "BOXER STRIPE",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -2738,7 +2876,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/03-d5a9a2cbdd2caff39017867190269358-1024-1024.jpg"
       }
     ],
-    "description": "Boxer de algodón con elástico de cintura.\n\nColores disponibles: Negro, Celeste.\nTalles: S, M, L, XL.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Boxer de algodón con elástico de cintura.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nColores: Negro, Celeste.\nTalles: S / M / L / XL.\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-2118b0f51d11e73d6417867190225982-1024-1024.jpg"
@@ -2776,7 +2914,9 @@
       "BRAND": "Tussy",
       "MODEL": "BOXER TUSSY",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -2836,7 +2976,7 @@
         "foto": null
       }
     ],
-    "description": "Boxer de algodón con elástico de cintura.\n\nColores disponibles: Cemento, Negro.\nTalles: L, M, XL, XXL.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Boxer de algodón con elástico de cintura.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nColores: Cemento, Negro.\nTalles: L / M / XL / XXL.\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-f804ff740d97b3bcc617867190865049-1024-1024.jpg"
@@ -2857,7 +2997,7 @@
     "tn_id": 339454904,
     "tn_nombre": "BOXER ALWAYS",
     "tipo": "boxer",
-    "title": "Boxer Tussy Always",
+    "title": "Boxer Always",
     "category_id": "MLA429740",
     "size_grid": null,
     "price_tn": 15000,
@@ -2868,7 +3008,9 @@
       "BRAND": "Tussy",
       "MODEL": "BOXER ALWAYS",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -2956,7 +3098,7 @@
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/02-cc0e05e789ec6b320f17867190007415-1024-1024.jpg"
       }
     ],
-    "description": "Boxer de algodón con elástico de cintura.\n\nColores disponibles: Negro, Negro c/Blanco, Gris.\nTalles: S, M, L, XL.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Boxer de algodón con elástico de cintura.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nColores: Negro, Negro c/Blanco, Gris.\nTalles: S / M / L / XL.\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-9534b5a7624732d81617867189985978-1024-1024.jpg"
@@ -2974,7 +3116,7 @@
     "tn_id": 339455755,
     "tn_nombre": "BOXER T-COM",
     "tipo": "boxer",
-    "title": "Boxer Tussy T-Com",
+    "title": "Boxer T-Com",
     "category_id": "MLA429740",
     "size_grid": null,
     "price_tn": 15000,
@@ -2985,7 +3127,9 @@
       "BRAND": "Tussy",
       "MODEL": "BOXER T-COM",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -3017,7 +3161,7 @@
         "foto": null
       }
     ],
-    "description": "Boxer de algodón con elástico de cintura.\n\nTalles: S, M, L, XL.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Boxer de algodón con elástico de cintura.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-f75d6579a95e5bb5eb17867190608497-1024-1024.jpg"
@@ -3029,7 +3173,7 @@
     "tn_id": 339455924,
     "tn_nombre": "BOXER T-COM LINE",
     "tipo": "boxer",
-    "title": "Boxer Tussy T-Com Line",
+    "title": "Boxer T-Com Line",
     "category_id": "MLA429740",
     "size_grid": null,
     "price_tn": 15000,
@@ -3040,7 +3184,9 @@
       "BRAND": "Tussy",
       "MODEL": "BOXER T-COM LINE",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "COMPOSITION": "Algodón",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -3072,7 +3218,7 @@
         "foto": null
       }
     ],
-    "description": "Boxer de algodón con elástico de cintura.\n\nTalles: S, M, L, XL.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Boxer de algodón con elástico de cintura.\n\nTejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.\n\nTalles: S / M / L / XL.\n\nCUIDADOS\nLavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-6b8ea834a24a922a1517867190648697-1024-1024.jpg"
@@ -3105,7 +3251,7 @@
         "foto": null
       }
     ],
-    "description": "Pin metálico Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Pin metálico Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-2f014b951b5a5e9de717867232042484-1024-1024.jpg"
@@ -3138,7 +3284,7 @@
         "foto": null
       }
     ],
-    "description": "Pin metálico Tussy.\n\nTalles: UNDEFINED.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
+    "description": "Pin metálico Tussy.\n\nTussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.\nDespachamos dentro de las 24 h hábiles de acreditado el pago.",
     "pictures": [
       {
         "source": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/01-59f2e87e1146d16b4817867232085809-1024-1024.jpg"

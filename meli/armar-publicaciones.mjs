@@ -15,14 +15,21 @@ const sube = p => Math.ceil((p * 1.15 - 900) / 1000) * 1000 + 900;
 
 // molde, categoria MELI y atributos por tipo de producto
 const TIPOS = {
-  remera:  { molde:"REMERA_OVERSIZE", cat:"MLA109042", attrs:{GENDER:"Hombre",GARMENT_TYPE:"Remera",SLEEVE_TYPE:"Corta",MAIN_MATERIAL:"Algodón"}, calce:"oversize" },
-  remeraM: { molde:"REMERA_MUJER",    cat:"MLA109042", attrs:{GENDER:"Mujer", GARMENT_TYPE:"Remera",SLEEVE_TYPE:"Corta",MAIN_MATERIAL:"Algodón"}, calce:"regular" },
+  remera:  { molde:"REMERA_OVERSIZE", cat:"MLA109042", calce:"oversize",
+             attrs:{GENDER:"Hombre",GARMENT_TYPE:"Remera",SLEEVE_TYPE:"Corta",MAIN_MATERIAL:"Algodón",
+                    COMPOSITION:"Algodón",T_SHIRT_COLLAR_TYPE:"Redondo",WEDGE_SHAPE:"Oversized",
+                    SALE_FORMAT:"Unidad",UNITS_PER_PACK:"1",IS_SPORTIVE:"No",WITH_RECYCLED_MATERIALS:"No"} },
+  remeraM: { molde:"REMERA_MUJER",    cat:"MLA109042", calce:"regular",
+             attrs:{GENDER:"Mujer",GARMENT_TYPE:"Remera",SLEEVE_TYPE:"Corta",MAIN_MATERIAL:"Algodón",
+                    COMPOSITION:"Algodón",T_SHIRT_COLLAR_TYPE:"Redondo",WEDGE_SHAPE:"Recto",
+                    SALE_FORMAT:"Unidad",UNITS_PER_PACK:"1",IS_SPORTIVE:"No",WITH_RECYCLED_MATERIALS:"No"} },
   camperaT:{ molde:"CAMPERA_PERLE_TEJIDA", cat:"MLA109096", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Tejido de punto"}, calce:"oversize" },
   campera: { molde:"CAMPERA_TSSY",    cat:"MLA109096", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón"}, calce:"oversize" },
   sweater: { molde:"SWEATERS_2026",   cat:"MLA109100", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Tejido de punto"}, calce:"oversize" },
-  buzo:    { molde:"BUZO_CANGURO",    cat:"MLA109085", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón"}, calce:"oversize" },
+  buzo:    { molde:"BUZO_CANGURO",    cat:"MLA109085", calce:"oversize",
+             attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad",IS_SPORTIVE:"No"} },
   pantalon:{ molde:"PANTALONES",      cat:"MLA109282", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón"}, calce:"baggy" },
-  boxer:   { molde:null,              cat:"MLA429740", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón"} },
+  boxer:   { molde:null,              cat:"MLA429740", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad"} },
   bolso:   { molde:null,              cat:"MLA432000", attrs:{GENDER:"Sin género"} },
   mochila: { molde:null,              cat:"MLA120350", attrs:{GENDER:"Sin género"} },
   gorra:   { molde:null,              cat:"MLA67460",  attrs:{GENDER:"Sin género"} },
@@ -50,52 +57,63 @@ const SELECCION = {
   "PIN TUSSY SY":"pin","PIN TUSSY T":"pin",
 };
 
-// --- titulo MELI: Producto + Marca + Modelo + specs. Max 60, sin promo. ---
-function titulo(nombre, tipo, colores) {
-  const modelo = nombre.replace(/^(REMERA|BUZO|CAMPERA|SWEATER|PANTALON|BOLSO|MOCHILA|GORRA|PIN|BOXER|CAMISETA)\s+/i, "")
-    .replace(/\b(OVERSIZE|TSSY|TUSSY|TEJIDA|BAGGY|CON BRILLOS)\b/gi, " ")
-    .replace(/\s+/g, " ").trim()
-    .toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-  const base = {
-    remera:"Remera Oversize Tussy", remeraM:"Remera Tussy Mujer", camperaT:"Campera Tejida Tussy",
-    campera:"Campera Tussy", sweater:"Sweater Tussy", buzo:"Buzo Canguro Tussy",
-    pantalon:"Pantalón Baggy Tussy", boxer:"Boxer Tussy", bolso:"Bolso Tussy",
-    mochila:"Mochila Tussy", gorra:"Gorra Tussy", pin:"Pin Tussy",
-  }[tipo];
-  const cola = tipo === "remera" ? " Algodón Hombre" : tipo === "buzo" ? " Frisa" : "";
-  let t = `${base} ${modelo}${cola}`.replace(/\s+/g, " ").trim();
-  if (t.length > 60) t = `${base} ${modelo}`.replace(/\s+/g, " ").trim();
-  return t.slice(0, 60);
+// --- titulo: el MISMO nombre que en la web ---
+// Decisión de Alan: ganamos por posicionamiento de marca, no por keywords.
+// Nada de "Algodón Hombre" al final para pescar búsquedas.
+function titulo(nombre) {
+  return nombre.toLowerCase()
+    .replace(/\b[a-záéíóúñ]/g, c => c.toUpperCase())
+    .replace(/\bPantalon\b/g, "Pantalón")
+    .replace(/\bCamiseta Arg\b/g, "Camiseta ARG")
+    .slice(0, 60);
 }
 
-// --- descripcion ---
+// --- descripción ---
+// Molde tomado de cómo escriben Bullbenny y King of the Kongo: abre con el calce
+// y el material, después composición, medidas y cuidados. Sin keywords metidas a
+// la fuerza. Solo afirmamos lo que sabemos: no inventamos detalles de confección.
+const QUE_ES = {
+  remera: "Remera de calce oversize en algodón.",
+  remeraM: "Remera de calce regular en algodón.",
+  camperaT: "Campera tejida con capucha y cierre.",
+  campera: "Campera con capucha y cierre.",
+  sweater: "Sweater de punto, escote redondo.",
+  buzo: "Buzo canguro con capucha y bolsillo delantero.",
+  pantalon: "Pantalón de calce baggy.",
+  boxer: "Boxer de algodón con elástico de cintura.",
+  bolso: "Bolso Tussy.", mochila: "Mochila Tussy.",
+  gorra: "Gorra Tussy.", pin: "Pin metálico Tussy.",
+};
+const ALGODON = new Set(["remera", "remeraM", "buzo", "boxer"]);
+
 function descripcion(nombre, tipo, colores, talles) {
   const T = TIPOS[tipo];
-  const l = [];
-  const quees = {
-    remera:"Remera de algodón con calce oversize.", remeraM:"Remera de algodón, calce regular.",
-    camperaT:"Campera tejida con capucha y cierre.", campera:"Campera con capucha y cierre.",
-    sweater:"Sweater de punto, escote redondo.", buzo:"Buzo canguro con capucha y bolsillo delantero.",
-    pantalon:"Pantalón de calce baggy.", boxer:"Boxer de algodón con elástico de cintura.",
-    bolso:"Bolso Tussy.", mochila:"Mochila Tussy.", gorra:"Gorra Tussy.", pin:"Pin metálico Tussy.",
-  }[tipo];
-  l.push(quees, "");
-  if (T.calce) l.push(`Calce ${T.calce}. Si dudás entre dos talles, mirá las medidas de abajo: están tomadas sobre la prenda apoyada, no sobre el cuerpo.`, "");
-  if (colores.length > 1) l.push(`Colores disponibles: ${colores.join(", ")}.`);
-  if (talles.length) l.push(`Talles: ${talles.join(", ")}.`);
-  l.push("");
+  const l = [QUE_ES[tipo], ""];
+
+  if (ALGODON.has(tipo)) {
+    l.push("Tejido 100% algodón, desarrollado por Tussy. Es un algodón similar a un 16.1: tiene cuerpo y caída, y no se deforma con el uso.", "");
+  }
+  if (colores.length > 1) l.push(`Colores: ${colores.join(", ")}.`);
+  if (talles.length > 1) l.push(`Talles: ${talles.join(" / ")}.`);
+  if (colores.length > 1 || talles.length > 1) l.push("");
+
   const g = T.molde && GUIAS.moldes[T.molde];
   if (g) {
-    const campos = g.medidas.filter(x => x !== "copa"); // 'copa' de la campera tejida queda pendiente
-    l.push("MEDIDAS (cm)");
+    const campos = g.medidas.filter(c => c !== "copa");
+    l.push("MEDIDAS APROXIMADAS (prenda apoyada, en cm)");
     l.push(["Talle", ...campos.map(c => c.replace(/_/g, " "))].join(" · "));
     for (const [t, v] of Object.entries(g.talles)) {
       if (talles.length && !talles.includes(t)) continue;
-      const vals = g.medidas.map((c, i) => campos.includes(c) ? v[i] : null).filter(x => x !== null);
-      l.push([t, ...vals].join(" · "));
+      l.push([t, ...g.medidas.map((c, i) => campos.includes(c) ? v[i] : null).filter(x => x !== null)].join(" · "));
     }
     l.push("");
   }
+
+  if (ALGODON.has(tipo) || ["camperaT", "sweater", "campera", "pantalon"].includes(tipo)) {
+    l.push("CUIDADOS");
+    l.push("Lavar con agua fría del lado del revés. No usar lavandina. No secar a máquina. No planchar sobre la estampa.", "");
+  }
+
   l.push("Tussy es una marca argentina de streetwear. Producto original, con etiqueta y packaging de la marca.");
   l.push("Despachamos dentro de las 24 h hábiles de acreditado el pago.");
   return l.join("\n").replace(/\n{3,}/g, "\n\n").trim();
@@ -119,7 +137,7 @@ for (const [nombre, tipo] of Object.entries(SELECCION)) {
   const T = TIPOS[tipo];
   salida.push({
     tn_id: p.id, tn_nombre: nombre, tipo,
-    title: titulo(nombre, tipo, colores),
+    title: titulo(nombre),
     category_id: T.cat,
     size_grid: T.molde,
     price_tn: precioTN,
