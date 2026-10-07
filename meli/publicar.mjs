@@ -6,7 +6,7 @@
 // mano porque no es el mismo inventario que el de la web.
 import fs from "fs";
 import { neon } from "@neondatabase/serverless";
-import { prepararFoto, carpetaTemp } from "./fotos.mjs";
+import { prepararFoto } from "./fotos.mjs";
 
 for (const l of fs.readFileSync("/Users/alanlopez/Desktop/Claudito/tussy-app/.env.development.local", "utf8").split("\n")) {
   const m = l.match(/^([A-Z_0-9]+)="?([^"]*)"?$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
@@ -34,13 +34,11 @@ const H = { Authorization: `Bearer ${T}`, "Content-Type": "application/json" };
 // la foto y la deja en 500x500; subiendo el archivo queda en 800x1200. En Moda
 // la foto es medio ranking, así que la resolución no es un detalle.
 const idPorUrl = new Map();
-const tmp = carpetaTemp();
 async function subirFotos(urls) {
   for (const url of urls) {
     if (idPorUrl.has(url)) continue;
-    const f = await prepararFoto(url, tmp);       // original de TN -> 1200x1540
     const fd = new FormData();
-    fd.append("file", new Blob([fs.readFileSync(f)], { type: "image/jpeg" }), "foto.jpg");
+    fd.append("file", await prepararFoto(url), "foto.jpg");   // el original de TN, sin tocar
     const r = await fetch(`${API}/pictures/items/upload`, {
       method: "POST", headers: { Authorization: H.Authorization }, body: fd,
     });

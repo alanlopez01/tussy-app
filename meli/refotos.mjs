@@ -2,7 +2,7 @@
 // Uso: node meli/refotos.mjs "NOMBRE EN TIENDANUBE"
 import fs from "fs";
 import { neon } from "@neondatabase/serverless";
-import { prepararFoto, carpetaTemp } from "./fotos.mjs";
+import { prepararFoto } from "./fotos.mjs";
 
 for (const l of fs.readFileSync("/Users/alanlopez/Desktop/Claudito/tussy-app/.env.development.local", "utf8").split("\n")) {
   const m = l.match(/^([A-Z_0-9]+)="?([^"]*)"?$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
@@ -18,14 +18,12 @@ if (!f || !pub) { console.error("no encontrado o no publicado:", nombre); proces
 
 const [{ access_token: T }] = await sql`SELECT access_token FROM meli_cuenta WHERE id = 1`;
 const H = { Authorization: `Bearer ${T}`, "Content-Type": "application/json" };
-const tmp = carpetaTemp();
 
 const ids = [];
 process.stdout.write("preparando y subiendo ");
 for (const p of f.pictures) {
-  const local = await prepararFoto(p.source, tmp);
   const fd = new FormData();
-  fd.append("file", new Blob([fs.readFileSync(local)], { type: "image/jpeg" }), "foto.jpg");
+  fd.append("file", await prepararFoto(p.source), "foto.jpg");   // el original de TN, sin tocar
   const r = await fetch(`${API}/pictures/items/upload`, { method: "POST", headers: { Authorization: H.Authorization }, body: fd });
   const j = await r.json();
   if (!r.ok || !j.id) throw new Error(`foto: ${j.message || JSON.stringify(j).slice(0, 120)}`);
