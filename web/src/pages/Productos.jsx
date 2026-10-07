@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getTopProductos, getCategorias, getVariantes, rangoDe, fmtPesos, fmtPesosCorto, LOCALES } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar, BarraH, Paginacion } from "../components/ui.jsx";
+import MeliConexion from "../components/MeliConexion.jsx";
 
 const POR_PAGINA = 10;
 const PERIODOS = [
@@ -155,6 +156,7 @@ export default function Productos() {
           </div>
         </div>
       </div>
+      <MeliConexion />
     </div>
   );
 }

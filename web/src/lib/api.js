@@ -125,3 +125,7 @@ export function fmtPesosCorto(n) {
   if (Math.abs(v) >= 1e3) return "$" + Math.round(v / 1e3).toLocaleString("es-AR") + " mil";
   return "$" + v.toLocaleString("es-AR");
 }
+
+// --- Mercado Libre ---
+export const getMeliEstado = () => getJSON("/api/meli?action=estado");
+export const getMeliAuthUrl = () => getJSON("/api/meli?action=auth");
