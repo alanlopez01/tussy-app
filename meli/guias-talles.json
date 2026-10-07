@@ -1,0 +1,615 @@
+{
+  "_nota": "Guias de talles de Tussy para publicar en Mercado Libre. Medidas en cm. Cada molde se carga una vez en MELI como size guide y se referencia con SIZE_GRID_ID; cada talle es una fila con su SIZE_GRID_ROW_ID.",
+  "_fuente": "tussy.com.ar/guia-de-talles (25 imagenes) + planillas que paso Alan",
+  "moldes": {
+    "REMERA_OVERSIZE": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "largo_manga",
+        "ancho_manga"
+      ],
+      "talles": {
+        "S": [
+          67,
+          62,
+          22,
+          20
+        ],
+        "M": [
+          70,
+          63,
+          23,
+          21
+        ],
+        "L": [
+          73,
+          64,
+          24,
+          22
+        ],
+        "XL": [
+          76,
+          65,
+          25,
+          23
+        ]
+      },
+      "aplica_a": [
+        "las 19 remeras oversize de la seleccion"
+      ]
+    },
+    "SWEATER_PESADO": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "cintura"
+      ],
+      "talles": {
+        "S": [
+          65,
+          64,
+          62
+        ],
+        "M": [
+          68,
+          65,
+          63
+        ],
+        "L": [
+          70,
+          69,
+          66
+        ]
+      }
+    },
+    "BERMUDA_ALGODON": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "ancho_pierna"
+      ],
+      "talles": {
+        "S": [
+          45,
+          30,
+          32
+        ],
+        "M": [
+          48,
+          33,
+          33
+        ],
+        "L": [
+          52,
+          36,
+          34
+        ],
+        "XL": [
+          55,
+          39,
+          35
+        ]
+      }
+    },
+    "JOGGER": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho"
+      ],
+      "talles": {
+        "S": [
+          95,
+          "34/38"
+        ],
+        "M": [
+          97,
+          "40/42"
+        ],
+        "L": [
+          99,
+          "44/46"
+        ],
+        "XL": [
+          101,
+          "48/50"
+        ]
+      }
+    },
+    "CAMISA_LIMITS": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "largo_manga",
+        "ancho_manga"
+      ],
+      "talles": {
+        "S": [
+          62,
+          56,
+          24,
+          20
+        ],
+        "M": [
+          65,
+          59,
+          26,
+          21
+        ],
+        "L": [
+          68,
+          62,
+          28,
+          22
+        ],
+        "XL": [
+          71,
+          65,
+          30,
+          23
+        ]
+      }
+    },
+    "CAMPERA_PERLE_TEJIDA": {
+      "origen": "planilla Alan 07-oct-2026",
+      "descripcion": "Campera perle tejida con capucha y cierre",
+      "aplica_a": [
+        "CAMPERA TEJIDA BRICKELL"
+      ],
+      "medidas": [
+        "largo_cuerpo",
+        "ancho_cuerpo_bajo_sisa",
+        "ancho_alto_ruedo",
+        "largo_manga",
+        "copa"
+      ],
+      "talles": {
+        "S": [
+          61,
+          63,
+          53,
+          51,
+          71
+        ],
+        "M": [
+          63,
+          64,
+          54,
+          52,
+          72
+        ],
+        "L": [
+          65,
+          65,
+          55,
+          53,
+          73
+        ],
+        "XL": [
+          67,
+          66,
+          56,
+          54,
+          74
+        ]
+      },
+      "_pendiente": "'Copa' (71-74) no puede ser hombro a hombro. Se publica sin esa fila hasta que Alan confirme que mide."
+    },
+    "SWEATERS_2026": {
+      "origen": "web + planilla Alan (identicas: 'Sw escote redondo PERLE' = 'SWEATERS 2026')",
+      "aplica_a": [
+        "SWEATER ATLANTIC TSSY",
+        "SWEATER WEAVES TSSY"
+      ],
+      "medidas": [
+        "largo",
+        "ancho",
+        "copa_hombro_a_hombro",
+        "largo_manga"
+      ],
+      "talles": {
+        "S": [
+          62,
+          61,
+          54,
+          51
+        ],
+        "M": [
+          64,
+          62,
+          55,
+          52
+        ],
+        "L": [
+          66,
+          63,
+          56,
+          53
+        ],
+        "XL": [
+          68,
+          64,
+          57,
+          54
+        ]
+      }
+    },
+    "BUZO_CANGURO": {
+      "origen": "web",
+      "aplica_a": [
+        "BUZO OVERSIZE BLUE JAYS"
+      ],
+      "medidas": [
+        "largo",
+        "sisa",
+        "manga"
+      ],
+      "talles": {
+        "XS": [
+          62,
+          57,
+          51
+        ],
+        "S": [
+          64,
+          65,
+          53
+        ],
+        "M": [
+          66,
+          67,
+          55
+        ],
+        "L": [
+          68,
+          69,
+          57
+        ],
+        "XL": [
+          70,
+          71,
+          59
+        ],
+        "XXL": [
+          77,
+          73,
+          61
+        ]
+      }
+    },
+    "CAMPERA_TSSY": {
+      "origen": "web",
+      "descripcion": "campera con capucha y cierre",
+      "medidas": [
+        "largo",
+        "ancho_cintura",
+        "ancho_cadera",
+        "largo_manga",
+        "ancho_manga"
+      ],
+      "talles": {
+        "S": [
+          62,
+          63,
+          48,
+          60,
+          25
+        ],
+        "M": [
+          65,
+          65,
+          50,
+          60,
+          26
+        ],
+        "L": [
+          68,
+          67,
+          52,
+          62,
+          27
+        ],
+        "XL": [
+          71,
+          69,
+          54,
+          62,
+          28
+        ]
+      },
+      "aplica_a": [
+        "CAMPERA TSSY ASIMOV",
+        "CAMPERA TSSY OUTSIDER",
+        "CAMPERA TSSY DIZZY"
+      ]
+    },
+    "REMERA_MUJER": {
+      "origen": "web",
+      "aplica_a": [
+        "CAMISETA MUJER TSSY ARG"
+      ],
+      "medidas": [
+        "largo",
+        "ancho",
+        "largo_manga",
+        "ancho_manga"
+      ],
+      "talles": {
+        "S": [
+          43,
+          32,
+          16,
+          12
+        ],
+        "M": [
+          45,
+          34,
+          17,
+          13
+        ],
+        "L": [
+          47,
+          36,
+          18,
+          14
+        ],
+        "XL": [
+          49,
+          38,
+          19,
+          15
+        ]
+      }
+    },
+    "PANTALONES": {
+      "origen": "web",
+      "aplica_a": [
+        "PANTALON BAGGY TSSY ASIMOV"
+      ],
+      "medidas": [
+        "largo",
+        "ancho"
+      ],
+      "talles": {
+        "S": [
+          100,
+          36
+        ],
+        "M": [
+          103,
+          38
+        ],
+        "L": [
+          106,
+          40
+        ],
+        "XL": [
+          109,
+          42
+        ]
+      }
+    },
+    "POLO_OVERSIZE": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "largo_manga",
+        "ancho_manga"
+      ],
+      "talles": {
+        "S": [
+          64,
+          62,
+          42,
+          18
+        ],
+        "M": [
+          66,
+          63,
+          43,
+          19
+        ],
+        "L": [
+          68,
+          64,
+          45,
+          20
+        ],
+        "XL": [
+          70,
+          65,
+          46,
+          21
+        ]
+      }
+    },
+    "MUSCULOSA": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho"
+      ],
+      "talles": {
+        "S": [
+          76,
+          55
+        ],
+        "M": [
+          78,
+          57
+        ],
+        "L": [
+          80,
+          59
+        ],
+        "XL": [
+          82,
+          61
+        ]
+      }
+    },
+    "BERMUDA_BAGGY_GABARDINA": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "cintura",
+        "cadera",
+        "bota_manga"
+      ],
+      "talles": {
+        "S": [
+          52,
+          39,
+          48,
+          33
+        ],
+        "M": [
+          54,
+          40,
+          50,
+          34
+        ],
+        "L": [
+          56,
+          41,
+          52,
+          35
+        ]
+      }
+    },
+    "CAMISA_PANAL_TEJIDA": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "largo_manga",
+        "ancho_manga"
+      ],
+      "talles": {
+        "S": [
+          64,
+          62,
+          42,
+          18
+        ],
+        "M": [
+          66,
+          63,
+          43,
+          19
+        ],
+        "L": [
+          68,
+          64,
+          45,
+          20
+        ],
+        "XL": [
+          70,
+          65,
+          46,
+          21
+        ]
+      }
+    },
+    "CAMISA_CURSIVE": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "largo_manga",
+        "ancho_manga"
+      ],
+      "talles": {
+        "S": [
+          69,
+          55,
+          25,
+          19
+        ],
+        "M": [
+          71,
+          57,
+          26,
+          20
+        ],
+        "L": [
+          73,
+          59,
+          27,
+          21
+        ],
+        "XL": [
+          75,
+          61,
+          28,
+          22
+        ]
+      }
+    },
+    "CAMISA_GABARDINA": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "manga"
+      ],
+      "talles": {
+        "S": [
+          70,
+          57,
+          26
+        ],
+        "M": [
+          72,
+          59,
+          27
+        ],
+        "L": [
+          74,
+          61,
+          28
+        ]
+      }
+    },
+    "CAMISA_ALGODON": {
+      "origen": "web",
+      "medidas": [
+        "largo",
+        "ancho",
+        "manga"
+      ],
+      "talles": {
+        "S": [
+          69,
+          56,
+          24
+        ],
+        "M": [
+          72,
+          58,
+          26
+        ],
+        "L": [
+          75,
+          60,
+          28
+        ],
+        "XL": [
+          77,
+          62,
+          30
+        ]
+      }
+    }
+  },
+  "_sin_guia": {
+    "BOXER": "Decidido con Alan 07-oct-2026: los 5 boxers se publican SIN guia de talles."
+  }
+}
