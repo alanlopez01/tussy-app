@@ -6,13 +6,14 @@
 // mano porque no es el mismo inventario que el de la web.
 import fs from "fs";
 import { neon } from "@neondatabase/serverless";
-import { prepararFoto } from "./fotos.mjs";
+import { prepararFoto, carpetaTemp } from "./fotos.mjs";
 
 for (const l of fs.readFileSync("/Users/alanlopez/Desktop/Claudito/tussy-app/.env.development.local", "utf8").split("\n")) {
   const m = l.match(/^([A-Z_0-9]+)="?([^"]*)"?$/); if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
 }
 const sql = neon(process.env.DATABASE_URL);
 const API = "https://api.mercadolibre.com";
+const tmp = carpetaTemp();
 
 const nombre = process.argv[2];
 const confirmar = process.argv.includes("--confirmar");
@@ -37,8 +38,9 @@ const idPorUrl = new Map();
 async function subirFotos(urls) {
   for (const url of urls) {
     if (idPorUrl.has(url)) continue;
+    const { file } = await prepararFoto(url, tmp, idPorUrl.size);   // TN original -> 1200x1200
     const fd = new FormData();
-    fd.append("file", await prepararFoto(url), "foto.jpg");   // el original de TN, sin tocar
+    fd.append("file", new Blob([fs.readFileSync(file)], { type: "image/jpeg" }), "foto.jpg");
     const r = await fetch(`${API}/pictures/items/upload`, {
       method: "POST", headers: { Authorization: H.Authorization }, body: fd,
     });
