@@ -38,7 +38,18 @@
       },
       "aplica_a": [
         "las 19 remeras oversize de la seleccion"
-      ]
+      ],
+      "meli": {
+        "size_grid_id": "9555089",
+        "domain_id": "T_SHIRTS",
+        "filas": {
+          "S": "9555089:1",
+          "M": "9555089:2",
+          "L": "9555089:3",
+          "XL": "9555089:4"
+        },
+        "_nota": "La grilla de MELI para T_SHIRTS solo acepta GARMENT_CHEST_WIDTH_FROM (ancho a lo plano, sin duplicar) y FILTRABLE_SIZE. Rechaza el largo y el manga: eso queda solo en la descripcion."
+      }
     },
     "SWEATER_PESADO": {
       "origen": "web",

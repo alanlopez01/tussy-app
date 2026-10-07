@@ -4,6 +4,10 @@ import fs from "fs";
 
 const CAT = JSON.parse(fs.readFileSync("/private/tmp/claude-501/-Users-alanlopez-Desktop-Claudito/de39b6c3-4ac5-4caa-986d-aad6aa47d917/scratchpad/tn-catalogo.json", "utf8"));
 const GUIAS = JSON.parse(fs.readFileSync("guias-talles.json", "utf8"));
+// Qué foto es la de portada de cada producto. La calcula detectar.mjs midiendo el
+// borde de cada imagen (un packshot sobre blanco da ~100% de píxeles claros ahí).
+// Va cacheado porque recalcularlo baja ~250 fotos de Tiendanube.
+const PORTADAS = JSON.parse(fs.readFileSync("portadas.json", "utf8"));
 
 const TALLE = { "1": "S", "2": "M", "3": "L", "4": "XL", "xxl": "XXL" };
 const norm = t => TALLE[String(t)] || String(t).toUpperCase();
@@ -128,8 +132,21 @@ for (const [nombre, tipo] of Object.entries(SELECCION)) {
       COLOR: v.values?.[0]?.es || null,
       SIZE: talles.length ? norm(v.values?.[1]?.es) : "Único",
       peso_kg: Number(v.weight) || null,
+      // MELI exige 1..10 fotos POR variación. Tiendanube asocia una foto a cada
+      // variante con image_id: cuando está, le damos a cada color su foto; cuando
+      // no (27 de 43 productos), la variación se queda con todas las del producto.
+      foto: (p.images || []).find(i => i.id === v.image_id)?.src || null,
     })),
     description: descripcion(nombre, tipo, colores, talles),
+    pictures: (() => {
+      const imgs = (p.images || []).sort((a, b) => a.position - b.position);
+      const i = PORTADAS[p.id]?.portada;
+      // la de contexto primero: MELI pondera mucho la portada y una foto de
+      // ambiente convierte bastante mejor que un packshot sobre fondo blanco
+      const orden = i != null ? [imgs[i], ...imgs.filter((_, n) => n !== i)] : imgs;
+      return orden.filter(Boolean).map(x => ({ source: x.src }));
+    })(),
+    portada_contexto: PORTADAS[p.id]?.portada != null ? PORTADAS[p.id].portada + 1 : null,
   });
 }
 fs.writeFileSync("publicaciones.json", JSON.stringify(salida, null, 2));
