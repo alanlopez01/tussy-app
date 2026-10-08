@@ -14,7 +14,25 @@ import { execFileSync } from "child_process";
 
 const sips = (...a) => execFileSync("/usr/bin/sips", a, { stdio: "ignore" });
 
-export function fondoABlanco(entrada, salida, tol = 26) {
+// Rango sano de relleno. Un mockup normal tiene 55-75% de fondo; si el relleno
+// se pasa de ahi es que se filtro dentro de la prenda, que es lo que pasaba con
+// las remeras crudo (Red Deus quedaba al 82%, con la tela quemada a blanco).
+const MIN_OK = 0.35, MAX_OK = 0.78;
+
+// Prueba tolerancias de mayor a menor y se queda con la primera que de un
+// relleno sano. Si ninguna lo logra, devuelve la foto original sin tocar:
+// mejor un fondo gris que una prenda quemada.
+export function fondoABlanco(entrada, salida, tolerancias = [26, 18, 12, 8]) {
+  for (const tol of tolerancias) {
+    const pct = rellenar(entrada, salida, tol);
+    if (pct === false) return false;
+    if (pct >= MIN_OK && pct <= MAX_OK) return pct;
+  }
+  fs.copyFileSync(entrada, salida);
+  return false;
+}
+
+export function rellenar(entrada, salida, tol) {
   const bmp = entrada + ".in.bmp", bmp2 = entrada + ".out.bmp";
   sips("-s", "format", "bmp", entrada, "--out", bmp);
   const b = fs.readFileSync(bmp);
