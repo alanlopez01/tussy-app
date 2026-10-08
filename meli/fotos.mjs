@@ -1,24 +1,23 @@
-// Prepara las fotos de Tiendanube para Mercado Libre: 1200x1200 cuadrado.
+// Prepara las fotos de Tiendanube para Mercado Libre Moda.
 //
-// Dos tratamientos distintos, porque las fotos son de dos tipos:
+// Baja el ORIGINAL (el `src` del catálogo apunta a un thumbnail de 1024 px:
+// sacándole el sufijo "-1024-1024" viene la foto completa) y lo deja en el
+// formato que MELI recomienda para Moda: 1200x1540 vertical.
 //
-// - MOCKUP (prenda sola sobre fondo liso): se EXTIENDE el fondo con su mismo
-//   tono hasta el cuadrado. No se recorta: recortar le comería la prenda.
-// - AMBIENTE (foto con modelo): se RECORTA al centro. Rellenar acá queda mal —
-//   probamos con blanco y con el color de las esquinas, y a una foto sacada en
-//   un portal le quedaban bandas marrones a los costados.
+// Dos tratamientos, porque las fotos son de dos tipos:
 //
-// Para distinguirlas mide el borde: un mockup sobre fondo liso claro tiene el
-// borde casi todo claro, una foto de ambiente no.
-//
-// También baja el ORIGINAL y no el `src` del catálogo, que apunta a un
-// thumbnail de 1024 px (el original va de 1200x1800 a 3072x4608).
+// - AMBIENTE (con modelo): se recorta a 1200x1540 ANCLADO ARRIBA. De un
+//   original 2:3 eso saca 260 px de 1800, así que la cabeza entra holgada.
+// - MOCKUP (prenda sola sobre fondo liso): primero se RECORTA AL CONTORNO de
+//   la prenda y después se agranda. Sin esto la prenda queda chica y con
+//   margen, que es justo lo que se veía mal. Y rellenar no sirve: MELI
+//   recorta el fondo liso igual, lo probamos de tres formas distintas.
 import fs from "fs";
 import os from "os";
 import path from "path";
 import { execFileSync } from "child_process";
 
-export const LADO = 1200;
+export const ANCHO = 1200, ALTO = 1540;
 const sips = (...a) => execFileSync("/usr/bin/sips", a, { stdio: "ignore" });
 
 export function urlOriginal(src) {
@@ -30,33 +29,45 @@ function medir(f) {
   return { w: +s.match(/pixelWidth:\s*(\d+)/)[1], h: +s.match(/pixelHeight:\s*(\d+)/)[1] };
 }
 
-// Lee el borde en miniatura: devuelve { claro: 0..1, fondo: "RRGGBB" }.
-function borde(f) {
-  const bmp = f + ".bmp";
-  sips("-s", "format", "bmp", "--resampleWidth", "40", f, "--out", bmp);
+// Lee la foto en miniatura y devuelve si es mockup y, si lo es, el recuadro
+// que ocupa la prenda (en proporción 0..1 sobre el original).
+function analizar(f) {
+  const N = 60, bmp = f + ".bmp";
+  sips("-s", "format", "bmp", "--resampleWidth", String(N), f, "--out", bmp);
   const b = fs.readFileSync(bmp);
   const off = b.readUInt32LE(10), w = b.readInt32LE(18), h = Math.abs(b.readInt32LE(22));
   const bpp = b.readUInt16LE(28) / 8, fila = Math.ceil(w * bpp / 4) * 4;
-  let n = 0, claros = 0, sum = [0, 0, 0];
+  const px = (x, y) => { const i = off + y * fila + x * bpp; return [b[i + 2], b[i + 1], b[i]]; };
+
+  // ¿es mockup? el borde casi todo claro
+  let n = 0, claros = 0;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (!(x < 3 || x >= w - 3 || y < 3 || y >= h - 3)) continue;
-    const i = off + y * fila + x * bpp;
-    const [r, g, bl] = [b[i + 2], b[i + 1], b[i]];
-    n++; if (r > 228 && g > 228 && bl > 228) claros++;
-    sum[0] += r; sum[1] += g; sum[2] += bl;
+    const [r, g, bl] = px(x, y); n++;
+    if (r > 228 && g > 228 && bl > 228) claros++;
+  }
+  const mockup = claros / n > 0.9;
+
+  // recuadro del contenido: lo que se aparta del tono del fondo
+  const fondo = px(0, 0);
+  const difiere = (x, y) => {
+    const p = px(x, y);
+    return Math.abs(p[0] - fondo[0]) + Math.abs(p[1] - fondo[1]) + Math.abs(p[2] - fondo[2]) > 36;
+  };
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (difiere(x, y)) {
+    if (x < x0) x0 = x; if (x > x1) x1 = x;
+    if (y < y0) y0 = y; if (y > y1) y1 = y;
   }
   fs.unlinkSync(bmp);
-  return {
-    claro: claros / n,
-    fondo: sum.map(v => Math.round(v / n).toString(16).padStart(2, "0")).join("").toUpperCase(),
-  };
+  const caja = x1 < 0 ? null : { x0: x0 / w, y0: y0 / h, x1: (x1 + 1) / w, y1: (y1 + 1) / h };
+  return { mockup, caja };
 }
 
 export function carpetaTemp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "meli-fotos-"));
 }
 
-// Devuelve { file, tipo } con un JPEG de 1200x1200.
 export async function prepararFoto(src, dir, i = 0) {
   const bruto = path.join(dir, `b${i}.jpg`);
   let r = await fetch(urlOriginal(src));
@@ -65,34 +76,31 @@ export async function prepararFoto(src, dir, i = 0) {
   fs.writeFileSync(bruto, Buffer.from(await r.arrayBuffer()));
 
   const { w, h } = medir(bruto);
-  const { claro, fondo } = borde(bruto);
-  const mockup = claro > 0.9;
+  const { mockup, caja } = analizar(bruto);
   const fin = path.join(dir, `f${i}.jpg`);
 
-  if (mockup) {
-    // Acá NO se rellena ni se achica, aunque suene al revés de lo que se pide.
-    // MELI recorta el fondo liso y sirve la foto al recuadro de la prenda: lo
-    // probamos sin rellenar (1111x1063), rellenando a cuadrado achicando antes
-    // (739x709) y rellenando a cuadrado sin achicar (1113x1063). Siempre recorta.
-    // Entonces lo único que mueve la aguja es agrandar la prenda. El recuadro de
-    // una remera apoyada es más ancho que alto, así que el que topea en 1200 es
-    // el ANCHO: hay que escalar por el lado corto, no por el largo. Llevando el
-    // ancho a 1800 el recorte cae justo en el tope y queda 1200x1152.
-    const esc = Math.max(1, 1800 / Math.min(w, h));
-    sips("--resampleHeightWidth", String(Math.round(h * esc)), String(Math.round(w * esc)), bruto, "--out", fin);
+  if (mockup && caja) {
+    // Recorte al contorno con un 3% de aire, y después agrandar: el tope de
+    // MELI son 1200 px de lado largo, así que apuntamos a 1800 para caer justo
+    // ahí después de que recorte el resto del fondo.
+    const aire = 0.03;
+    const cx0 = Math.max(0, (caja.x0 - aire) * w), cx1 = Math.min(w, (caja.x1 + aire) * w);
+    const cy0 = Math.max(0, (caja.y0 - aire) * h), cy1 = Math.min(h, (caja.y1 + aire) * h);
+    const cw = Math.round(cx1 - cx0), ch = Math.round(cy1 - cy0);
+    sips("-c", String(ch), String(cw),
+         "--cropOffset", String(Math.round(cy0)), String(Math.round(cx0)), bruto, "--out", fin);
+    const esc = Math.max(1, 1800 / Math.max(cw, ch));
+    if (esc > 1) sips("--resampleHeightWidth", String(Math.round(ch * esc)), String(Math.round(cw * esc)), fin, "--out", fin);
   } else {
-    // Se agranda hasta cubrir el cuadrado y se recorta ANCLADO ARRIBA, no al
-    // centro: un centrado sobre una foto de cuerpo entero le corta la cabeza.
-    // Dejando sólo un 10% del sobrante arriba queda la cara entera y la prenda
-    // más grande en cuadro, que para una publicación de remera es lo que sirve.
-    const esc = LADO / Math.min(w, h);
-    const nh = Math.round(h * esc), nw = Math.round(w * esc);
+    // Cubrir 1200x1540 y recortar anclado arriba (10% del sobrante): centrado
+    // le corta la cara al modelo.
+    const esc = Math.max(ANCHO / w, ALTO / h);
+    const nw = Math.round(w * esc), nh = Math.round(h * esc);
     sips("--resampleHeightWidth", String(nh), String(nw), bruto, "--out", fin);
-    const sobraY = Math.max(0, nh - LADO), sobraX = Math.max(0, nw - LADO);
-    sips("-c", String(LADO), String(LADO),
-         "--cropOffset", String(Math.round(sobraY * 0.1)), String(Math.round(sobraX / 2)),
-         fin, "--out", fin);
+    sips("-c", String(ALTO), String(ANCHO),
+         "--cropOffset", String(Math.round(Math.max(0, nh - ALTO) * 0.1)),
+         String(Math.round(Math.max(0, nw - ANCHO) / 2)), fin, "--out", fin);
   }
   sips("-s", "format", "jpeg", "-s", "formatOptions", "92", fin, "--out", fin);
-  return { file: fin, tipo: mockup ? "mockup" : "ambiente", fondo };
+  return { file: fin, tipo: mockup ? "mockup" : "ambiente" };
 }
