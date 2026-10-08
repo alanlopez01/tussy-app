@@ -632,9 +632,50 @@
           30
         ]
       }
+    },
+    "BOXER": {
+      "origen": "planilla Alan 08-oct-2026",
+      "descripcion": "Boxer Tussy. Aplica a todos menos STRIPE, que tiene otra medida.",
+      "aplica_a": [
+        "BOXER TUSSY",
+        "BOXER ALWAYS",
+        "BOXER T-COM",
+        "BOXER T-COM LINE"
+      ],
+      "medidas": [
+        "largo",
+        "ancho",
+        "ancho_estirado"
+      ],
+      "talles": {
+        "S": [
+          27.5,
+          37,
+          45
+        ],
+        "M": [
+          28,
+          39,
+          46
+        ],
+        "L": [
+          28.5,
+          42,
+          48
+        ],
+        "XL": [
+          29.5,
+          43,
+          50
+        ]
+      },
+      "meli": {
+        "size_grid_id": "9599587",
+        "domain_id": "UNDERPANTS"
+      }
     }
   },
   "_sin_guia": {
-    "BOXER": "Decidido con Alan 07-oct-2026: los 5 boxers se publican SIN guia de talles."
+    "BOXER": "MELI NO deja publicar boxers sin guia (missing.fashion_grid.grid_id.values), asi que la decision de 'sin tabla' no se pudo sostener. Alan paso las medidas el 08-oct-2026. Falta la de BOXER STRIPE, que tiene otro molde."
   }
 }

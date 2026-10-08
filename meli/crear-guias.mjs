@@ -34,6 +34,7 @@ const DOMINIO = {
   SWEATERS_2026:        { dom: "SWEATERS_AND_CARDIGANS", nombre: "Tussy Sweater" },
   BUZO_CANGURO:         { dom: "SWEATSHIRTS_AND_HOODIES", nombre: "Tussy Buzo Canguro" },
   PANTALONES:           { dom: "PANTS", nombre: "Tussy Pantalon" },
+  BOXER:                { dom: "UNDERPANTS", nombre: "Tussy Boxer" },
 };
 
 // nuestras medidas -> atributos de MELI, por orden de preferencia
@@ -48,6 +49,9 @@ const MAPA = {
   // En pantalones nuestra planilla trae un solo "ancho", que es la cintura a lo
   // plano: es la medida que MELI pide como ancho de cadera para esa categoria.
   GARMENT_HIP_WIDTH_FROM:      ["cadera", "ancho_cadera", "ancho"],
+  // En el boxer la planilla trae el ancho en reposo y cuanto estira: eso es
+  // exactamente el par minimo/maximo que MELI espera.
+  GARMENT_HIP_WIDTH_TO:        ["ancho_estirado"],
 };
 
 const [{ access_token: T }] = await sql`SELECT access_token FROM meli_cuenta WHERE id = 1`;
@@ -91,7 +95,11 @@ for (const [molde, { dom, nombre }] of Object.entries(DOMINIO)) {
     .filter(e => e.code === "required_row_attribute_not_found")
     .map(e => e.cell?.attribute_id).filter(x => x && x !== "FILTRABLE_SIZE"))];
 
-  const body = armar(molde, dom, nombre, req);
+  // ademas de los requeridos, sumamos los que tengamos dato y la categoria
+  // acepte: mas medidas en la tabla es mejor para el comprador
+  const extra = Object.keys(MAPA).filter(a => !req.includes(a) &&
+    (MAPA[a] || []).some(c => GUIAS.moldes[molde].medidas.includes(c)));
+  const body = armar(molde, dom, nombre, [...req, ...extra]);
   const usados = [...new Set(body.rows[0].attributes.map(a => a.id))].filter(a => !["SIZE", "FILTRABLE_SIZE"].includes(a));
   const faltan = req.filter(a => !usados.includes(a));
 
@@ -103,12 +111,23 @@ for (const [molde, { dom, nombre }] of Object.entries(DOMINIO)) {
     continue;
   }
 
-  const { ok, j: res } = await postChart(body);
+  // Los extras son a ojo: si la categoría rechaza alguno, lo sacamos y
+  // reintentamos. Es la única forma, no hay endpoint que liste los válidos.
+  let atributos = [...req, ...extra], ok, res;
+  for (let intento = 0; intento < 4; intento++) {
+    ({ ok, j: res } = await postChart(armar(molde, dom, nombre, atributos)));
+    if (ok) break;
+    const malos = [...new Set((res.errors || [])
+      .filter(e => e.code === "invalid_row_attribute").map(e => e.cell?.attribute_id).filter(Boolean))];
+    if (!malos.length) break;
+    console.log(`  (${molde}: ${dom} no acepta ${malos.join(", ")}, reintento sin eso)`);
+    atributos = atributos.filter(a => !malos.includes(a));
+  }
   if (!ok) {
     console.log(`✗ ${molde}: ${(res.errors || []).map(e => e.message).slice(0, 2).join(" | ") || res.message}`);
     continue;
   }
-  console.log(`✓ ${molde} -> ${res.id}  (${usados.join(", ")})`);
+  console.log(`✓ ${molde} -> ${res.id}  (${atributos.join(", ")})`);
   GUIAS.moldes[molde].meli = { size_grid_id: String(res.id), domain_id: dom };
 }
 

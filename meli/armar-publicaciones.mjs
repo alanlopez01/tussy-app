@@ -36,7 +36,7 @@ const TIPOS = {
   // El Asimov es un conjunto deportivo con vivos, de ahi PANT_TYPE "Deportivo".
   pantalon:{ molde:"PANTALONES",      cat:"MLA109282", calce:"baggy",
              attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",PANT_TYPE:"Deportivo",SALE_FORMAT:"Unidad"} },
-  boxer:   { molde:null,              cat:"MLA429740", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad",MALE_UNDERWEAR_TYPE:"Boxer"} },
+  boxer:   { molde:"BOXER",           cat:"MLA429740", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad",MALE_UNDERWEAR_TYPE:"Boxer"} },
   bolso:   { molde:null,              cat:"MLA432000", attrs:{GENDER:"Sin género"} },
   // Mochila, gorra, boxer y pin piden cada uno su tipo propio.
   mochila: { molde:null,              cat:"MLA120350", attrs:{GENDER:"Sin género",BACKPACK_TYPE:"Urbana"} },

@@ -93,7 +93,9 @@ function armarBody() {
     shipping: { mode: "me2", free_shipping: f.price_meli >= 33000, local_pick_up: false },
     pictures: todas.map(id => ({ id })),
     attributes: itemAttrs,
-    variations: f.variaciones.map(v => {
+    // Si un talle no tiene fila en la guía, MELI rechaza el alta entera. Lo
+    // dejamos afuera y avisamos, en vez de trabar toda la publicación.
+    variations: f.variaciones.filter(v => !grid || !v.SIZE || filas[v.SIZE]).map(v => {
       // Cada variación lleva la galería entera con la de contexto primero. Darle
       // a cada color sólo su packshot hacía que esa fuera su portada, justo al
       // revés de lo que MELI recomienda en Moda.
@@ -114,6 +116,9 @@ function armarBody() {
     }),
   };
 }
+
+const sinFila = grid ? [...new Set(f.variaciones.filter(v => v.SIZE && !filas[v.SIZE]).map(v => v.SIZE))] : [];
+if (sinFila.length) console.log(`⚠ talles sin medida en la guía, quedan afuera: ${sinFila.join(", ")}`);
 
 if (!confirmar) {
   console.log("--- SIMULACRO. Agregá --confirmar para publicar de verdad ---");
