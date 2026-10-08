@@ -23,10 +23,22 @@ const fichas = JSON.parse(fs.readFileSync(new URL("./publicaciones.json", import
 const GUIAS = JSON.parse(fs.readFileSync(new URL("./guias-talles.json", import.meta.url), "utf8"));
 const f = fichas.find(x => x.tn_nombre === nombre);
 if (!f) { console.error("no está en publicaciones.json:", nombre); process.exit(1); }
-const grid = f.size_grid && GUIAS.moldes[f.size_grid]?.meli;
-
 const [{ access_token: T }] = await sql`SELECT access_token FROM meli_cuenta WHERE id = 1`;
 const H = { Authorization: `Bearer ${T}`, "Content-Type": "application/json" };
+
+const grid = f.size_grid && GUIAS.moldes[f.size_grid]?.meli;
+
+// Las filas de la grilla se piden a MELI en vez de guardarlas: así no hay que
+// acordarse de actualizar el json cada vez que se rehace una guía.
+let filas = {};
+if (grid) {
+  const ch = await (await fetch(`${API}/catalog/charts/${grid.size_grid_id}`, { headers: H })).json();
+  for (const r of ch.rows || []) {
+    const t = r.attributes?.find(a => a.id === "SIZE")?.values?.[0]?.name;
+    if (t) filas[t] = r.id;
+  }
+}
+
 
 // MELI pide entre 1 y 10 fotos POR VARIACIÓN, y ahí no acepta URLs: hay que
 // subirlas antes y referenciarlas por id. Una subida por URL única.
@@ -53,8 +65,11 @@ async function subirFotos(urls) {
 
 function armarBody() {
   // Con variaciones, COLOR y SIZE van en attribute_combinations, no a nivel item.
+  // COLOR y SIZE van en attribute_combinations... salvo que las variaciones no
+  // los traigan (la gorra no tiene variante de color), ahí van a nivel item.
+  const hayColor = f.variaciones.some(v => v.COLOR);
   const itemAttrs = Object.entries(f.attributes)
-    .filter(([id]) => !["COLOR", "SIZE"].includes(id))
+    .filter(([id]) => !(id === "SIZE" || (id === "COLOR" && hayColor)))
     .map(([id, value_name]) => ({ id, value_name }));
   // Estos no figuran como `required` en /categories/{id}/attributes pero la
   // validación de negocio los exige igual. Los fuimos descubriendo publicando.
@@ -79,7 +94,9 @@ function armarBody() {
     pictures: todas.map(id => ({ id })),
     attributes: itemAttrs,
     variations: f.variaciones.map(v => {
-      const propia = v.foto && idPorUrl.get(v.foto);
+      // Cada variación lleva la galería entera con la de contexto primero. Darle
+      // a cada color sólo su packshot hacía que esa fuera su portada, justo al
+      // revés de lo que MELI recomienda en Moda.
       return {
         price: f.price_meli,
         available_quantity: f.available_quantity,
@@ -87,12 +104,12 @@ function armarBody() {
           v.COLOR ? { id: "COLOR", value_name: v.COLOR } : null,
           v.SIZE ? { id: "SIZE", value_name: v.SIZE } : null,
         ].filter(Boolean),
-        // La fila de la guía va en `attributes`, no en attribute_combinations:
-        // es lo que hace que el comprador vea las medidas del talle que mira.
-        attributes: grid?.filas?.[v.SIZE]
-          ? [{ id: "SIZE_GRID_ROW_ID", value_name: grid.filas[v.SIZE] }] : [],
+        // La fila de la guía va en `attributes` de cada variación. El GET
+        // después la muestra vacía, pero si no se manda el alta falla con
+        // "missing.fashion_grid.grid_row_id.values".
+        attributes: filas[v.SIZE] ? [{ id: "SIZE_GRID_ROW_ID", value_name: filas[v.SIZE] }] : [],
         seller_custom_field: v.sku || undefined,
-        picture_ids: deLaVariacion.slice(0, 10),
+        picture_ids: todas.slice(0, 10),
       };
     }),
   };

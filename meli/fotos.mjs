@@ -17,7 +17,14 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { execFileSync } from "child_process";
 import { fondoABlanco } from "./fondo.mjs";
+
+// MELI rechaza con 413 los archivos grandes, y de todos modos sirve a 1200 px
+// de lado largo. Dejamos 2000 de techo: muy por encima de lo que muestra, pero
+// sin mandar 20 MB al cuete. Esto NO es recortar: la foto es la misma.
+const LADO_MAX = 2000;
+const sips = (...a) => execFileSync("/usr/bin/sips", a, { stdio: "ignore" });
 
 export function urlOriginal(src) {
   return src.replace(/-\d+-\d+(\.[a-z]+)$/i, "$1");
@@ -33,6 +40,13 @@ export async function prepararFoto(src, dir, i = 0) {
   if (!r.ok) r = await fetch(src);
   if (!r.ok) throw new Error(`no se pudo bajar ${src}`);
   fs.writeFileSync(bruto, Buffer.from(await r.arrayBuffer()));
+
+  const dim = execFileSync("/usr/bin/sips", ["-g", "pixelWidth", "-g", "pixelHeight", bruto]).toString();
+  const w = +dim.match(/pixelWidth:\s*(\d+)/)[1], h = +dim.match(/pixelHeight:\s*(\d+)/)[1];
+  if (Math.max(w, h) > LADO_MAX) {
+    const e = LADO_MAX / Math.max(w, h);
+    sips("--resampleHeightWidth", String(Math.round(h * e)), String(Math.round(w * e)), bruto, "--out", bruto);
+  }
 
   const fin = path.join(dir, `f${i}.jpg`);
   const tocada = fondoABlanco(bruto, fin);

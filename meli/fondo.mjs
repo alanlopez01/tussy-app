@@ -52,7 +52,7 @@ export function fondoABlanco(entrada, salida, tol = 26) {
     cola.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
   }
   fs.writeFileSync(bmp2, b);
-  sips("-s", "format", "jpeg", "-s", "formatOptions", "95", bmp2, "--out", salida);
+  sips("-s", "format", "jpeg", "-s", "formatOptions", "88", bmp2, "--out", salida);
   fs.unlinkSync(bmp); fs.unlinkSync(bmp2);
   return n / (w * h);
 }

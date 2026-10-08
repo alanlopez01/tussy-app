@@ -10,7 +10,9 @@ const GUIAS = JSON.parse(fs.readFileSync("guias-talles.json", "utf8"));
 const PORTADAS = JSON.parse(fs.readFileSync("portadas.json", "utf8"));
 
 const TALLE = { "1": "S", "2": "M", "3": "L", "4": "XL", "xxl": "XXL" };
-const norm = t => TALLE[String(t)] || String(t).toUpperCase();
+// Sin talle (bolsos, gorra, pines) va "Único": si no, String(undefined) dejaba
+// un talle literal "UNDEFINED" en la publicación.
+const norm = t => (t == null || t === "" || t === "-") ? "Único" : (TALLE[String(t)] || String(t).toUpperCase());
 const sube = p => Math.ceil((p * 1.15 - 900) / 1000) * 1000 + 900;
 
 // molde, categoria MELI y atributos por tipo de producto
@@ -23,16 +25,24 @@ const TIPOS = {
              attrs:{GENDER:"Mujer",GARMENT_TYPE:"Remera",SLEEVE_TYPE:"Corta",MAIN_MATERIAL:"Algodón",
                     COMPOSITION:"Algodón",T_SHIRT_COLLAR_TYPE:"Redondo",WEDGE_SHAPE:"Recto",
                     SALE_FORMAT:"Unidad",UNITS_PER_PACK:"1",IS_SPORTIVE:"No",WITH_RECYCLED_MATERIALS:"No"} },
-  camperaT:{ molde:"CAMPERA_PERLE_TEJIDA", cat:"MLA109096", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Tejido de punto"}, calce:"oversize" },
-  campera: { molde:"CAMPERA_TSSY",    cat:"MLA109096", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón"}, calce:"oversize" },
-  sweater: { molde:"SWEATERS_2026",   cat:"MLA109100", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Tejido de punto"}, calce:"oversize" },
+  camperaT:{ molde:"CAMPERA_PERLE_TEJIDA", cat:"MLA109096", calce:"oversize",
+             attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Tejido de punto",GARMENT_TYPE:"Campera",SALE_FORMAT:"Unidad"} },
+  campera: { molde:"CAMPERA_TSSY",    cat:"MLA109096", calce:"oversize",
+             attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",GARMENT_TYPE:"Campera",SALE_FORMAT:"Unidad"} },
+  sweater: { molde:"SWEATERS_2026",   cat:"MLA109100", calce:"oversize",
+             attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Tejido de punto",SALE_FORMAT:"Unidad"} },
   buzo:    { molde:"BUZO_CANGURO",    cat:"MLA109085", calce:"oversize",
-             attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad",IS_SPORTIVE:"No"} },
-  pantalon:{ molde:"PANTALONES",      cat:"MLA109282", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón"}, calce:"baggy" },
-  boxer:   { molde:null,              cat:"MLA429740", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad"} },
+             attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad",IS_SPORTIVE:"No",GARMENT_TYPE:"Hoodie"} },
+  // El Asimov es un conjunto deportivo con vivos, de ahi PANT_TYPE "Deportivo".
+  pantalon:{ molde:"PANTALONES",      cat:"MLA109282", calce:"baggy",
+             attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",PANT_TYPE:"Deportivo",SALE_FORMAT:"Unidad"} },
+  boxer:   { molde:null,              cat:"MLA429740", attrs:{GENDER:"Hombre",MAIN_MATERIAL:"Algodón",COMPOSITION:"Algodón",SALE_FORMAT:"Unidad",MALE_UNDERWEAR_TYPE:"Boxer"} },
   bolso:   { molde:null,              cat:"MLA432000", attrs:{GENDER:"Sin género"} },
-  mochila: { molde:null,              cat:"MLA120350", attrs:{GENDER:"Sin género"} },
-  gorra:   { molde:null,              cat:"MLA67460",  attrs:{GENDER:"Sin género"} },
+  // Mochila, gorra, boxer y pin piden cada uno su tipo propio.
+  mochila: { molde:null,              cat:"MLA120350", attrs:{GENDER:"Sin género",BACKPACK_TYPE:"Urbana"} },
+  // La Scout es camuflada verde y no tiene variante de color en Tiendanube, así
+  // que el COLOR que pide la categoría va a nivel publicación.
+  gorra:   { molde:null,              cat:"MLA67460",  attrs:{GENDER:"Sin género",HAT_AND_CAP_TYPE:"Gorra",COLOR:"Verde"} },
   pin:     { molde:null,              cat:"MLA393903", attrs:{GENDER:"Sin género"} },
 };
 
@@ -148,7 +158,7 @@ for (const [nombre, tipo] of Object.entries(SELECCION)) {
     variaciones: base.map(v => ({
       sku: (v.sku || "").trim() || null,
       COLOR: v.values?.[0]?.es || null,
-      SIZE: talles.length ? norm(v.values?.[1]?.es) : "Único",
+      SIZE: norm(v.values?.[1]?.es),
       peso_kg: Number(v.weight) || null,
       // MELI exige 1..10 fotos POR variación. Tiendanube asocia una foto a cada
       // variante con image_id: cuando está, le damos a cada color su foto; cuando

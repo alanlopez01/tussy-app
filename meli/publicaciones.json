@@ -257,7 +257,9 @@
       "BRAND": "Tussy",
       "MODEL": "CAMPERA TEJIDA BRICKELL",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Tejido de punto"
+      "MAIN_MATERIAL": "Tejido de punto",
+      "GARMENT_TYPE": "Campera",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -459,7 +461,9 @@
       "BRAND": "Tussy",
       "MODEL": "PANTALON BAGGY TSSY ASIMOV",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "PANT_TYPE": "Deportivo",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -523,7 +527,9 @@
       "BRAND": "Tussy",
       "MODEL": "CAMPERA TSSY ASIMOV",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "GARMENT_TYPE": "Campera",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -908,7 +914,7 @@
       {
         "sku": "11184",
         "COLOR": "Negro",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": null
       }
@@ -1536,7 +1542,8 @@
       "BRAND": "Tussy",
       "MODEL": "SWEATER ATLANTIC TSSY",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Tejido de punto"
+      "MAIN_MATERIAL": "Tejido de punto",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -1671,7 +1678,9 @@
       "BRAND": "Tussy",
       "MODEL": "CAMPERA TSSY OUTSIDER",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "GARMENT_TYPE": "Campera",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -1819,7 +1828,7 @@
       {
         "sku": "11185",
         "COLOR": "Negro",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": null
       }
@@ -2206,7 +2215,9 @@
       "BRAND": "Tussy",
       "MODEL": "CAMPERA TSSY DIZZY",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Algodón"
+      "MAIN_MATERIAL": "Algodón",
+      "GARMENT_TYPE": "Campera",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -2279,7 +2290,8 @@
       "BRAND": "Tussy",
       "MODEL": "SWEATER WEAVES TSSY",
       "GENDER": "Hombre",
-      "MAIN_MATERIAL": "Tejido de punto"
+      "MAIN_MATERIAL": "Tejido de punto",
+      "SALE_FORMAT": "Unidad"
     },
     "variaciones": [
       {
@@ -2380,7 +2392,8 @@
       "MAIN_MATERIAL": "Algodón",
       "COMPOSITION": "Algodón",
       "SALE_FORMAT": "Unidad",
-      "IS_SPORTIVE": "No"
+      "IS_SPORTIVE": "No",
+      "GARMENT_TYPE": "Hoodie"
     },
     "variaciones": [
       {
@@ -2458,7 +2471,7 @@
       {
         "sku": "11187",
         "COLOR": "Negro",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": null
       }
@@ -2509,13 +2522,14 @@
     "attributes": {
       "BRAND": "Tussy",
       "MODEL": "MOCHILA TSSY",
-      "GENDER": "Sin género"
+      "GENDER": "Sin género",
+      "BACKPACK_TYPE": "Urbana"
     },
     "variaciones": [
       {
         "sku": "50008",
         "COLOR": "Negro",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": null
       }
@@ -2557,7 +2571,7 @@
       {
         "sku": "50009",
         "COLOR": "Negro",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": null
       }
@@ -2605,7 +2619,7 @@
       {
         "sku": "11186",
         "COLOR": "Negro",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": null
       }
@@ -2653,14 +2667,14 @@
       {
         "sku": "50010",
         "COLOR": "Negro",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": null
       },
       {
         "sku": "50010",
         "COLOR": "Crudo",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/06-4b0b5df30eb8dd2db217867189195623-1024-1024.jpg"
       }
@@ -2717,7 +2731,7 @@
       {
         "sku": "50004",
         "COLOR": "Blanco",
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.5,
         "foto": "https://acdn-us.mitiendanube.com/stores/004/690/284/products/img_0158-4119bad564c79116d617870748095278-1024-1024.jpg"
       }
@@ -2774,13 +2788,15 @@
     "attributes": {
       "BRAND": "Tussy",
       "MODEL": "GORRA SCOUT",
-      "GENDER": "Sin género"
+      "GENDER": "Sin género",
+      "HAT_AND_CAP_TYPE": "Gorra",
+      "COLOR": "Verde"
     },
     "variaciones": [
       {
         "sku": "2387",
         "COLOR": null,
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.3,
         "foto": null
       }
@@ -2816,7 +2832,8 @@
       "GENDER": "Hombre",
       "MAIN_MATERIAL": "Algodón",
       "COMPOSITION": "Algodón",
-      "SALE_FORMAT": "Unidad"
+      "SALE_FORMAT": "Unidad",
+      "MALE_UNDERWEAR_TYPE": "Boxer"
     },
     "variaciones": [
       {
@@ -2916,7 +2933,8 @@
       "GENDER": "Hombre",
       "MAIN_MATERIAL": "Algodón",
       "COMPOSITION": "Algodón",
-      "SALE_FORMAT": "Unidad"
+      "SALE_FORMAT": "Unidad",
+      "MALE_UNDERWEAR_TYPE": "Boxer"
     },
     "variaciones": [
       {
@@ -3010,7 +3028,8 @@
       "GENDER": "Hombre",
       "MAIN_MATERIAL": "Algodón",
       "COMPOSITION": "Algodón",
-      "SALE_FORMAT": "Unidad"
+      "SALE_FORMAT": "Unidad",
+      "MALE_UNDERWEAR_TYPE": "Boxer"
     },
     "variaciones": [
       {
@@ -3129,7 +3148,8 @@
       "GENDER": "Hombre",
       "MAIN_MATERIAL": "Algodón",
       "COMPOSITION": "Algodón",
-      "SALE_FORMAT": "Unidad"
+      "SALE_FORMAT": "Unidad",
+      "MALE_UNDERWEAR_TYPE": "Boxer"
     },
     "variaciones": [
       {
@@ -3186,7 +3206,8 @@
       "GENDER": "Hombre",
       "MAIN_MATERIAL": "Algodón",
       "COMPOSITION": "Algodón",
-      "SALE_FORMAT": "Unidad"
+      "SALE_FORMAT": "Unidad",
+      "MALE_UNDERWEAR_TYPE": "Boxer"
     },
     "variaciones": [
       {
@@ -3246,7 +3267,7 @@
       {
         "sku": "10711",
         "COLOR": null,
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.04,
         "foto": null
       }
@@ -3279,7 +3300,7 @@
       {
         "sku": "10711",
         "COLOR": null,
-        "SIZE": "UNDEFINED",
+        "SIZE": "Único",
         "peso_kg": 0.04,
         "foto": null
       }

@@ -203,7 +203,11 @@
           74
         ]
       },
-      "_pendiente": "'Copa' (71-74) no puede ser hombro a hombro. Se publica sin esa fila hasta que Alan confirme que mide."
+      "_pendiente": "'Copa' (71-74) no puede ser hombro a hombro. Se publica sin esa fila hasta que Alan confirme que mide.",
+      "meli": {
+        "size_grid_id": "9586433",
+        "domain_id": "JACKETS_AND_COATS"
+      }
     },
     "SWEATERS_2026": {
       "origen": "web + planilla Alan (identicas: 'Sw escote redondo PERLE' = 'SWEATERS 2026')",
@@ -242,6 +246,10 @@
           57,
           54
         ]
+      },
+      "meli": {
+        "size_grid_id": "9586445",
+        "domain_id": "SWEATERS_AND_CARDIGANS"
       }
     },
     "BUZO_CANGURO": {
@@ -285,6 +293,10 @@
           73,
           61
         ]
+      },
+      "meli": {
+        "size_grid_id": "9586775",
+        "domain_id": "SWEATSHIRTS_AND_HOODIES"
       }
     },
     "CAMPERA_TSSY": {
@@ -331,7 +343,11 @@
         "CAMPERA TSSY ASIMOV",
         "CAMPERA TSSY OUTSIDER",
         "CAMPERA TSSY DIZZY"
-      ]
+      ],
+      "meli": {
+        "size_grid_id": "9586441",
+        "domain_id": "JACKETS_AND_COATS"
+      }
     },
     "REMERA_MUJER": {
       "origen": "web",
@@ -397,6 +413,10 @@
           109,
           42
         ]
+      },
+      "meli": {
+        "size_grid_id": "9586457",
+        "domain_id": "PANTS"
       }
     },
     "POLO_OVERSIZE": {
