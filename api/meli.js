@@ -63,6 +63,22 @@ async function tokenValido() {
   return j.access_token;
 }
 
+// Renueva el token si está por vencer. Lo llama un cron cada 4 h para que la
+// conexión no se caiga sola: el refresh dura 6 meses, pero si nadie lo usa
+// durante ese tiempo hay que volver a autorizar a mano desde el navegador.
+// Es público porque lo invoca el cron de Vercel, que no manda sesión. No
+// devuelve nada sensible y `tokenValido` no hace nada si al token le queda
+// más de 10 minutos, así que llamarlo de más es inofensivo.
+async function refrescar(req, res) {
+  try {
+    await tokenValido();
+    const c = await cuenta();
+    res.json({ ok: true, vence_en_min: Math.round((new Date(c.expira_en) - Date.now()) / 60000) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+}
+
 async function estado(req, res) {
   if (!requerirSesion(req, res)) return;
   if (!configurada()) return res.json({ conectada: false, motivo: "faltan MELI_CLIENT_ID / MELI_CLIENT_SECRET" });
@@ -144,6 +160,7 @@ module.exports = async (req, res) => {
     if (action === "estado") return await estado(req, res);
     if (action === "auth") return await auth(req, res);
     if (action === "callback") return await callback(req, res);
+    if (action === "refrescar") return await refrescar(req, res);
     res.status(400).json({ error: `acción desconocida: ${action}` });
   } catch (e) {
     console.error("meli:", e);
