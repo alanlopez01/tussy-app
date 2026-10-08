@@ -10,6 +10,10 @@ for (const l of fs.readFileSync("/Users/alanlopez/Desktop/Claudito/tussy-app/.en
 const sql = neon(process.env.DATABASE_URL);
 const API = "https://api.mercadolibre.com";
 const tmp = carpetaTemp();
+// Las fotos intermedias pesan: el BMP de una imagen de 2000x3000 son ~18 MB.
+// Sin esto los temporales se acumulan corrida tras corrida y llenan el disco
+// (nos paso: el reproceso de las 39 publicaciones se corto por falta de espacio).
+process.on("exit", () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} });
 const nombre = process.argv[2];
 
 const f = JSON.parse(fs.readFileSync(new URL("./publicaciones.json", import.meta.url), "utf8"))
