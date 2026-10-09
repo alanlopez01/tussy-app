@@ -148,9 +148,19 @@ async function marcarSync(sql, fecha, local, ok, error) {
       ultimo_error = EXCLUDED.ultimo_error, actualizado_en = now()`;
 }
 
-function fuentesDelDia() {
+// Palermo y La Plata dejaron WooCommerce el 19-ago-2026: desde entonces entran
+// por webhook del Tussy ERP. Seguir consultándole Woo al día en curso no aporta
+// nada —Palermo contesta vacío y el dominio de La Plata ya ni existe (NXDOMAIN)—
+// y deja a La Plata marcada en error todos los días, tapando fallas de verdad.
+// wooLocales() se sigue usando para recargar días anteriores a esta fecha, que
+// es donde Woo sí era la fuente real.
+const ERP_DESDE = "2026-08-19";
+
+function fuentesDelDia(fecha) {
   const fuentes = [];
-  for (const l of wooLocales()) fuentes.push({ local: l.nombre, fn: f => fetchWooDia(l, f) });
+  if (fecha < ERP_DESDE) {
+    for (const l of wooLocales()) fuentes.push({ local: l.nombre, fn: f => fetchWooDia(l, f) });
+  }
   fuentes.push({ local: "Tiendanube", fn: f => fetchTNDia(f) });
   for (const l of dfLocales()) fuentes.push({ local: l.nombre, fn: f => fetchDFDia(l, f) });
   return fuentes;
@@ -264,7 +274,7 @@ async function correrIngesta() {
   const resumen = [];
 
   // 1) Día en curso: todas las fuentes en paralelo
-  await Promise.allSettled(fuentesDelDia().map(async ({ local, fn }) => {
+  await Promise.allSettled(fuentesDelDia(hoy).map(async ({ local, fn }) => {
     const r = await fn(hoy);
     if (!r.ok) {
       await marcarSync(sql, hoy, local, false, r.error);
@@ -323,7 +333,7 @@ async function correrIngesta() {
     WHERE estado = 'error' AND fecha >= ${hoy}::date - 7 AND fecha < ${hoy}
     ORDER BY fecha DESC LIMIT 2`;
   for (const p of pendientes) {
-    const fuente = fuentesDelDia().find(f => f.local === p.local);
+    const fuente = fuentesDelDia(p.fecha).find(f => f.local === p.local);
     if (!fuente) continue;
     const r = await fuente.fn(p.fecha);
     if (r.ok) {
@@ -518,8 +528,11 @@ async function reingestarUltimosDias(sql, dias = 7) {
   for (let i = 1; i <= dias; i++) {
     listaDias.push(new Date(Date.now() - 3 * 3600 * 1000 - i * 86400000).toISOString().slice(0, 10));
   }
+  // Woo sólo si el rango pisa días anteriores al pase al ERP (ver ERP_DESDE).
   const fuentesWebs = [
-    ...wooLocales().map(l => ({ local: l.nombre, fn: f => fetchWooDia(l, f) })),
+    ...(listaDias[listaDias.length - 1] < ERP_DESDE
+      ? wooLocales().map(l => ({ local: l.nombre, fn: f => fetchWooDia(l, f) }))
+      : []),
     { local: "Tiendanube", fn: f => fetchTNDia(f) },
   ];
   for (const { local, fn } of fuentesWebs) {
