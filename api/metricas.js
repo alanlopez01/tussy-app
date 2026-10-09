@@ -13,7 +13,7 @@
 const { neon } = require("@neondatabase/serverless");
 const { waitUntil } = require("@vercel/functions");
 const webpush = require("web-push");
-const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchDFDia, fetchDFRango } = require("../lib/fuentes");
+const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchTNModificadas, fetchDFDia, fetchDFRango } = require("../lib/fuentes");
 
 const KEY_LOCAL = {
   "Palermo": "palermo", "La Plata": "laplata", "Tiendanube": "online",
@@ -537,24 +537,51 @@ async function reingestarUltimosDias(sql, dias = 7) {
   return resumen;
 }
 
-// Repaso largo, sólo Tiendanube. Hay órdenes que se acreditan semanas después de
-// creadas y la ventana de 7 días no las alcanza: quedaban afuera para siempre
-// (en agosto de 2026 se perdieron así 4 órdenes por $300 mil, una pagada a los
-// 35 días). Es un problema exclusivo de esta fuente, porque los locales físicos
-// cobran en el momento; por eso no se amplía la ventana de todas, que saldría
-// mucho más cara en llamadas.
-async function reingestarTiendanube(sql, desdeDia, hastaDia) {
-  let dias = 0, fallos = 0;
-  for (let i = desdeDia; i <= hastaDia; i++) {
-    const dia = new Date(Date.now() - 3 * 3600 * 1000 - i * 86400000).toISOString().slice(0, 10);
-    const r = await fetchTNDia(dia);
-    if (!r.ok) { fallos++; continue; }
-    await escribirDiaLocal(sql, dia, "Tiendanube", r.filas);
-    await escribirCobrosDia(sql, dia, "Tiendanube", r.cobros);
-    await escribirClientesTN(sql, r.clientes);
-    dias++;
+// Repaso de Tiendanube por órdenes modificadas, no por días.
+//
+// Las transferencias se confirman a mano desde el panel de TN y el retraso no
+// tiene techo: hay órdenes que se marcaron pagas 70 días después de creadas.
+// Barrer un rango fijo de días siempre deja un borde por donde se escapan, y
+// cuesta una llamada por día aunque no haya cambiado nada.
+//
+// Acá se pregunta al revés: qué órdenes CAMBIARON en los últimos días. Marcar
+// una transferencia como paga cuenta como cambio, así que la orden aparece sin
+// importar cuándo se creó. De esas se reprocesan sólo los días que tienen
+// alguna orden paga que falta en la base — casi siempre ninguno o uno.
+//
+// Hoy y ayer quedan afuera a propósito: ya los cubre la corrida de 5 minutos.
+// Y no se baja más allá del primer día con datos: Tiendanube devuelve órdenes
+// de 2024 modificadas, y escribirlas dejaría ventas sueltas en fechas donde la
+// app no tiene historia de ningún otro local.
+async function reingestarTiendanubeModificadas(sql, diasVentana = 4) {
+  const desdeISO = new Date(Date.now() - diasVentana * 86400000).toISOString().replace(/\.\d+Z$/, "+0000");
+  const r = await fetchTNModificadas(desdeISO);
+  if (!r.ok) return { local: "Tiendanube", ok: false, error: r.error };
+
+  const hoy = hoyArg();
+  const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
+  const piso = (await sql`SELECT MIN(fecha)::text AS d FROM ventas WHERE local = 'Tiendanube'`)[0]?.d;
+
+  const candidatas = r.ordenes.filter(o =>
+    o.status !== "cancelled" && ["paid", "partially_paid"].includes(o.payment_status) &&
+    o.dia !== hoy && o.dia !== ayer && (!piso || o.dia >= piso));
+  if (!candidatas.length) return { local: "Tiendanube", ok: true, modificadas: r.ordenes.length, dias: 0 };
+
+  const presentes = new Set((await sql`
+    SELECT DISTINCT orden_id FROM ventas
+    WHERE local = 'Tiendanube' AND orden_id = ANY(${candidatas.map(o => o.id)})`).map(x => String(x.orden_id)));
+  const dias = [...new Set(candidatas.filter(o => !presentes.has(o.id)).map(o => o.dia))].sort();
+
+  let rehechos = 0, fallos = 0;
+  for (const dia of dias) {
+    const d = await fetchTNDia(dia);
+    if (!d.ok) { fallos++; continue; }
+    await escribirDiaLocal(sql, dia, "Tiendanube", d.filas);
+    await escribirCobrosDia(sql, dia, "Tiendanube", d.cobros);
+    await escribirClientesTN(sql, d.clientes);
+    rehechos++;
   }
-  return { local: "Tiendanube", dias, fallos };
+  return { local: "Tiendanube", ok: true, modificadas: r.ordenes.length, dias: rehechos, fallos, fechas: dias };
 }
 
 // ── Cierre del día anterior (cron diario 00:05 ARG) ──
@@ -590,10 +617,10 @@ async function cierreDiario(req, res) {
       .then(r => console.log("[reingesta]", JSON.stringify(r)))
       .catch(e => console.error("[reingesta] error:", e))
   );
-  // Y Tiendanube con ventana larga, desde donde termina la de arriba: recupera
-  // los pagos que se acreditaron semanas más tarde.
+  // Y Tiendanube por órdenes modificadas: recupera las transferencias que se
+  // confirmaron tarde, sin tope de antigüedad.
   waitUntil(
-    reingestarTiendanube(sql, 8, 45)
+    reingestarTiendanubeModificadas(sql)
       .then(r => console.log("[reingesta-tn]", JSON.stringify(r)))
       .catch(e => console.error("[reingesta-tn] error:", e))
   );
