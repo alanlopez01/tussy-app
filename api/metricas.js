@@ -294,6 +294,29 @@ async function correrIngesta() {
     resumen.push({ local, ok: true, filas: r.filas.length, nuevas: habiaBaseline ? Object.keys(porOrden).filter(id => !idsPrevios.has(id)).length : 0 });
   }));
 
+  // 1.5) Tiendanube de ayer. Las órdenes que se crean sin pagar (transferencia,
+  // pago pendiente) recién cuentan cuando el cliente paga, y casi siempre paga al
+  // día siguiente. La consulta del día en curso va por created_at, así que no las
+  // ve nunca, y el repaso del cierre corre a las 00:05, antes de que se paguen:
+  // la venta online quedaba hasta 24 h por debajo de lo que muestra Tiendanube
+  // (el 09-oct-2026 eran 19 órdenes por $3,5M).
+  // No toca sync_estado a propósito: `intentos` cuenta las corridas del día
+  // (288 = una cada 5 min) y es lo que después delata a qué hora se cortó todo.
+  try {
+    const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
+    const r = await fetchTNDia(ayer);
+    if (r.ok) {
+      await escribirDiaLocal(sql, ayer, "Tiendanube", r.filas);
+      await escribirCobrosDia(sql, ayer, "Tiendanube", r.cobros);
+      await escribirClientesTN(sql, r.clientes);
+      resumen.push({ local: "Tiendanube", fecha: ayer, ok: true, repaso: true, filas: r.filas.length });
+    } else {
+      resumen.push({ local: "Tiendanube", fecha: ayer, ok: false, repaso: true, error: r.error });
+    }
+  } catch (e) {
+    console.error("[ingesta] no se pudo repasar Tiendanube de ayer:", e);
+  }
+
   // 2) Reintentar hasta 2 (fecha, local) pendientes de los últimos 7 días (ej. Córdoba apagada el finde)
   const pendientes = await sql`
     SELECT fecha::text, local FROM sync_estado
@@ -514,6 +537,26 @@ async function reingestarUltimosDias(sql, dias = 7) {
   return resumen;
 }
 
+// Repaso largo, sólo Tiendanube. Hay órdenes que se acreditan semanas después de
+// creadas y la ventana de 7 días no las alcanza: quedaban afuera para siempre
+// (en agosto de 2026 se perdieron así 4 órdenes por $300 mil, una pagada a los
+// 35 días). Es un problema exclusivo de esta fuente, porque los locales físicos
+// cobran en el momento; por eso no se amplía la ventana de todas, que saldría
+// mucho más cara en llamadas.
+async function reingestarTiendanube(sql, desdeDia, hastaDia) {
+  let dias = 0, fallos = 0;
+  for (let i = desdeDia; i <= hastaDia; i++) {
+    const dia = new Date(Date.now() - 3 * 3600 * 1000 - i * 86400000).toISOString().slice(0, 10);
+    const r = await fetchTNDia(dia);
+    if (!r.ok) { fallos++; continue; }
+    await escribirDiaLocal(sql, dia, "Tiendanube", r.filas);
+    await escribirCobrosDia(sql, dia, "Tiendanube", r.cobros);
+    await escribirClientesTN(sql, r.clientes);
+    dias++;
+  }
+  return { local: "Tiendanube", dias, fallos };
+}
+
 // ── Cierre del día anterior (cron diario 00:05 ARG) ──
 async function cierreDiario(req, res) {
   if (!autorizarCron(req, res)) return;
@@ -546,6 +589,13 @@ async function cierreDiario(req, res) {
     reingestarUltimosDias(sql, 7)
       .then(r => console.log("[reingesta]", JSON.stringify(r)))
       .catch(e => console.error("[reingesta] error:", e))
+  );
+  // Y Tiendanube con ventana larga, desde donde termina la de arriba: recupera
+  // los pagos que se acreditaron semanas más tarde.
+  waitUntil(
+    reingestarTiendanube(sql, 8, 45)
+      .then(r => console.log("[reingesta-tn]", JSON.stringify(r)))
+      .catch(e => console.error("[reingesta-tn] error:", e))
   );
   // Métricas de Meta: última semana (la atribución cambia retroactivamente)
   if (metaConfigurada()) {
