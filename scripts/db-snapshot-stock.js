@@ -9,10 +9,16 @@ const { fuentesStock } = require("../lib/stock");
 const { normalizarProducto } = require("../lib/normalizar");
 
 function loadEnv() {
-  const envPath = path.join(__dirname, "..", ".env.development.local");
-  for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
-    const m = line.match(/^([A-Z_]+)="?([^"]*)"?$/);
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  // Los dos archivos están en uso: `vercel env pull` escribe .env.development.local
+  // y algunas variables quedaron en .env.local. Leer uno solo hace que falte una
+  // credencial según dónde la hayan puesto, que no es un error fácil de ver.
+  for (const nombre of [".env.development.local", ".env.local"]) {
+    const envPath = path.join(__dirname, "..", nombre);
+    if (!fs.existsSync(envPath)) continue;
+    for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
+      const m = line.match(/^([A-Z_]+)="?([^"]*)"?$/);
+      if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+    }
   }
 }
 
@@ -102,6 +108,12 @@ async function main() {
       const r = await fn();
       const u = r.filas.reduce((a, f) => a + f.cantidad, 0);
       console.log(`  ${local.padEnd(11)} ${r.ok ? "OK " : "ERR"}  ${String(r.filas.length).padStart(4)} filas · ${Math.round(u).toLocaleString("es-AR").padStart(7)} u.${r.error ? "  → " + r.error : ""}`);
+      // Unas pocas filas de muestra: los totales solos no dejan ver si el
+      // producto, el talle o el precio están viniendo mal de una fuente nueva.
+      for (const f of r.filas.slice(0, 5)) {
+        const precio = f.precio == null ? "s/precio" : "$" + Number(f.precio).toLocaleString("es-AR");
+        console.log(`      ${String(f.producto).slice(0, 34).padEnd(35)} ${String(f.talle || "-").padEnd(6)} ${String(f.color || "-").padEnd(14)} ${String(f.cantidad).padStart(4)} u.  ${precio}`);
+      }
     }
     console.log("\n(corré con --aplicar para guardar la foto del día)");
     return;
