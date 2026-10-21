@@ -26,6 +26,7 @@ const { requerirSesion, verificarToken } = require("../lib/auth");
 const { costear } = require("../lib/costeo");
 const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
+const { reponerVentasFaltantes } = require("../lib/erp");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
 const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = require("../lib/bancos");
 const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require("../lib/meta");
@@ -627,6 +628,28 @@ async function cierreDiario(req, res) {
       .then(r => console.log("[reingesta]", JSON.stringify(r)))
       .catch(e => console.error("[reingesta] error:", e))
   );
+  // Red de seguridad del webhook del ERP: si un POST se perdió, esa venta no se
+  // reintenta nunca y queda un agujero mudo. Esto compara contra la base de
+  // origen y repone lo que falte. Sólo inserta, así que no puede pisar nada.
+  waitUntil(
+    reponerVentasFaltantes(sql, 7)
+      .then(async r => {
+        console.log("[erp-faltantes]", JSON.stringify(r));
+        if (!r.ok || !r.repuestas) return;
+        // Que haya hecho falta reponer significa que el webhook perdió algo:
+        // vale un aviso aunque el dato ya esté corregido.
+        const texto = `Se repusieron ${r.repuestas} ventas que el webhook del ERP no entregó ($${r.pesos.toLocaleString("es-AR")}). Ya están en la app.`;
+        await enviarPush([{ title: "Ventas repuestas del ERP", body: texto, url: "/pedidos" }], { solo: "alan" }).catch(() => {});
+        if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: `⚠️ ${texto}` }),
+          }).catch(() => {});
+        }
+      })
+      .catch(e => console.error("[erp-faltantes] error:", e))
+  );
+
   // Y Tiendanube por órdenes modificadas: recupera las transferencias que se
   // confirmaron tarde, sin tope de antigüedad.
   waitUntil(
