@@ -13,10 +13,11 @@
 const { neon } = require("@neondatabase/serverless");
 const { waitUntil } = require("@vercel/functions");
 const webpush = require("web-push");
-const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchTNModificadas, fetchDFDia, fetchDFRango } = require("../lib/fuentes");
+const { ERP_DESDE, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchTNModificadas, fetchDFDia, fetchDFRango } = require("../lib/fuentes");
 
 const KEY_LOCAL = {
   "Palermo": "palermo", "La Plata": "laplata", "Tiendanube": "online",
+  "MercadoLibre": "meli",
   "Dot": "dot", "Abasto": "abasto", "Córdoba": "cordoba", "Cordoba": "cordoba",
 };
 
@@ -148,20 +149,16 @@ async function marcarSync(sql, fecha, local, ok, error) {
       ultimo_error = EXCLUDED.ultimo_error, actualizado_en = now()`;
 }
 
-// Palermo y La Plata dejaron WooCommerce el 19-ago-2026: desde entonces entran
-// por webhook del Tussy ERP. Seguir consultándole Woo al día en curso no aporta
-// nada —Palermo contesta vacío y el dominio de La Plata ya ni existe (NXDOMAIN)—
-// y deja a La Plata marcada en error todos los días, tapando fallas de verdad.
-// wooLocales() se sigue usando para recargar días anteriores a esta fecha, que
-// es donde Woo sí era la fuente real.
-const ERP_DESDE = "2026-08-19";
-
 function fuentesDelDia(fecha) {
   const fuentes = [];
   if (fecha < ERP_DESDE) {
     for (const l of wooLocales()) fuentes.push({ local: l.nombre, fn: f => fetchWooDia(l, f) });
   }
   fuentes.push({ local: "Tiendanube", fn: f => fetchTNDia(f) });
+  // MELI es un canal más. Si la cuenta todavía no está conectada, fetchMeliDia
+  // devuelve ok:false con el motivo y queda registrado en sync_estado como
+  // cualquier otra fuente caída, sin frenar al resto.
+  fuentes.push({ local: "MercadoLibre", fn: f => fetchMeliDia(f) });
   for (const l of dfLocales()) fuentes.push({ local: l.nombre, fn: f => fetchDFDia(l, f) });
   return fuentes;
 }
@@ -496,7 +493,7 @@ async function totalesRango(sql, desde, hasta) {
   return { rows, total };
 }
 
-const CORTO_LOCAL = { "Palermo": "Pal", "La Plata": "LP", "Tiendanube": "Online", "Dot": "Dot", "Abasto": "Ab", "Córdoba": "Cba", "Cordoba": "Cba" };
+const CORTO_LOCAL = { "Palermo": "Pal", "La Plata": "LP", "Tiendanube": "Online", "MercadoLibre": "MELI", "Dot": "Dot", "Abasto": "Ab", "Córdoba": "Cba", "Cordoba": "Cba" };
 function fmtCortoPesos(n) {
   const v = Math.round(n || 0);
   if (Math.abs(v) >= 1e6) return "$" + (v / 1e6).toLocaleString("es-AR", { maximumFractionDigits: 1 }) + "M";
@@ -2055,7 +2052,7 @@ async function proyeccionMes(req, res) {
     diasRestantes.push(new Date(Date.UTC(y, m - 1, d)).getUTCDay());
   }
 
-  const locales = ["Palermo", "La Plata", "Tiendanube", "Dot", "Abasto", "Córdoba"];
+  const locales = ["Palermo", "La Plata", "Tiendanube", "MercadoLibre", "Dot", "Abasto", "Córdoba"];
   const filas = locales.map(local => {
     const acum = Number(acumRows.find(r => r.local === local)?.venta || 0);
     const acumCompleto = Number(acumCompletos.find(r => r.local === local)?.venta || 0);

@@ -110,6 +110,7 @@ export const LOCALES = [
   { key: "palermo", nombre: "Palermo",  db: "Palermo",    color: "var(--color-s-palermo)" },
   { key: "laplata", nombre: "La Plata", db: "La Plata",   color: "var(--color-s-laplata)" },
   { key: "online",  nombre: "Online",   db: "Tiendanube", color: "var(--color-s-online)" },
+  { key: "meli",    nombre: "MELI",     db: "MercadoLibre", color: "var(--color-s-meli)" },
   { key: "dot",     nombre: "Dot",      db: "Dot",        color: "var(--color-s-dot)" },
   { key: "abasto",  nombre: "Abasto",   db: "Abasto",     color: "var(--color-s-abasto)" },
   { key: "cordoba", nombre: "Córdoba",  db: "Córdoba",    color: "var(--color-s-cordoba)" },

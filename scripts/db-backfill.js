@@ -6,7 +6,7 @@
 // Uso: node scripts/db-backfill.js [desde] [hasta]   (default: 2026-03-01 → ayer)
 const fs = require("fs");
 const path = require("path");
-const { wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchDFRango, diaSiguiente } = require("../lib/fuentes");
+const { ERP_DESDE, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchDFRango, diaSiguiente } = require("../lib/fuentes");
 const { normalizarProducto } = require("../lib/normalizar");
 
 function loadEnv() {
@@ -31,7 +31,9 @@ async function conReintentos(fn, intentos = 4) {
 }
 
 async function guardarDiaLocal(sql, fecha, local, filas) {
-  await sql`DELETE FROM ventas WHERE fecha = ${fecha} AND local = ${local}`;
+  // Nunca borrar lo que entró por webhook del ERP: esta función reescribe el día
+  // con lo que trajo una fuente de pull, y el ERP no es una de ellas.
+  await sql`DELETE FROM ventas WHERE fecha = ${fecha} AND local = ${local} AND sistema <> 'erp'`;
   for (let i = 0; i < filas.length; i += 500) {
     const c = filas.slice(i, i + 500);
     await sql`
@@ -95,8 +97,11 @@ async function main() {
   // ── Woo + TN: por día (filtro server-side por fecha) ──
   for (const dia of dias) {
     const fuentes = [
-      ...wooLocales().map(l => ({ nombre: l.nombre, fn: () => fetchWooDia(l, dia) })),
+      // Woo sólo para días anteriores al pase al ERP. Después de esa fecha
+      // devuelve vacío y escribirlo borraría las ventas que entraron por webhook.
+      ...(dia < ERP_DESDE ? wooLocales().map(l => ({ nombre: l.nombre, fn: () => fetchWooDia(l, dia) })) : []),
       { nombre: "Tiendanube", fn: () => fetchTNDia(dia) },
+      { nombre: "MercadoLibre", fn: () => fetchMeliDia(dia) },
     ].filter(f => !yaOk.has(`${dia}|${f.nombre}`));
     if (!fuentes.length) continue;
 
