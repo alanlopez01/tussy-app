@@ -7,7 +7,6 @@ import Pedidos from "./pages/Pedidos.jsx";
 import Finanzas from "./pages/Finanzas.jsx";
 import Rentabilidad from "./pages/Rentabilidad.jsx";
 import Contabilidad from "./pages/Contabilidad.jsx";
-import Alertas from "./pages/Alertas.jsx";
 import Cajas from "./pages/Cajas.jsx";
 import DeudaShato from "./pages/DeudaShato.jsx";
 import Socios from "./pages/Socios.jsx";
@@ -19,7 +18,6 @@ import Login from "./pages/Login.jsx";
 const NAV = [
   { titulo: "Operación", items: [
     { to: "/", label: "Inicio", icon: "◧" },
-    { to: "/alertas", label: "Alertas", icon: "◉", soloAdmin: true },
     { to: "/ventas", label: "Ventas", icon: "▤" },
     { to: "/pedidos", label: "Pedidos", icon: "◷" },
     { to: "/productos", label: "Productos", icon: "▦", soloAdmin: true },
@@ -173,7 +171,6 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/ventas" element={<Ventas />} />
-            <Route path="/alertas" element={user.rol === "admin" ? <Alertas /> : <Navigate to="/" replace />} />
             <Route path="/productos" element={user.rol === "admin" ? <Productos /> : <Navigate to="/" replace />} />
             <Route path="/pedidos" element={<Pedidos rol={user.rol} />} />
             <Route path="/finanzas" element={user.rol === "admin" ? <Navigate to="/cajas" replace /> : <Finanzas />} />

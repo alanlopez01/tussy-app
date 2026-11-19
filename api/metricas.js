@@ -30,7 +30,6 @@ const { reponerVentasFaltantes } = require("../lib/erp");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
 const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = require("../lib/bancos");
 const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require("../lib/meta");
-const { generarAlertas } = require("../lib/alertas");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
 const { contextoRentabilidad, margenDeOperacion } = require("../lib/rentabilidad");
 const { mpConfigurado, sincronizarPagos, cruzarConCobros } = require("../lib/mercadopago");
@@ -697,22 +696,6 @@ async function cierreDiario(req, res) {
     );
   }
 
-  // Alertas comerciales del día: solo se avisa lo urgente, y solo a Alan.
-  waitUntil(
-    generarAlertas(sql)
-      .then(async r => {
-        const altas = r.alertas.filter(a => a.severidad === "alta");
-        if (altas.length) {
-          await enviarPush([{
-            title: altas.length === 1 ? "1 cosa para revisar hoy" : `${altas.length} cosas para revisar hoy`,
-            body: altas.map(a => a.titulo).join(" · "),
-            url: "/alertas",
-          }], { solo: "alan" });
-        }
-        console.log("[alertas]", JSON.stringify(r.resumen));
-      })
-      .catch(e => console.error("[alertas] error:", e))
-  );
   return res.status(200).json({ ok: true, fecha: ayer, total, porLocal: rows, notificadas: enviadas });
 }
 
@@ -2965,12 +2948,6 @@ module.exports = async function handler(req, res) {
     if (action === "feed") return await feed(req, res);
     if (action === "operaciones") return await operaciones(req, res);
     if (action === "cierre") return await cierreDiario(req, res);
-    // Las alertas son de Alan: exponen costos, márgenes por producto y pauta.
-    if (action === "alertas") {
-      const sesion = verificarToken(req.headers["x-tussy-auth"]);
-      if (sesion?.rol !== "admin") return res.status(403).json({ error: "solo admin" });
-      return res.status(200).json(await generarAlertas(neon(process.env.DATABASE_URL)));
-    }
     if (action === "semanal") return await resumenSemanal(req, res);
     if (action === "modelosCostos") return await modelosCostos(req, res);
     if (action === "guardarCosto") return await guardarCosto(req, res);

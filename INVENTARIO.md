@@ -18,7 +18,6 @@ una o más *actions* de los endpoints de `/api`.
 | pantalla | archivo | quién la ve | qué hace |
 |---|---|---|---|
 | **Inicio** | `Home.jsx` | todos | Tablero del día: ventas por local, comparación contra el mes anterior, serie histórica y proyección de cierre de mes. |
-| **Alertas** | `Alertas.jsx` | solo admin | Seis reglas comerciales que corren todas las noches: productos sin costo, productos que pierden plata, los que venden en locales y no están en la web, drops nuevos sin pauta, campañas gastando sin vender y campañas fatigadas. La lógica vive en `lib/alertas.js`. |
 | **Ventas** | `Ventas.jsx` | todos | Ventas por día y por local, con filtro de período y comparación. |
 | **Pedidos** | `Pedidos.jsx` | todos (margen solo admin) | Operación por operación con su desglose de rentabilidad: mercadería, IVA, IIBB, impuesto al cheque y comisiones reales de cobro. Filtro por período y por local. |
 | **Productos** | `Productos.jsx` | solo admin | Top productos, categorías y variantes por período. |
@@ -40,7 +39,7 @@ una o más *actions* de los endpoints de `/api`.
 
 | endpoint | líneas | qué hace |
 |---|---|---|
-| `api/metricas.js` | 2.981 | El núcleo. 40 *actions*: ingesta, cierre diario, feed de pedidos, rentabilidad, contabilidad, inventario, alertas, proyecciones, carga de reportes. También aloja los tres crons. |
+| `api/metricas.js` | 2.981 | El núcleo. 39 *actions*: ingesta, cierre diario, feed de pedidos, rentabilidad, contabilidad, inventario, proyecciones, carga de reportes. También aloja los tres crons. |
 | `api/cajas.js` | 367 | Cajas, socios y deuda Shato. 14 *actions*. |
 | `api/rrhh.js` | 134 | Legajos y asistencias. 7 *actions*. |
 | `api/telegram.js` | 291 | Webhook del bot. Responde consultas con IA y ejecuta cambios de pauta con autorización. |
@@ -52,14 +51,14 @@ una o más *actions* de los endpoints de `/api`.
 
 ### Librerías compartidas
 
-`lib/alertas.js` (reglas comerciales) · `lib/fuentes.js` (fetchers de Woo, Tiendanube y Dragonfish) · `lib/agente.js` (capa de IA del bot) · `lib/arca.js` (web service de AFIP) · `lib/mercadopago.js` · `lib/stock.js` · `lib/rentabilidad.js` (modelo de margen por operación) · `lib/reportes.js` · `lib/meta.js` · `lib/bancos.js` · `lib/costeo.js` · `lib/normalizar.js` · `lib/auth.js`
+`lib/alertas.js` (reglas comerciales; desde nov-2026 sin pantalla propia, solo las consulta el bot de Telegram y la IA) · `lib/fuentes.js` (fetchers de Woo, Tiendanube y Dragonfish) · `lib/agente.js` (capa de IA del bot) · `lib/arca.js` (web service de AFIP) · `lib/mercadopago.js` · `lib/stock.js` · `lib/rentabilidad.js` (modelo de margen por operación) · `lib/reportes.js` · `lib/meta.js` · `lib/bancos.js` · `lib/costeo.js` · `lib/normalizar.js` · `lib/auth.js`
 
 ### Tareas programadas
 
 | cron | frecuencia | qué hace |
 |---|---|---|
 | `/api/cron/ingesta` | cada 5 minutos | Trae ventas de las 6 fuentes, sincroniza pagos de MercadoPago cada 20 min, manda notificaciones push de ventas nuevas y costea modelos nuevos. |
-| `/api/cron/cierre` | 00:05 ARG | Cierre del día anterior, foto de inventario, sincronización con ARCA, reingesta de 7 días, métricas de Meta, pagos de MP y alertas comerciales. |
+| `/api/cron/cierre` | 00:05 ARG | Cierre del día anterior, foto de inventario, sincronización con ARCA, reingesta de 7 días, métricas de Meta y pagos de MP. |
 | `/api/cron/semanal` | lunes 09:00 ARG | Resumen semanal. |
 
 ---
@@ -567,7 +566,7 @@ contraseña en variables de entorno:
 |---|---|---|
 | Inicio, Ventas, Pedidos, Rentabilidad | ✓ | ✓ |
 | Margen por operación en Pedidos | ✓ | ✗ |
-| Alertas, Productos, Carga | ✓ | ✗ |
+| Productos, Carga | ✓ | ✗ |
 | Cajas, Socios, Deuda Shato, RRHH, Contabilidad | ✓ | ✗ |
 | Finanzas | ✗ (redirige a Cajas) | ✓ |
 
