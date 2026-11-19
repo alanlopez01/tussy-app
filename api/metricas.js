@@ -96,15 +96,19 @@ async function escribirCobrosDia(sql, fecha, local, cobros) {
   for (let i = 0; i < cobros.length; i += 500) {
     const c = cobros.slice(i, i + 500);
     await sql`
-      INSERT INTO cobros (fecha, local, orden_id, item, medio, detalle, monto, gateway, cuotas)
+      INSERT INTO cobros (fecha, local, orden_id, item, medio, detalle, monto, gateway, cuotas, comision, comision_exacta)
       SELECT * FROM UNNEST(
         ${c.map(f => f.fecha)}::date[], ${c.map(f => f.local)}::text[], ${c.map(f => f.orden_id)}::text[],
         ${c.map(f => f.item)}::int[], ${c.map(f => f.medio)}::text[],
         ${c.map(f => f.detalle || null)}::text[], ${c.map(f => f.monto)}::numeric[],
-        ${c.map(f => f.gateway || null)}::text[], ${c.map(f => f.cuotas || null)}::int[]
+        ${c.map(f => f.gateway || null)}::text[], ${c.map(f => f.cuotas || null)}::int[],
+        ${c.map(f => f.comision == null ? null : f.comision)}::numeric[],
+        ${c.map(f => f.comision_exacta == null ? null : f.comision_exacta)}::boolean[]
       ) ON CONFLICT (local, orden_id, item) DO UPDATE SET
         gateway = COALESCE(EXCLUDED.gateway, cobros.gateway),
-        cuotas = COALESCE(EXCLUDED.cuotas, cobros.cuotas)`;
+        cuotas = COALESCE(EXCLUDED.cuotas, cobros.cuotas),
+        comision = COALESCE(EXCLUDED.comision, cobros.comision),
+        comision_exacta = COALESCE(EXCLUDED.comision_exacta, cobros.comision_exacta)`;
   }
 }
 
@@ -1761,14 +1765,19 @@ async function feed(req, res) {
              -- pero cae en el banco y paga impuesto al cheque.
              SUM(CASE WHEN detalle ILIKE '%transferencia%' OR gateway = 'offline'
                       THEN monto ELSE 0 END)::float AS transferencia,
-             MAX(gateway) AS gateway, MAX(cuotas)::int AS cuotas_cobro
+             MAX(gateway) AS gateway, MAX(cuotas)::int AS cuotas_cobro,
+             -- Lo que se queda el canal (hoy sólo MELI): comisión + envío a
+             -- cargo nuestro, tal como lo informa su API.
+             SUM(COALESCE(comision, 0))::float AS comision_canal,
+             BOOL_OR(COALESCE(comision_exacta, false)) AS comision_canal_exacta
       FROM cobros WHERE fecha BETWEEN ${desde} AND ${hasta}
       GROUP BY 1, 2
     )
     SELECT op.fecha::text AS fecha, op.local, op.orden_id, op.hora, op.total, op.unidades,
            op.items, op.mercaderia, op.falta_costo,
            p.financiero_real, p.cuotas, p.medio_mp,
-           cob.efectivo, cob.electronico, cob.transferencia, cob.gateway, cob.cuotas_cobro
+           cob.efectivo, cob.electronico, cob.transferencia, cob.gateway, cob.cuotas_cobro,
+           cob.comision_canal, cob.comision_canal_exacta
     FROM op
     LEFT JOIN pago p ON p.orden_id = op.orden_id AND p.local = op.local
     LEFT JOIN cob ON cob.orden_id = op.orden_id AND cob.local = op.local

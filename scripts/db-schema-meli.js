@@ -44,8 +44,17 @@ async function main() {
   )`;
   await sql`CREATE INDEX IF NOT EXISTS meli_pub_tn ON meli_publicaciones (tn_id)`;
 
+  // Lo que se queda el canal por cada venta. En MELI es sale_fee (comisión, que
+  // ya incluye el costo de las cuotas sin interés) más el envío, que lo paga el
+  // vendedor. Sin esto el margen de MELI salía ~37 puntos más alto que el real,
+  // porque margenDeOperacion no encontraba tasa para el gateway "mercadolibre"
+  // y le ponía comisión cero.
+  await sql`ALTER TABLE cobros ADD COLUMN IF NOT EXISTS comision numeric`;
+  await sql`ALTER TABLE cobros ADD COLUMN IF NOT EXISTS comision_exacta boolean`;
+
   const [c] = await sql`SELECT COUNT(*)::int n FROM meli_cuenta`;
   console.log("meli_cuenta OK (filas:", c.n + ")");
   console.log("meli_publicaciones OK");
+  console.log("cobros.comision / comision_exacta OK");
 }
 main().catch(e => { console.error(e.message); process.exit(1); });
