@@ -6,7 +6,7 @@
 // Uso: node scripts/db-backfill.js [desde] [hasta]   (default: 2026-03-01 → ayer)
 const fs = require("fs");
 const path = require("path");
-const { ERP_DESDE, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchDFRango, diaSiguiente } = require("../lib/fuentes");
+const { ERP_DESDE, enERP, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchDFRango, diaSiguiente } = require("../lib/fuentes");
 const { normalizarProducto } = require("../lib/normalizar");
 
 function loadEnv() {
@@ -125,7 +125,9 @@ async function main() {
 
   // ── Dragonfish: un sweep por local (pagina de hoy hacia atrás) ──
   for (const local of dfLocales()) {
-    const diasFaltantes = dias.filter(d => !yaOk.has(`${d}|${local.nombre}`));
+    // Desde el pase al ERP, Dragonfish devuelve vacío para ese local y sus ventas
+    // entran por webhook: ni se le piden esos días.
+    const diasFaltantes = dias.filter(d => !yaOk.has(`${d}|${local.nombre}`) && !enERP(local.nombre, d));
     if (!diasFaltantes.length) { console.log(`\nDragonfish ${local.nombre}: ya completo, salteado`); continue; }
     const desdeL = diasFaltantes[0], hastaL = diasFaltantes[diasFaltantes.length - 1];
     console.log(`\nDragonfish ${local.nombre}: sweep ${desdeL} → ${hastaL} (${diasFaltantes.length} días faltantes)...`);

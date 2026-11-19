@@ -13,7 +13,7 @@
 const { neon } = require("@neondatabase/serverless");
 const { waitUntil } = require("@vercel/functions");
 const webpush = require("web-push");
-const { ERP_DESDE, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchTNModificadas, fetchDFDia, fetchDFRango } = require("../lib/fuentes");
+const { ERP_DESDE, enERP, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchTNModificadas, fetchDFDia, fetchDFRango } = require("../lib/fuentes");
 
 const KEY_LOCAL = {
   "Palermo": "palermo", "La Plata": "laplata", "Tiendanube": "online",
@@ -160,7 +160,14 @@ function fuentesDelDia(fecha) {
   // devuelve ok:false con el motivo y queda registrado en sync_estado como
   // cualquier otra fuente caída, sin frenar al resto.
   fuentes.push({ local: "MercadoLibre", fn: f => fetchMeliDia(f) });
-  for (const l of dfLocales()) fuentes.push({ local: l.nombre, fn: f => fetchDFDia(l, f) });
+  // Dragonfish sólo para los locales que ese día todavía no habían pasado al ERP.
+  // Desde el pase, sus ventas entran por webhook y preguntarle a Dragonfish deja
+  // a ese local en sync_estado con cero filas todos los días: falsa alarma que
+  // tapa fallas reales, y duplica si el POS viejo vuelve a escribir.
+  for (const l of dfLocales()) {
+    if (enERP(l.nombre, fecha)) continue;
+    fuentes.push({ local: l.nombre, fn: f => fetchDFDia(l, f) });
+  }
   return fuentes;
 }
 
@@ -512,10 +519,14 @@ async function reingestarUltimosDias(sql, dias = 7) {
   const desde = new Date(Date.now() - 3 * 3600 * 1000 - dias * 86400000).toISOString().slice(0, 10);
   const ayer = new Date(Date.now() - 3 * 3600 * 1000 - 86400000).toISOString().slice(0, 10);
   for (const l of dfLocales()) {
+    // Si todo el rango es posterior al pase al ERP, Dragonfish no es fuente de
+    // este local: ni se lo barre.
+    if (enERP(l.nombre, desde)) continue;
     const r = await fetchDFRango(l, desde, ayer);
     if (!r.ok) { resumen.push({ local: l.nombre, ok: false, error: r.error }); continue; }
     for (const [dia, filas] of Object.entries(r.porDia)) {
       if (dia >= hoy) continue;
+      if (enERP(l.nombre, dia)) continue;   // ese día ya lo manda el webhook
       await escribirDiaLocal(sql, dia, l.nombre, filas);
       await escribirCobrosDia(sql, dia, l.nombre, (r.cobrosPorDia || {})[dia] || []);
     }
