@@ -32,15 +32,33 @@ const H = { Authorization: `Bearer ${T}`, "Content-Type": "application/json" };
 
 const grid = f.size_grid && GUIAS.moldes[f.size_grid]?.meli;
 
+// MELI marca algunos atributos como read_only y rechaza el alta entera si se
+// mandan ("ignored because it is not modifiable"). Cuáles son cambia por
+// categoría —AGE_GROUP hay que mandarlo en remeras y molesta en buzos— así que
+// se pregunta en vez de mantener una lista a mano.
+const noModificables = new Set();
+try {
+  const defs = await (await fetch(`${API}/categories/${f.category_id}/attributes`, { headers: H })).json();
+  for (const a of defs || []) if (a.tags?.read_only) noModificables.add(a.id);
+} catch { /* si no se puede leer, se manda todo y que MELI avise */ }
+
 // Las filas de la grilla se piden a MELI en vez de guardarlas: así no hay que
 // acordarse de actualizar el json cada vez que se rehace una guía.
 let filas = {};
+// El GENDER del ítem tiene que ser el MISMO que el de la guía de talles, o el
+// alta falla con `invalid.fashion_grid.attributes.values`. Las guías de Tussy no
+// son todas iguales —remera, buzo, campera y sweater están como "Sin género";
+// pantalón y boxer como "Hombre"— así que en vez de repetir el dato en el molde
+// se lee de la grilla, que es la fuente de verdad.
+let generoGrilla = null;
 if (grid) {
   const ch = await (await fetch(`${API}/catalog/charts/${grid.size_grid_id}`, { headers: H })).json();
   for (const r of ch.rows || []) {
     const t = r.attributes?.find(a => a.id === "SIZE")?.values?.[0]?.name;
     if (t) filas[t] = r.id;
   }
+  const g = (ch.attributes || []).find(a => a.id === "GENDER");
+  generoGrilla = g?.values?.[0]?.name || g?.value_name || null;
 }
 
 
@@ -67,6 +85,18 @@ async function subirFotos(urls) {
   }
 }
 
+// MELI valida en el ALTA que las palabras del título coincidan con el GENDER
+// declarado: un "Hombre" con la guía en "Sin género" tira invalid.title.gender.
+// En el PUT posterior no lo valida, así que se nace con el nombre limpio y el
+// título bueno se pone enseguida (es lo que ya tienen las que están arriba).
+const generoEnTitulo = /\b(Hombre|Mujer|Niño|Niña)\b/i;
+const chocaGenero = generoEnTitulo.test(f.title) && generoGrilla && /sin género/i.test(generoGrilla);
+const tituloInicial = chocaGenero ? titulo_simple(f.tn_nombre) : f.title;
+
+function titulo_simple(n) {
+  return String(n).toLowerCase().replace(/\b[a-záéíóúñ]/g, c => c.toUpperCase()).slice(0, 60);
+}
+
 function armarBody() {
   // Con variaciones, COLOR y SIZE van en attribute_combinations, no a nivel item.
   // COLOR y SIZE van en attribute_combinations... salvo que las variaciones no
@@ -79,12 +109,24 @@ function armarBody() {
   // validación de negocio los exige igual. Los fuimos descubriendo publicando.
   itemAttrs.push({ id: "VALUE_ADDED_TAX", value_name: "21 %" });
   itemAttrs.push({ id: "IMPORT_DUTY", value_name: "0 %" });
+  // AGE_GROUP figura como read_only y hidden en /categories/{id}/attributes, pero
+  // la validación de negocio lo exige al crear (create.item.attribute.business_conditional).
+  // Que esté marcado read_only no significa que no haya que mandarlo.
+  if (grid && !noModificables.has("AGE_GROUP")) itemAttrs.push({ id: "AGE_GROUP", value_name: "Adultos" });
+  if (generoGrilla) {
+    const i = itemAttrs.findIndex(a => a.id === "GENDER");
+    if (i >= 0) itemAttrs[i].value_name = generoGrilla; else itemAttrs.push({ id: "GENDER", value_name: generoGrilla });
+  }
   if (grid) itemAttrs.push({ id: "SIZE_GRID_ID", value_name: String(grid.size_grid_id) });
+
+  for (let i = itemAttrs.length - 1; i >= 0; i--) {
+    if (noModificables.has(itemAttrs[i].id)) itemAttrs.splice(i, 1);
+  }
 
   const todas = f.pictures.map(p => idPorUrl.get(p.source)).filter(Boolean);
 
   return {
-    title: f.title,
+    title: tituloInicial,
     category_id: f.category_id,
     price: f.price_meli,
     currency_id: "ARS",

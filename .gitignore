@@ -3,3 +3,18 @@ node_modules
 .env*.local
 secrets/
 .env.local
+
+# Basura de macOS
+.DS_Store
+
+# Carpetas de trabajo de MELI: fotos, videos, HTML de revision y salidas de
+# auditoria de cada corrida. Son resultados, no fuente — pesan ~24 MB y se
+# regeneran con los scripts de meli/.
+meli/*-oct*/
+meli/*-nov*/
+meli/*-dic*/
+meli/auditoria-variantes/
+meli/videos/
+
+# Salidas de scripts sueltos
+outputs/

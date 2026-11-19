@@ -40,9 +40,10 @@
         "las 19 remeras oversize de la seleccion"
       ],
       "meli": {
-        "size_grid_id": "9555173",
+        "size_grid_id": "10649535",
         "domain_id": "T_SHIRTS",
-        "_nota": "La grilla acepta GARMENT_LENGTH_FROM (largo), GARMENT_CHEST_WIDTH_FROM (ancho a lo plano, sin duplicar) y GARMENT_SLEEVE_LENGTH_FROM (largo de manga). El ancho de manga no tiene slot: queda solo en la descripcion. SIZE_GRID_ROW_ID por variacion no se guarda; MELI matchea por el valor de SIZE."
+        "_nota": "La grilla acepta GARMENT_LENGTH_FROM (largo), GARMENT_CHEST_WIDTH_FROM (ancho a lo plano, sin duplicar) y GARMENT_SLEEVE_LENGTH_FROM (largo de manga). El ancho de manga no tiene slot: queda solo en la descripcion. SIZE_GRID_ROW_ID por variacion no se guarda; MELI matchea por el valor de SIZE.",
+        "gender": "Sin género"
       }
     },
     "SWEATER_PESADO": {
@@ -205,8 +206,9 @@
       },
       "_pendiente": "'Copa' (71-74) no puede ser hombro a hombro. Se publica sin esa fila hasta que Alan confirme que mide.",
       "meli": {
-        "size_grid_id": "9586433",
-        "domain_id": "JACKETS_AND_COATS"
+        "size_grid_id": "10186236",
+        "domain_id": "JACKETS_AND_COATS",
+        "gender": "Sin género"
       }
     },
     "SWEATERS_2026": {
@@ -248,8 +250,9 @@
         ]
       },
       "meli": {
-        "size_grid_id": "9586445",
-        "domain_id": "SWEATERS_AND_CARDIGANS"
+        "size_grid_id": "10186240",
+        "domain_id": "SWEATERS_AND_CARDIGANS",
+        "gender": "Sin género"
       }
     },
     "BUZO_CANGURO": {
@@ -295,8 +298,9 @@
         ]
       },
       "meli": {
-        "size_grid_id": "9586775",
-        "domain_id": "SWEATSHIRTS_AND_HOODIES"
+        "size_grid_id": "10186238",
+        "domain_id": "SWEATSHIRTS_AND_HOODIES",
+        "gender": "Sin género"
       }
     },
     "CAMPERA_TSSY": {
@@ -345,8 +349,9 @@
         "CAMPERA TSSY DIZZY"
       ],
       "meli": {
-        "size_grid_id": "9586441",
-        "domain_id": "JACKETS_AND_COATS"
+        "size_grid_id": "10649643",
+        "domain_id": "JACKETS_AND_COATS",
+        "gender": "Sin género"
       }
     },
     "REMERA_MUJER": {
