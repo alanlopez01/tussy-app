@@ -2968,6 +2968,21 @@ module.exports = async function handler(req, res) {
     if (action === "feed") return await feed(req, res);
     if (action === "operaciones") return await operaciones(req, res);
     if (action === "cierre") return await cierreDiario(req, res);
+    // Hace cuánto que no entra nada de cada carga manual. La pantalla lo muestra
+    // arriba de cada subida, para que un extracto atrasado se vea antes de mirar
+    // un número que no incluye tres meses de gastos.
+    if (action === "frescuraCarga") {
+      const sesion = verificarToken(req.headers["x-tussy-auth"]);
+      if (sesion?.rol !== "admin") return res.status(403).json({ error: "solo admin" });
+      const sql = neon(process.env.DATABASE_URL);
+      const [[rec], [emi], [egr], [ban]] = await Promise.all([
+        sql`SELECT max(fecha)::text f FROM comprobantes_recibidos`,
+        sql`SELECT max(fecha)::text f FROM comprobantes_emitidos`,
+        sql`SELECT max(fecha)::text f FROM egresos_mp`,
+        sql`SELECT max(fecha)::text f FROM movimientos_banco`,
+      ]);
+      return res.status(200).json({ recibidos: rec.f, emitidos: emi.f, egresos: egr.f, banco: ban.f });
+    }
     if (action === "semanal") return await resumenSemanal(req, res);
     if (action === "modelosCostos") return await modelosCostos(req, res);
     if (action === "guardarCosto") return await guardarCosto(req, res);

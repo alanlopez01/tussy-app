@@ -188,10 +188,28 @@ function fmtCuit(c) {
   return s.length === 11 ? `${s.slice(0, 2)}-${s.slice(2, 10)}-${s.slice(10)}` : s;
 }
 
-function Uploader({ titulo, descripcion, onFile, estado }) {
+// Cuántos días hace que no entra nada de esta fuente. Es lo único que evita que
+// una carga manual se pudra en silencio: el extracto del banco estuvo tres meses
+// sin actualizarse y nada lo decía.
+function Frescura({ ultimo }) {
+  if (ultimo === undefined) return null;
+  if (!ultimo) return <p className="text-[12px] text-warn font-semibold mb-2">Nunca se cargó nada.</p>;
+  const dias = Math.floor((Date.now() - new Date(ultimo + "T12:00:00").getTime()) / 86400000);
+  const color = dias > 30 ? "text-bad" : dias > 10 ? "text-warn" : "text-ok";
+  const fecha = new Date(ultimo + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+  return (
+    <p className={`text-[12px] font-semibold mb-2 ${color}`}>
+      Último dato: {fecha}{dias > 1 ? ` · hace ${dias} días` : ""}
+      {dias > 30 ? " — está muy atrasado" : ""}
+    </p>
+  );
+}
+
+function Uploader({ titulo, descripcion, onFile, estado, ultimo }) {
   const inputCls = "block w-full text-[12px] text-ink-2 file:mr-3 file:rounded-md file:border-0 file:bg-negro file:text-white file:px-3.5 file:py-2 file:text-[12px] file:font-semibold file:cursor-pointer";
   return (
     <Card title={titulo}>
+      <Frescura ultimo={ultimo} />
       <p className="text-[12px] text-ink-3 mb-3">{descripcion}</p>
       <input type="file" accept=".xlsx,.csv" className={inputCls}
              onChange={e => { onFile(e.target.files?.[0]); e.target.value = ""; }} />
@@ -515,6 +533,11 @@ export default function Contabilidad() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [estados, setEstados] = useState({});
+  // Hace cuánto que no entra nada de cada carga manual.
+  const [frescura, setFrescura] = useState({});
+  useEffect(() => {
+    getJSON("frescuraCarga").then(setFrescura).catch(() => {});
+  }, [estados]);
   const [sync, setSync] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [soloFaltan, setSoloFaltan] = useState(false);
@@ -1100,16 +1123,16 @@ export default function Contabilidad() {
               </div>
             )}
           </Card>
-          <Uploader titulo="ARCA · Comprobantes recibidos (compras)" estado={estados.recibidos || { estado: "idle" }}
+          <Uploader titulo="ARCA · Comprobantes recibidos (compras)" estado={estados.recibidos || { estado: "idle" }} ultimo={frescura.recibidos}
             descripcion="ARCA → Mis Comprobantes → Recibidos → elegí el período → Exportar (xlsx o csv). Subilo cada 2-3 días: las filas repetidas no duplican."
             onFile={subir("recibidos", f => parsearMisComprobantes(f, "recibidos"), "cargarComprobantes")} />
-          <Uploader titulo="ARCA · Comprobantes emitidos (hasta que ande el certificado)" estado={estados.emitidos || { estado: "idle" }}
+          <Uploader titulo="ARCA · Comprobantes emitidos (hasta que ande el certificado)" estado={estados.emitidos || { estado: "idle" }} ultimo={frescura.emitidos}
             descripcion="ARCA → Mis Comprobantes → Emitidos → período → Exportar. Cuando el web service esté activo, esta carga deja de ser necesaria."
             onFile={subir("emitidos", f => parsearMisComprobantes(f, "emitidos"), "cargarComprobantes")} />
-          <Uploader titulo="MercadoPago · Estado de cuenta (para conciliar transferencias)" estado={estados.egresos || { estado: "idle" }}
+          <Uploader titulo="MercadoPago · Estado de cuenta (para conciliar transferencias)" estado={estados.egresos || { estado: "idle" }} ultimo={frescura.egresos}
             descripcion="MercadoPago → Dinero → Movimientos → Exportar (estado de cuenta). Tomo solo la plata que sale: transferencias a proveedores (se concilian contra sus facturas), pauta, envíos y servicios."
             onFile={subir("egresos", parsearMovimientosMP, "cargarEgresos")} />
-          <Uploader titulo="Galicia · Extracto de la cuenta corriente" estado={estados.banco || { estado: "idle" }}
+          <Uploader titulo="Galicia · Extracto de la cuenta corriente" estado={estados.banco || { estado: "idle" }} ultimo={frescura.banco}
             descripcion="Galicia Office → Consultas → Movimientos → Descargar CSV. Es lo que cierra el circuito: muestra en qué se gastó la plata que se transfiere de MercadoPago a la cuenta propia (sueldos, AFIP, echeqs, proveedores)."
             onFile={subir("banco", null, "cargarBanco")} />
         </>
