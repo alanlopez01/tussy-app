@@ -1,11 +1,15 @@
 // Cajas en efectivo — reemplaza los Sheets "Finanzas Tussy Definitivo" y "Finanzas_Shato_v2".
 // GET  ?action=resumen&marca=&mes=&anio=  → mismo shape que el getDashboard del Apps Script,
 //      así Finanzas puede cambiar de fuente sin tocar la pantalla de los socios.
+//      Lo lee cualquier sesión: es el saldo y el total del mes, nada más.
 // GET  ?action=movimientos&marca=&mes=&anio=[&tipo=][&categoria=]
 // GET  ?action=categorias&marca=  → { gasto: [...], ingreso: [...] }
+//      El detalle movimiento por movimiento: admin, o el socio que lo tenga
+//      habilitado en lib/usuarios.js (`ve: ["cajas"]`).
 // POST ?action=crear|editar|borrar  (solo admin)
 const { neon } = require("@neondatabase/serverless");
 const { requerirSesion } = require("../lib/auth");
+const { puedeVer } = require("../lib/usuarios");
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -363,14 +367,18 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
       if (action === "resumen") return await resumen(req, res);
-      if (action === "movimientos") return await movimientos(req, res);
-      if (action === "categorias") return await categorias(req, res);
+      if (action === "movimientos" || action === "categorias") {
+        // El detalle de la caja no es de todos los socios: lo habilita `ve`.
+        if (!puedeVer(sesion, "cajas")) return res.status(403).json({ error: "no tenés habilitada la caja" });
+        return action === "movimientos" ? await movimientos(req, res) : await categorias(req, res);
+      }
       if (action === "deuda" || action === "socios") {
         if (sesion.rol !== "admin") return res.status(403).json({ error: "solo admin" });
         return action === "deuda" ? await deuda(req, res) : await sociosResumen(req, res);
       }
     } else if (req.method === "POST") {
-      // La caja la carga solo el admin: los socios ven el resultado en Finanzas.
+      // La caja la carga solo el admin. Un socio con `ve: ["cajas"]` la lee
+      // completa, pero no la toca.
       if (sesion.rol !== "admin") return res.status(403).json({ error: "solo el admin puede modificar la caja" });
       if (action === "crear") return await crear(req, res, sesion);
       if (action === "editar") return await editar(req, res, sesion);

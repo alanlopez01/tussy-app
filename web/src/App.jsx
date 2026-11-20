@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom";
+import { getJSON } from "./lib/api.js";
+import { Spinner } from "./components/ui.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import VentasHub from "./pages/VentasHub.jsx";
 import Finanzas from "./pages/Finanzas.jsx";
@@ -13,15 +15,18 @@ import Login from "./pages/Login.jsx";
 
 // Los socios ven la operación (ventas, pedidos, finanzas) y el resultado del
 // negocio; el detalle técnico (productos, contabilidad, costos) es del admin.
+//
+// `ver`  → se muestra a quien tenga esa pantalla habilitada (admin incluido).
+// `noSi` → se esconde a quien ya tenga esa otra, porque muestran lo mismo.
 const NAV = [
   { titulo: "Operación", items: [
     { to: "/", label: "Dashboard", icon: "tablero" },
     { to: "/ventas", label: "Ventas", icon: "barras" },
   ]},
   { titulo: "Administración", items: [
-    // Para el admin, Finanzas es redundante con Cajas: la ven solo los socios
-    { to: "/finanzas", label: "Finanzas", icon: "billete", soloSocio: true },
-    { to: "/cajas", label: "Cajas", icon: "caja", soloAdmin: true },
+    // Finanzas es el resumen flaco de Cajas: la ve el que no tiene Cajas
+    { to: "/finanzas", label: "Finanzas", icon: "billete", noSi: "cajas" },
+    { to: "/cajas", label: "Cajas", icon: "caja", ver: "cajas" },
     { to: "/socios", label: "Socios", icon: "personas", soloAdmin: true },
     { to: "/deuda-shato", label: "Deuda Shato", icon: "intercambio", soloAdmin: true },
     { to: "/rrhh", label: "RRHH", icon: "persona", soloAdmin: true },
@@ -62,10 +67,21 @@ function Icono({ nombre, className = "" }) {
   );
 }
 
+// Qué puede ver este usuario. El admin, todo; un socio, lo que el backend le
+// haya habilitado (lib/usuarios.js → `ve`). Acá es solo la vista: el permiso de
+// verdad lo valida cada endpoint con la misma lista.
+function puedeVer(user, pantalla) {
+  return user.rol === "admin" || (user.ve || []).includes(pantalla);
+}
+
 function navPara(user) {
   const admin = user.rol === "admin";
+  const pasa = item =>
+    (!item.soloAdmin || admin) &&
+    (!item.ver || puedeVer(user, item.ver)) &&
+    (!item.noSi || !puedeVer(user, item.noSi));
   return NAV
-    .map(sec => ({ ...sec, items: sec.items.filter(item => (!item.soloAdmin || admin) && (!item.soloSocio || !admin)) }))
+    .map(sec => ({ ...sec, items: sec.items.filter(pasa) }))
     .filter(sec => sec.items.length);
 }
 
@@ -260,7 +276,28 @@ export default function App() {
   });
   const [tema, alternarTema] = useTema();
 
+  // La sesión guardada puede ser vieja y no saber lo que este usuario ya tiene
+  // habilitado. Al abrir se la pregunta al server: un permiso nuevo vale en el
+  // próximo F5, nadie tiene que cerrar sesión y volver a entrar. Si el server
+  // no contesta, se sigue con la que había; si el token no vale, getJSON
+  // devuelve al login por su cuenta.
+  const [refrescando, setRefrescando] = useState(() => !!localStorage.getItem("tussy_token"));
+  useEffect(() => {
+    if (!localStorage.getItem("tussy_token")) return;
+    getJSON("/api/auth?action=sesion", 15000)
+      .then(s => {
+        const sesion = { usuario: s.usuario, rol: s.rol, nombre: s.nombre, ve: s.ve || [] };
+        localStorage.setItem("tussy_sesion", JSON.stringify(sesion));
+        setUser(u => (JSON.stringify(u) === JSON.stringify(sesion) ? u : sesion));
+      })
+      .catch(() => { /* sin red: vale la sesión guardada */ })
+      .finally(() => setRefrescando(false));
+  }, []);
+
   if (!user) return <Login onLogin={setUser} />;
+
+  // Solo las sesiones viejas (las que no traen `ve`) esperan al refresh.
+  const esperandoPermisos = refrescando && !user.ve;
 
   return (
     <BrowserRouter>
@@ -277,8 +314,14 @@ export default function App() {
                   mantienen porque hay notificaciones y links guardados que apuntan ahí. */}
               <Route path="/productos" element={<Navigate to="/" replace />} />
               <Route path="/pedidos" element={<Navigate to="/ventas" replace />} />
-              <Route path="/finanzas" element={user.rol === "admin" ? <Navigate to="/cajas" replace /> : <Finanzas />} />
-              <Route path="/cajas" element={user.rol === "admin" ? <Cajas /> : <Navigate to="/" replace />} />
+              {/* Una sesión guardada de antes de los permisos no sabe todavía qué
+                  puede ver: esperar al refresh en vez de rebotar a Dashboard. */}
+              <Route path="/finanzas" element={esperandoPermisos ? <Spinner texto="Un segundo…" />
+                : puedeVer(user, "cajas") ? <Navigate to="/cajas" replace /> : <Finanzas />} />
+              {/* El socio habilitado ve la misma pantalla, sin los botones de carga */}
+              <Route path="/cajas" element={esperandoPermisos ? <Spinner texto="Un segundo…" />
+                : puedeVer(user, "cajas") ? <Cajas soloLectura={user.rol !== "admin"} />
+                : <Navigate to="/" replace />} />
               <Route path="/rrhh" element={user.rol === "admin" ? <RRHH /> : <Navigate to="/" replace />} />
               <Route path="/deuda-shato" element={user.rol === "admin" ? <DeudaShato /> : <Navigate to="/" replace />} />
               <Route path="/socios" element={user.rol === "admin" ? <Socios /> : <Navigate to="/" replace />} />

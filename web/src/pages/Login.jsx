@@ -33,7 +33,8 @@ export default function Login({ onLogin }) {
         // La contraseña NUNCA se guarda: la sesión vive en un token firmado.
         localStorage.removeItem("tussy_pass");
         localStorage.setItem("tussy_token", data.token);
-        localStorage.setItem("tussy_sesion", JSON.stringify({ rol: data.rol, nombre: data.nombre }));
+        localStorage.setItem("tussy_sesion", JSON.stringify(
+          { usuario: data.usuario, rol: data.rol, nombre: data.nombre, ve: data.ve || [] }));
         if (recordar || silencioso) {
           localStorage.setItem("tussy_user", u);
           localStorage.setItem("tussy_remember", "1");
@@ -41,7 +42,7 @@ export default function Login({ onLogin }) {
           localStorage.removeItem("tussy_user");
           localStorage.removeItem("tussy_remember");
         }
-        onLogin({ rol: data.rol, nombre: data.nombre });
+        onLogin({ usuario: data.usuario, rol: data.rol, nombre: data.nombre, ve: data.ve || [] });
       } else {
         if (!silencioso) setError(data.error || "Usuario o contraseña incorrectos");
         setCargando(false);

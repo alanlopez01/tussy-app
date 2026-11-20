@@ -1,6 +1,10 @@
-// Cajas en efectivo (solo admin) — reemplaza a los Sheets "Finanzas Tussy Definitivo"
-// y "Finanzas_Shato_v2". Marcas SIEMPRE separadas. La carga es lo primero: monto,
+// Cajas en efectivo — reemplaza a los Sheets "Finanzas Tussy Definitivo" y
+// "Finanzas_Shato_v2". Marcas SIEMPRE separadas. La carga es lo primero: monto,
 // categoría como botones (las más usadas primero) y listo.
+//
+// `soloLectura` = la misma pantalla, los mismos números, sin el formulario de
+// carga ni los botones de editar y borrar. Es lo que ve un socio habilitado:
+// que mire la caja no significa que la mueva, y el server tampoco lo dejaría.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getJSON, postJSON, fmtPesos, hoyISO } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar } from "../components/ui.jsx";
@@ -37,7 +41,7 @@ function fechaLinda(iso) {
 
 const FORM_VACIO = { id: null, tipo: "egreso", fecha: hoyISO(), categoria: "", nuevaCat: "", detalle: "", monto: "", medio: "Efectivo" };
 
-export default function Cajas() {
+export default function Cajas({ soloLectura = false }) {
   const hoy = new Date();
   const [marca, setMarca] = useState("tussy");
   const [mes, setMes] = useState(hoy.getMonth() + 1);
@@ -62,12 +66,13 @@ export default function Cajas() {
     Promise.all([
       getJSON(`/api/cajas?action=resumen&${qs}`),
       getJSON(`/api/cajas?action=movimientos&${qs}`),
-      getJSON(`/api/cajas?action=categorias&marca=${marca}`),
+      // Las categorías son para los botones de la carga: sin carga, no se piden.
+      soloLectura ? Promise.resolve(null) : getJSON(`/api/cajas?action=categorias&marca=${marca}`),
     ])
-      .then(([r, m, c]) => { setResumen(r); setMovs(m.movimientos); setCats(c); })
+      .then(([r, m, c]) => { setResumen(r); setMovs(m.movimientos); if (c) setCats(c); })
       .catch(e => setError(e.message))
       .finally(() => setCargando(false));
-  }, [marca, mes, anio]);
+  }, [marca, mes, anio, soloLectura]);
 
   useEffect(() => { setResumen(null); setMovs(null); cargar(); }, [cargar]);
   useEffect(() => { setForm(f => ({ ...FORM_VACIO, tipo: f.tipo })); setFormError(null); setMasFechaMedio(false); }, [marca]);
@@ -131,7 +136,9 @@ export default function Cajas() {
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Cajas</h1>
-          <p className="text-[12px] text-ink-3">La caja se carga acá · el Excel ya fue</p>
+          <p className="text-[12px] text-ink-3">
+            {soloLectura ? "Todo lo que entra y sale de la caja · la carga Alan" : "La caja se carga acá · el Excel ya fue"}
+          </p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />
       </header>
@@ -142,7 +149,9 @@ export default function Cajas() {
           {[["tussy", "Tussy"], ["shato", "Shato"]].map(([v, l]) => (
             <button key={v} onClick={() => setMarca(v)}
               className={`rounded-full px-4 py-1.5 text-[13px] font-bold transition-colors ${
-                marca === v ? "bg-white text-negro" : "bg-white/10 text-surface-1/60 hover:text-white"
+                // En oscuro la franja se da vuelta (negro = claro): el botón
+                // elegido tiene que invertirse con ella o queda blanco sobre blanco.
+                marca === v ? "bg-surface-1 text-negro" : "bg-surface-1/10 text-surface-1/60 hover:text-surface-1"
               }`}>
               {l}
             </button>
@@ -162,85 +171,87 @@ export default function Cajas() {
       )}
 
       {/* Carga rápida: monto → categoría → listo */}
-      <Card title={form.id ? "Editar movimiento" : null}>
-        <div className="space-y-3.5">
-          <div className="grid grid-cols-2 gap-2">
-            {[["egreso", "− Gasto"], ["ingreso", "+ Ingreso"]].map(([t, l]) => (
-              <button key={t} onClick={() => setForm(f => ({ ...f, tipo: t, categoria: "", nuevaCat: "" }))}
-                className={`rounded-lg px-3 py-3 text-[15px] font-bold border-2 transition-colors ${
-                  form.tipo === t
-                    ? t === "egreso" ? "bg-bad/10 border-bad text-bad" : "bg-ok/10 border-ok text-ok"
-                    : "border-borde text-ink-3"
-                }`}>
-                {l}
-              </button>
-            ))}
-          </div>
-
-          <input ref={montoRef} type="text" inputMode="decimal" placeholder="$ 0"
-                 value={form.monto} onChange={e => setForm(f => ({ ...f, monto: formatearMiles(e.target.value) }))}
-                 className="w-full rounded-lg border-2 border-borde bg-surface-1 px-4 py-3 text-[24px] font-bold text-ink tabular-nums placeholder:text-ink-3/50" />
-
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1.5">
-              ¿De qué es este {esGasto ? "gasto" : "ingreso"}?
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {listaCats.map(c => (
-                <button key={c} onClick={() => setForm(f => ({ ...f, categoria: c }))} className={catBtn(form.categoria === c)}>
-                  {c}
+      {!soloLectura && (
+        <Card title={form.id ? "Editar movimiento" : null}>
+          <div className="space-y-3.5">
+            <div className="grid grid-cols-2 gap-2">
+              {[["egreso", "− Gasto"], ["ingreso", "+ Ingreso"]].map(([t, l]) => (
+                <button key={t} onClick={() => setForm(f => ({ ...f, tipo: t, categoria: "", nuevaCat: "" }))}
+                  className={`rounded-lg px-3 py-3 text-[15px] font-bold border-2 transition-colors ${
+                    form.tipo === t
+                      ? t === "egreso" ? "bg-bad/10 border-bad text-bad" : "bg-ok/10 border-ok text-ok"
+                      : "border-borde text-ink-3"
+                  }`}>
+                  {l}
                 </button>
               ))}
-              <button onClick={() => setForm(f => ({ ...f, categoria: "__nueva__" }))} className={catBtn(form.categoria === "__nueva__")}>
-                + Nueva
-              </button>
             </div>
-          </div>
 
-          {form.categoria === "__nueva__" && (
-            <input type="text" placeholder="Nombre de la categoría nueva" value={form.nuevaCat}
-                   onChange={e => setForm(f => ({ ...f, nuevaCat: e.target.value }))} className={inputCls} />
-          )}
+            <input ref={montoRef} type="text" inputMode="decimal" placeholder="$ 0"
+                   value={form.monto} onChange={e => setForm(f => ({ ...f, monto: formatearMiles(e.target.value) }))}
+                   className="w-full rounded-lg border-2 border-borde bg-surface-1 px-4 py-3 text-[24px] font-bold text-ink tabular-nums placeholder:text-ink-3/50" />
 
-          <input type="text" placeholder="Detalle (opcional) · ej: pago taller Luis" value={form.detalle}
-                 onChange={e => setForm(f => ({ ...f, detalle: e.target.value }))} className={inputCls} />
-
-          {!masFechaMedio ? (
-            <button onClick={() => setMasFechaMedio(true)} className="text-[12px] font-semibold text-ink-3 underline underline-offset-2">
-              Es de otra fecha o por transferencia
-            </button>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Fecha</span>
-                <input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))} className={inputCls} />
-              </label>
-              <label className="block">
-                <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Medio</span>
-                <select value={form.medio} onChange={e => setForm(f => ({ ...f, medio: e.target.value }))} className={inputCls}>
-                  <option>Efectivo</option>
-                  <option>Transferencia</option>
-                </select>
-              </label>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1.5">
+                ¿De qué es este {esGasto ? "gasto" : "ingreso"}?
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {listaCats.map(c => (
+                  <button key={c} onClick={() => setForm(f => ({ ...f, categoria: c }))} className={catBtn(form.categoria === c)}>
+                    {c}
+                  </button>
+                ))}
+                <button onClick={() => setForm(f => ({ ...f, categoria: "__nueva__" }))} className={catBtn(form.categoria === "__nueva__")}>
+                  + Nueva
+                </button>
+              </div>
             </div>
-          )}
 
-          {formError && <p className="text-[13px] text-bad font-semibold">{formError}</p>}
-
-          <div className="flex gap-2">
-            <button onClick={guardar} disabled={guardando}
-                    className={`flex-1 rounded-lg px-4 py-3.5 text-[15px] font-bold text-white disabled:opacity-50 ${esGasto ? "bg-bad" : "bg-ok"}`}>
-              {guardando ? "Guardando…" : form.id ? "Guardar cambios" : `Cargar ${esGasto ? "gasto" : "ingreso"}`}
-            </button>
-            {form.id && (
-              <button onClick={() => { setForm(f => ({ ...FORM_VACIO, tipo: f.tipo })); setFormError(null); }}
-                      className="rounded-lg border border-borde px-4 py-3.5 text-[14px] font-semibold text-ink-2">
-                Cancelar
-              </button>
+            {form.categoria === "__nueva__" && (
+              <input type="text" placeholder="Nombre de la categoría nueva" value={form.nuevaCat}
+                     onChange={e => setForm(f => ({ ...f, nuevaCat: e.target.value }))} className={inputCls} />
             )}
+
+            <input type="text" placeholder="Detalle (opcional) · ej: pago taller Luis" value={form.detalle}
+                   onChange={e => setForm(f => ({ ...f, detalle: e.target.value }))} className={inputCls} />
+
+            {!masFechaMedio ? (
+              <button onClick={() => setMasFechaMedio(true)} className="text-[12px] font-semibold text-ink-3 underline underline-offset-2">
+                Es de otra fecha o por transferencia
+              </button>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Fecha</span>
+                  <input type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))} className={inputCls} />
+                </label>
+                <label className="block">
+                  <span className="block text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1">Medio</span>
+                  <select value={form.medio} onChange={e => setForm(f => ({ ...f, medio: e.target.value }))} className={inputCls}>
+                    <option>Efectivo</option>
+                    <option>Transferencia</option>
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {formError && <p className="text-[13px] text-bad font-semibold">{formError}</p>}
+
+            <div className="flex gap-2">
+              <button onClick={guardar} disabled={guardando}
+                      className={`flex-1 rounded-lg px-4 py-3.5 text-[15px] font-bold text-white disabled:opacity-50 ${esGasto ? "bg-bad" : "bg-ok"}`}>
+                {guardando ? "Guardando…" : form.id ? "Guardar cambios" : `Cargar ${esGasto ? "gasto" : "ingreso"}`}
+              </button>
+              {form.id && (
+                <button onClick={() => { setForm(f => ({ ...FORM_VACIO, tipo: f.tipo })); setFormError(null); }}
+                        className="rounded-lg border border-borde px-4 py-3.5 text-[14px] font-semibold text-ink-2">
+                  Cancelar
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Movimientos del mes */}
       <Card
@@ -293,12 +304,14 @@ export default function Cajas() {
                     <div className={`text-[13px] font-bold tabular-nums ${m.tipo === "egreso" ? "text-bad" : "text-ok"}`}>
                       {m.tipo === "egreso" ? "−" : "+"}{fmtPesos(m.monto)}
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => editarMov(m)} title="Editar"
-                              className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-ink">✎</button>
-                      <button onClick={() => borrarMov(m)} title="Borrar"
-                              className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-bad">🗑</button>
-                    </div>
+                    {!soloLectura && (
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => editarMov(m)} title="Editar"
+                                className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-ink">✎</button>
+                        <button onClick={() => borrarMov(m)} title="Borrar"
+                                className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-bad">🗑</button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
