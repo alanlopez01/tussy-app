@@ -45,6 +45,9 @@ export default function Socios() {
   const [formError, setFormError] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [flash, setFlash] = useState(null);
+  // En el celular se muestran los últimos meses y el resto se despliega. La
+  // lista completa en una pantalla angosta no se termina de leer nunca.
+  const [todosLosMeses, setTodosLosMeses] = useState(false);
   const [verPozos, setVerPozos] = useState(false);
 
   const cargar = useCallback(() => {
@@ -127,18 +130,18 @@ export default function Socios() {
           {socios.map(s => (
             <Card key={s.socio} className="!p-4">
               <div className="flex items-baseline justify-between">
-                <span className="text-[14px] font-bold text-ink">{s.socio}</span>
-                <span className="text-[11px] font-semibold text-ink-3">{(s.porcentaje * 100).toLocaleString("es-AR")}%</span>
+                <span className="text-[15px] font-bold text-ink">{s.socio}</span>
+                <span className="text-[12px] font-semibold text-ink-3">{(s.porcentaje * 100).toLocaleString("es-AR")}%</span>
               </div>
-              <div className="mt-2 space-y-1 text-[11px] text-ink-3 tabular-nums">
+              <div className="mt-2 space-y-1 text-[13px] md:text-[11px] text-ink-3 tabular-nums">
                 <div className="flex justify-between"><span>Le corresponde</span><span>{fmtPesos(s.corresponde)}</span></div>
                 <div className="flex justify-between"><span>Retirado</span><span>−{fmtPesos(s.retirado)}</span></div>
                 {s.gastos > 0 && <div className="flex justify-between"><span>Gastos</span><span>−{fmtPesos(s.gastos)}</span></div>}
                 {s.aportes > 0 && <div className="flex justify-between"><span>Aportes</span><span>+{fmtPesos(s.aportes)}</span></div>}
               </div>
               <div className="mt-2.5 pt-2 border-t border-borde flex justify-between items-baseline">
-                <span className="text-[10px] uppercase tracking-[0.06em] text-ink-3 font-semibold">A retirar</span>
-                <span className={`text-[16px] font-bold tabular-nums ${s.saldo > 1000 ? "text-ok" : s.saldo < -1000 ? "text-bad" : "text-ink"}`}>
+                <span className="text-[11px] uppercase tracking-[0.06em] text-ink-3 font-semibold">A retirar</span>
+                <span className={`text-[18px] font-bold tabular-nums ${s.saldo > 1000 ? "text-ok" : s.saldo < -1000 ? "text-bad" : "text-ink"}`}>
                   {fmtPesos(s.saldo)}
                 </span>
               </div>
@@ -149,7 +152,73 @@ export default function Socios() {
 
       {data?.meses?.length > 0 && (
         <Card title="Retiros mes a mes">
-          <div className="-mx-1 overflow-x-auto">
+          {/* Celular: una tarjeta por mes. La tabla de seis columnas no entra en
+              una pantalla angosta y obliga a scrollear de costado para leer un
+              número, que es justo lo que no se puede hacer con plata. */}
+          <div className="md:hidden space-y-3">
+            {(todosLosMeses ? data.meses : data.meses.slice(0, 6)).map(m => (
+              <div key={m.mes} className="rounded-lg border border-borde p-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-[15px] font-bold text-ink capitalize">{nombreMes(m.mes)}</span>
+                  <span className="text-[12px] text-ink-3 tabular-nums">
+                    {m.pozo ? `pozo ${fmtPesos(m.pozo)}` : "sin pozo"}
+                  </span>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {socios.map(s => {
+                    const d = m.socios[s.socio] || {};
+                    if (!d.retiro && !d.gasto && !d.aporte) return null;
+                    return (
+                      <div key={s.socio} className="flex items-baseline justify-between gap-3 text-[13px]">
+                        <span className="text-ink-2">{s.socio}</span>
+                        <span className="text-right tabular-nums">
+                          <span className="text-ink font-semibold">{d.retiro ? fmtPesos(d.retiro) : "—"}</span>
+                          {d.gasto > 0 && <div className="text-[12px] text-ink-3">+{fmtPesos(d.gasto)} gastos</div>}
+                          {d.aporte > 0 && <div className="text-[12px] text-ok">−{fmtPesos(d.aporte)} aporte</div>}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-borde flex items-baseline justify-between gap-3">
+                  <span className="text-[11px] uppercase tracking-[0.06em] text-ink-3 font-semibold">Retirado</span>
+                  <span className="text-[15px] font-bold tabular-nums text-ink">{fmtPesos(m.total_retiros)}</span>
+                </div>
+                {m.pozo > 0 && (
+                  <div className={`text-[12px] text-right mt-0.5 tabular-nums ${m.pozo - m.total_retiros >= 0 ? "text-ink-3" : "text-bad"}`}>
+                    {m.pozo - m.total_retiros >= 0
+                      ? `quedó ${fmtPesos(m.pozo - m.total_retiros)}`
+                      : `${fmtPesos(m.total_retiros - m.pozo)} de más`}
+                  </div>
+                )}
+              </div>
+            ))}
+            {data.meses.length > 6 && (
+              <button
+                onClick={() => setTodosLosMeses(v => !v)}
+                className="w-full rounded-lg border border-borde py-2.5 text-[13px] font-semibold text-ink-2"
+              >
+                {todosLosMeses ? "Ver solo los últimos 6 meses" : `Ver los ${data.meses.length} meses`}
+              </button>
+            )}
+            <div className="rounded-lg bg-surface border border-borde p-3">
+              <div className="text-[11px] uppercase tracking-[0.06em] text-ink-3 font-semibold">Acumulado</div>
+              <div className="mt-1.5 space-y-1 text-[13px] tabular-nums">
+                <div className="flex justify-between"><span className="text-ink-2">Pozos declarados</span><span className="text-ink">{fmtPesos(data.pozo_total)}</span></div>
+                {socios.map(s => (
+                  <div key={s.socio} className="flex justify-between">
+                    <span className="text-ink-2">{s.socio} retiró</span><span className="text-ink">{fmtPesos(s.retirado)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between border-t border-borde pt-1 font-bold">
+                  <span className="text-ink">Total retirado</span>
+                  <span className="text-ink">{fmtPesos(socios.reduce((a, s) => a + s.retirado, 0))}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden md:block -mx-1 overflow-x-auto">
             <table className="w-full text-[12px] tabular-nums">
               <thead>
                 <tr className="text-ink-3 text-[10px] uppercase tracking-[0.06em]">
