@@ -32,6 +32,13 @@ function colorDeLocal(nombre) {
 function nombreCorto(nombre) {
   return nombre === "Tiendanube" ? "Online" : nombre;
 }
+// Cada número de plata va acompañado de cuánto pesa sobre la venta. En pesos se
+// ve cuánto es; en porcentaje se ve si está caro, que es lo que se compara entre
+// canales y entre meses.
+function pct(valor, base) {
+  if (!base) return "—";
+  return (Math.round(Math.abs(valor) / base * 1000) / 10).toFixed(1).replace(".", ",") + "%";
+}
 // De dónde sale el costo financiero de la operación. Cada canal cobra distinto y
 // conviene que la pantalla lo diga: no es lo mismo la comisión de MercadoPago que
 // el 0,5% que cobra Tiendanube por una transferencia.
@@ -171,7 +178,10 @@ export default function Pedidos({ rol }) {
               ].map(([etiqueta, valor]) => (
                 <div key={etiqueta} className="flex justify-between gap-4 text-white/60">
                   <span>− {etiqueta}</span>
-                  <span className="text-white/80">{fmtPesos(valor || 0)}</span>
+                  <span className="text-white/80">
+                    {fmtPesos(valor || 0)}
+                    <span className="text-white/40 ml-2 inline-block w-[42px] text-right">{pct(valor || 0, resumen.total)}</span>
+                  </span>
                 </div>
               ))}
             </div>
@@ -223,7 +233,7 @@ export default function Pedidos({ rol }) {
                       <div className="text-[14px] font-bold text-ink tabular-nums">{fmtPesos(op.total)}</div>
                       {op.margen != null ? (
                         <div className={`text-[12px] font-bold tabular-nums ${op.margen > 0 ? "text-ok" : "text-bad"}`}>
-                          deja {fmtPesos(op.margen)}
+                          deja {fmtPesos(op.margen)} · {String(op.margen_pct).replace(".", ",")}%
                         </div>
                       ) : (
                         <div className="text-[11px] text-ink-3">{op.unidades} {op.unidades === 1 ? "unidad" : "unidades"}</div>
@@ -265,7 +275,12 @@ export default function Pedidos({ rol }) {
                           ].map(([etiqueta, valor, cls]) => (
                             <div key={etiqueta} className="flex items-center justify-between gap-3 text-[12px]">
                               <span className="text-ink-3">{etiqueta}</span>
-                              <span className={`tabular-nums ${cls}`}>{valor < 0 ? "−" : ""}{fmtPesos(Math.abs(valor))}</span>
+                              <span className={`tabular-nums ${cls}`}>
+                                {valor < 0 ? "−" : ""}{fmtPesos(Math.abs(valor))}
+                                <span className="text-ink-3 ml-2 inline-block w-[42px] text-right">
+                                  {etiqueta === "Vendido" ? "100%" : pct(valor, op.total)}
+                                </span>
+                              </span>
                             </div>
                           ))}
                           <div className="flex items-center justify-between gap-3 text-[13px] border-t border-borde pt-1.5">
