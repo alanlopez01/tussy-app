@@ -102,8 +102,11 @@ export default function Productos() {
                           ? `costo ${fmtPesos(p.costo_unitario)} · precio prom. ${fmtPesos(p.precio_promedio)}`
                           : `precio prom. ${fmtPesos(p.precio_promedio)} · sin costo cargado`}
                       </div>
-                      <div className="mt-1 h-[5px] rounded-[3px] bg-surface overflow-hidden">
-                        <div className="h-full rounded-[3px] bg-negro" style={{ width: `${(p[orden] / maxTop) * 100}%` }} />
+                      <div className="mt-1.5 h-[6px] rounded-sm overflow-hidden" style={{ background: "var(--color-pista-2)" }}>
+                        <div className="h-full rounded-[inherit] origin-left"
+                             style={{ background: "var(--color-dato)",
+                                      transform: `scaleX(${maxTop > 0 ? p[orden] / maxTop : 0})`,
+                                      transition: "transform .45s var(--ease-suave)" }} />
                       </div>
                     </div>
                     <div className="text-right shrink-0 w-20">

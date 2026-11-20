@@ -1,5 +1,5 @@
 // Piezas compartidas del dashboard — estilo sobrio
-import { fmtPesos } from "../lib/api.js";
+import { Delta } from "./graficos.jsx";
 
 export function Card({ title, sub, children, right, className = "" }) {
   return (
@@ -21,17 +21,13 @@ export function Card({ title, sub, children, right, className = "" }) {
 }
 
 export function StatTile({ label, value, sub, delta }) {
-  const deltaColor = delta > 0 ? "text-ok" : delta < 0 ? "text-bad" : "text-ink-3";
-  const deltaIcon = delta > 0 ? "▲" : delta < 0 ? "▼" : "—";
   return (
     <div className="elevado rounded-lg px-5 py-4">
       <div className="text-[12px] font-medium text-ink-3">{label}</div>
       <div className="text-[26px] leading-[1.15] text-ink mt-1 cifra-xl">{value}</div>
       {(sub || (delta != null && !isNaN(delta))) && (
-        <div className="flex items-center gap-2 mt-1 text-[12px]">
-          {delta != null && !isNaN(delta) && (
-            <span className={`font-semibold ${deltaColor}`}>{deltaIcon} {Math.abs(Math.round(delta))}%</span>
-          )}
+        <div className="flex items-center gap-2 mt-1.5 text-[12px] flex-wrap">
+          <Delta pct={delta} />
           {sub && <span className="text-ink-3">{sub}</span>}
         </div>
       )}
@@ -87,27 +83,45 @@ export function Spinner({ texto = "Cargando…" }) {
   );
 }
 
-export function LeyendaLocal({ locales }) {
+// La leyenda también es el filtro. Siete locales apilados en una barra de 24px
+// son un arcoíris; apagar los que no te interesan es la única forma honesta de
+// leerlos. Apagar uno NO repinta a los demás: el color sigue al local, no al
+// puesto que ocupa en la pila.
+export function LeyendaLocal({ locales, totales, fmt, ocultos, onToggle }) {
+  const Tag = onToggle ? "button" : "span";
   return (
-    <div className="flex flex-wrap gap-x-3.5 gap-y-1">
-      {locales.map(l => (
-        <span key={l.key} className="inline-flex items-center gap-1.5 text-[11px] text-ink-2 font-medium">
-          <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: l.color }} />
-          {l.nombre}
-        </span>
-      ))}
+    <div className="flex flex-wrap gap-1.5">
+      {locales.map(l => {
+        const off = ocultos?.has(l.key);
+        return (
+          <Tag key={l.key}
+               {...(onToggle ? { onClick: () => onToggle(l.key), "aria-pressed": !off, type: "button" } : {})}
+               title={onToggle ? (off ? `Mostrar ${l.nombre}` : `Ocultar ${l.nombre}`) : undefined}
+               className={`inline-flex items-center gap-1.5 rounded-md aro px-2 py-1 text-[11.5px] font-semibold transition-colors
+                           ${off ? "bg-transparent text-ink-3" : "bg-surface text-ink-2"}
+                           ${onToggle ? "hover:bg-surface cursor-pointer" : ""}`}>
+            <i className="w-2 h-2 rounded-[3px] shrink-0 not-italic transition-opacity"
+               style={{ background: l.color, opacity: off ? 0.25 : 1 }} />
+            {l.nombre}
+            {totales && fmt && !off && <b className="text-ink cifra font-bold">{fmt(totales[l.key] || 0)}</b>}
+          </Tag>
+        );
+      })}
     </div>
   );
 }
 
-export function BarraH({ etiqueta, valor, max, texto, color = "var(--color-negro)" }) {
+export function BarraH({ etiqueta, valor, max, texto, color = "var(--color-dato)" }) {
+  const f = max > 0 ? Math.max(valor / max, 0) : 0;
   return (
-    <div className="flex items-center gap-3 py-1.5">
-      <span className="w-24 shrink-0 text-[12px] font-medium text-ink-2 truncate">{etiqueta}</span>
-      <div className="flex-1 h-[8px] rounded-[3px] bg-surface overflow-hidden">
-        <div className="h-full rounded-[3px]" style={{ width: `${max > 0 ? (valor / max) * 100 : 0}%`, background: color }} />
+    <div className="grid items-center gap-3 py-2 border-b border-borde last:border-0"
+         style={{ gridTemplateColumns: "minmax(0,1fr) minmax(40px,110px) auto" }}>
+      <span className="text-[13px] font-semibold text-ink truncate">{etiqueta}</span>
+      <div className="relative h-2 rounded-sm overflow-hidden" style={{ background: "var(--color-pista-2)" }}>
+        <div className="absolute inset-0 rounded-[inherit] origin-left"
+             style={{ background: color, transform: `scaleX(${f})`, transition: "transform .45s var(--ease-suave)" }} />
       </div>
-      <span className="w-24 shrink-0 text-right text-[12px] font-semibold text-ink tabular-nums">{texto}</span>
+      <span className="text-right text-[13px] font-bold text-ink cifra whitespace-nowrap">{texto}</span>
     </div>
   );
 }
@@ -177,31 +191,6 @@ export function Paginacion({ pagina, totalPaginas, onChange }) {
               className="px-3 py-1 rounded-md aro text-[12px] font-semibold text-ink-2 disabled:opacity-40 hover:bg-surface">
         Siguiente ›
       </button>
-    </div>
-  );
-}
-
-// Tooltip compartido para Recharts
-export function TooltipPesos({ active, payload, label, labelFormatter }) {
-  if (!active || !payload || !payload.length) return null;
-  return (
-    <div className="bg-negro text-surface-1 rounded-md px-3.5 py-2.5 shadow-lg text-[12px] min-w-[170px]">
-      <div className="font-semibold mb-1.5">{labelFormatter ? labelFormatter(label) : label}</div>
-      {payload.filter(p => p.value > 0).map(p => (
-        <div key={p.dataKey} className="flex items-center justify-between gap-4 leading-relaxed">
-          <span className="inline-flex items-center gap-1.5 text-surface-1/75">
-            <span className="w-2 h-2 rounded-[2px]" style={{ background: p.color || p.fill }} />
-            {p.name}
-          </span>
-          <span className="font-semibold tabular-nums">{fmtPesos(p.value)}</span>
-        </div>
-      ))}
-      {payload.length > 1 && (
-        <div className="flex items-center justify-between gap-4 border-t border-surface-1/20 mt-1.5 pt-1.5">
-          <span className="text-surface-1/75">Total</span>
-          <span className="font-bold tabular-nums">{fmtPesos(payload.reduce((a, p) => a + (p.value || 0), 0))}</span>
-        </div>
-      )}
     </div>
   );
 }

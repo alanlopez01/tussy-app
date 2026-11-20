@@ -831,8 +831,10 @@ export default function Contabilidad() {
                     <span className="font-semibold text-ink-2">{r.rubro}</span>
                     <span className="tabular-nums text-ink">{fmtPesosCorto(r.total)} · {gastosMes ? Math.round(r.total / gastosMes * 100) : 0}%</span>
                   </div>
-                  <div className="h-2 rounded-full bg-surface overflow-hidden">
-                    <div className="h-full rounded-full bg-negro" style={{ width: `${gastosMes ? Math.max(2, r.total / gastosMes * 100) : 0}%` }} />
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--color-pista-2)" }}>
+                    <div className="h-full rounded-full" style={{
+                      width: `${gastosMes ? Math.max(2, r.total / gastosMes * 100) : 0}%`,
+                      background: "var(--color-dato)", transition: "width .45s var(--ease-suave)" }} />
                   </div>
                 </div>
               ))}
@@ -953,9 +955,10 @@ export default function Contabilidad() {
                         {propio ? (
                           <p className="text-[11px] text-ink-3">traspaso interno · no cuenta como gasto</p>
                         ) : (
-                          <div className="h-2 rounded-full bg-surface overflow-hidden">
-                            <div className="h-full rounded-full bg-negro"
-                                 style={{ width: `${totalEgresos ? Math.max(2, c.total / totalEgresos * 100) : 0}%` }} />
+                          <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--color-pista-2)" }}>
+                            <div className="h-full rounded-full" style={{
+                              width: `${totalEgresos ? Math.max(2, c.total / totalEgresos * 100) : 0}%`,
+                              background: "var(--color-dato)", transition: "width .45s var(--ease-suave)" }} />
                           </div>
                         )}
                       </button>

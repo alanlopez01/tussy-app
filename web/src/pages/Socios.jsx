@@ -258,8 +258,11 @@ export default function Socios() {
                               : `${fmtPesos(m.total_retiros - m.pozo)} de más`}
                           </div>
                         )}
-                        <div className="mt-1 h-1 rounded-full bg-borde overflow-hidden">
-                          <div className="h-full bg-negro" style={{ width: `${(m.total_retiros / max) * 100}%` }} />
+                        <div className="mt-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--color-pista-2)" }}>
+                          <div className="h-full rounded-[inherit] origin-left"
+                               style={{ background: "var(--color-dato)",
+                                        transform: `scaleX(${max > 0 ? m.total_retiros / max : 0})`,
+                                        transition: "transform .45s var(--ease-suave)" }} />
                         </div>
                       </td>
                     </tr>

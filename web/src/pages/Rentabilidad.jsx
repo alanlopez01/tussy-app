@@ -849,14 +849,19 @@ function Evolucion() {
                       </span>
                     </span>
                   </div>
-                  <div className="h-[10px] rounded-[3px] bg-surface overflow-hidden flex">
-                    <div className="h-full bg-negro" style={{ width: `${(m.resultado / maxVenta) * 100}%` }} />
-                    <div className="h-full bg-borde" style={{ width: `${((m.venta - m.resultado) / maxVenta) * 100}%` }} />
+                  <div className="h-2 rounded-sm overflow-hidden flex" style={{ background: "var(--color-pista-2)" }}>
+                    <div className="h-full" style={{
+                      width: `${Math.max(0, (m.resultado / maxVenta) * 100)}%`,
+                      background: m.resultado >= 0 ? "var(--color-ok)" : "var(--color-bad)",
+                      transition: "width .45s var(--ease-suave)" }} />
+                    <div className="h-full" style={{
+                      width: `${Math.max(0, ((m.venta - Math.max(m.resultado, 0)) / maxVenta) * 100)}%`,
+                      background: "var(--color-pista-2)" }} />
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-ink-3 mt-3">La parte oscura es el resultado; el resto, los costos.</p>
+            <p className="text-[11px] text-ink-3 mt-3">La parte de color es el resultado; el resto, los costos.</p>
           </Card>
 
           <Card title="Margen por unidad de negocio, mes a mes">

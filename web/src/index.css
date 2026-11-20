@@ -47,15 +47,32 @@
   --color-bad: #b42f2b;
   --color-info: #0b6c7c;
 
-  /* Paleta categórica — un color FIJO por local, nunca cambia.
-     Los mismos de siempre: ya estaban validados y no se tocan por estética. */
-  --color-s-palermo: #2a78d6;
-  --color-s-laplata: #eb6834;
-  --color-s-online: #1baf7a;
-  --color-s-dot: #eda100;
-  --color-s-abasto: #e87ba4;
-  --color-s-cordoba: #008300;
-  --color-s-meli: #8b5cf6;
+  /* Los gráficos */
+  --color-dato: #2348d0;                   /* la serie única, cuando no hay identidad */
+  --color-pista: rgba(20, 22, 28, 0.035);  /* la columna que se prende al pasar el mouse */
+  --color-pista-2: rgba(20, 22, 28, 0.07); /* la canaleta vacía de una barra */
+  --color-linea-2: rgba(20, 22, 28, 0.16); /* la grilla punteada */
+  --color-ok-suave: rgba(21, 122, 70, 0.12);
+  --color-warn-suave: rgba(150, 82, 0, 0.14);
+  --color-bad-suave: rgba(180, 47, 43, 0.11);
+
+  /* Paleta categórica — un color FIJO por local, nunca cambia, nunca se cicla.
+     Re-escalonada: la anterior tenía dos pares que un daltónico no podía
+     separar (Córdoba verde contra La Plata naranja, ΔE 3.2 en protanopía) y
+     uno que no se separaba ni con visión normal (Abasto contra La Plata, 12.9
+     sobre un piso de 15). El tono de cada local es el mismo —Palermo azul,
+     La Plata rojo-naranja, Online turquesa, MELI violeta, Dot ámbar, Abasto
+     magenta, Córdoba verde—; lo que cambió es el escalón. Verificada con el
+     validador: todos los pares pasan en claro, y en oscuro pasa la lista de
+     adyacentes (que es la regla para barras apiladas) con el apilado separado
+     por 2px, leyenda con nombre y tooltip con nombre como segundo código. */
+  --color-s-palermo: #1040c3;
+  --color-s-laplata: #cd2200;
+  --color-s-online: #05908b;
+  --color-s-meli: #955dcd;
+  --color-s-dot: #af8300;
+  --color-s-abasto: #931157;
+  --color-s-cordoba: #01741c;
 
   /* Radios: rounded-md son los controles, rounded-lg las tarjetas,
      rounded-xl los paneles que flotan. */
@@ -88,6 +105,23 @@
   --color-warn: #d9a33c;
   --color-bad: #ef6b63;
   --color-info: #4fb6c8;
+  --color-dato: #5b82ff;
+  --color-pista: rgba(225, 232, 255, 0.04);
+  --color-pista-2: rgba(225, 232, 255, 0.085);
+  --color-linea-2: rgba(225, 232, 255, 0.16);
+  --color-ok-suave: rgba(63, 191, 127, 0.15);
+  --color-warn-suave: rgba(217, 163, 60, 0.16);
+  --color-bad-suave: rgba(239, 107, 99, 0.15);
+  /* La paleta del oscuro NO es la del claro: son escalones elegidos contra
+     #18191d. Volver a usar los del claro los saca de la banda de luminosidad
+     y la mitad se apaga contra el fondo. */
+  --color-s-palermo: #376ef4;
+  --color-s-laplata: #cb3e00;
+  --color-s-online: #04a19b;
+  --color-s-meli: #a676d9;
+  --color-s-dot: #b68901;
+  --color-s-abasto: #cb0278;
+  --color-s-cordoba: #1b7e2a;
   --sombra-tarjeta: inset 0 0 0 1px rgba(225, 232, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.4),
                     0 14px 32px -20px rgba(0, 0, 0, 0.8);
   --sombra-flotante: inset 0 0 0 1px rgba(225, 232, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.5),
@@ -167,6 +201,27 @@ body {
 }
 @utility respira {
   animation: respira 2.2s ease-in-out infinite;
+}
+
+/* ── Piezas de gráfico ──────────────────────────────────────────────────── */
+
+/* El día que todavía no pasó: rayado en diagonal con un aro, no vacío. Una
+   columna en blanco se lee como "vendimos cero"; el rayado dice "todavía no". */
+@utility rayado {
+  background-image: repeating-linear-gradient(135deg,
+    var(--color-pista) 0 5px, transparent 5px 10px);
+  box-shadow: inset 0 0 0 1px var(--color-borde);
+}
+
+/* La separación entre dos tramos apilados es una sombra INTERIOR del color de
+   la tarjeta, no un borde: no suma alto ni corre el apilado. Es, además, el
+   segundo código que pide la paleta — el ojo separa los tramos por el corte
+   aunque los colores se le parezcan. */
+@utility corte {
+  box-shadow: inset 0 2px 0 var(--color-surface-1);
+}
+@utility corte-fino {
+  box-shadow: inset 0 1px 0 var(--color-surface-1);
 }
 
 ::selection { background: var(--color-acento-suave); }
