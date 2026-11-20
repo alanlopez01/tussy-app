@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from "react-router-dom";
-import Home from "./pages/Home.jsx";
-import Ventas from "./pages/Ventas.jsx";
-import Productos from "./pages/Productos.jsx";
-import Pedidos from "./pages/Pedidos.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import VentasHub from "./pages/VentasHub.jsx";
 import Finanzas from "./pages/Finanzas.jsx";
 import Rentabilidad from "./pages/Rentabilidad.jsx";
 import Contabilidad from "./pages/Contabilidad.jsx";
@@ -17,10 +15,8 @@ import Login from "./pages/Login.jsx";
 // negocio; el detalle técnico (productos, contabilidad, costos) es del admin.
 const NAV = [
   { titulo: "Operación", items: [
-    { to: "/", label: "Inicio", icon: "◧" },
+    { to: "/", label: "Dashboard", icon: "◧" },
     { to: "/ventas", label: "Ventas", icon: "▤" },
-    { to: "/pedidos", label: "Pedidos", icon: "◷" },
-    { to: "/productos", label: "Productos", icon: "▦", soloAdmin: true },
   ]},
   { titulo: "Administración", items: [
     // Para el admin, Finanzas es redundante con Cajas: la ven solo los socios
@@ -169,10 +165,12 @@ export default function App() {
         <MenuMobile user={user} />
         <main className="flex-1 min-w-0 px-4 md:px-8 py-6 md:py-6 max-w-[1200px]">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/ventas" element={<Ventas />} />
-            <Route path="/productos" element={user.rol === "admin" ? <Productos /> : <Navigate to="/" replace />} />
-            <Route path="/pedidos" element={<Pedidos rol={user.rol} />} />
+            <Route path="/" element={<Dashboard rol={user.rol} />} />
+            <Route path="/ventas" element={<VentasHub rol={user.rol} />} />
+            {/* Productos y Pedidos pasaron a ser solapas. Las rutas viejas se
+                mantienen porque hay notificaciones y links guardados que apuntan ahí. */}
+            <Route path="/productos" element={<Navigate to="/" replace />} />
+            <Route path="/pedidos" element={<Navigate to="/ventas" replace />} />
             <Route path="/finanzas" element={user.rol === "admin" ? <Navigate to="/cajas" replace /> : <Finanzas />} />
             <Route path="/cajas" element={user.rol === "admin" ? <Cajas /> : <Navigate to="/" replace />} />
             <Route path="/rrhh" element={user.rol === "admin" ? <RRHH /> : <Navigate to="/" replace />} />
