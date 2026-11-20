@@ -28,6 +28,7 @@ const { LOCALES_SIN_STOCK, MOTIVO_SIN_STOCK } = require("../lib/stock");
 const { snapshotStock } = require("../scripts/db-snapshot-stock");
 const { reponerVentasFaltantes } = require("../lib/erp");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
+const { sincronizarRecibidos } = require("../lib/kalyz");
 const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = require("../lib/bancos");
 const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require("../lib/meta");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
@@ -635,6 +636,16 @@ async function cierreDiario(req, res) {
     sincronizarEmitidos(sql, { maxComprobantes: 2000 })
       .then(r => console.log("[arca]", JSON.stringify(r)))
       .catch(e => console.error("[arca] error:", e))
+  );
+  // Los RECIBIDOS no tienen web service: los baja el robot de KALYZ todos los
+  // días y acá se leen de ahí. Se piden 45 días para atrás porque un proveedor
+  // puede autorizar una factura con fecha vieja y ARCA la publica tarde.
+  waitUntil(
+    (async () => {
+      const desde = new Date(Date.now() - 3 * 3600 * 1000 - 45 * 86400000).toISOString().slice(0, 10);
+      const r = await sincronizarRecibidos(sql, desde);
+      console.log("[recibidos]", JSON.stringify(r));
+    })().catch(e => console.error("[recibidos] error:", e))
   );
   // Y re-ingestamos la última semana para capturar pagos que se acreditaron tarde
   waitUntil(
