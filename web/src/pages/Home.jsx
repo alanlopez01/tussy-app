@@ -198,7 +198,7 @@ export default function Home() {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Resumen</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Resumen</h1>
           <p className="text-[12px] text-ink-3">
             <span className="capitalize">{new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
             {" · datos con hasta 5 min de demora"}

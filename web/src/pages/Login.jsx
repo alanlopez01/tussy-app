@@ -53,36 +53,43 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-negro flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <div className="flex justify-center mb-8">
-          <img src="/logo.png" alt="Tussy" className="h-12 brightness-0 invert" />
+    <div className="min-h-screen bg-surface flex items-center justify-center p-6">
+      <div className="w-full max-w-[380px] sube">
+        <div className="flex flex-col items-center gap-3 mb-7">
+          <span className="w-12 h-12 rounded-[15px] bg-acento grid place-items-center">
+            <img src="/logo.png" alt="Tussy" className="h-5 w-auto brightness-0 invert" />
+          </span>
+          <div className="text-center">
+            <div className="text-[19px] font-bold text-ink tracking-[-0.02em] leading-tight">Tussy</div>
+            <div className="text-[13px] text-ink-3 leading-tight">Métricas</div>
+          </div>
         </div>
-        <div className="bg-surface-1 rounded-lg p-6 space-y-4">
+        <div className="elevado rounded-xl p-6 space-y-4">
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3 mb-1.5">Usuario</label>
+            <label className="block text-[12px] font-medium text-ink-3 mb-1.5">Usuario</label>
             <input value={usuario} onChange={e => setUsuario(e.target.value)}
                    onKeyDown={e => e.key === "Enter" && document.getElementById("login-pass")?.focus()}
-                   className="w-full rounded-md border border-borde bg-surface-1 px-3 py-2.5 text-[14px] text-ink"
+                   className="w-full rounded-md aro bg-surface px-3 py-2.5 text-[14px] text-ink focus:aro-2 outline-none transition-shadow"
                    autoCapitalize="none" autoCorrect="off" />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3 mb-1.5">Contraseña</label>
+            <label className="block text-[12px] font-medium text-ink-3 mb-1.5">Contraseña</label>
             <input id="login-pass" type="password" value={pass} onChange={e => setPass(e.target.value)}
                    onKeyDown={e => e.key === "Enter" && entrar()}
-                   className="w-full rounded-md border border-borde bg-surface-1 px-3 py-2.5 text-[14px] text-ink" />
+                   className="w-full rounded-md aro bg-surface px-3 py-2.5 text-[14px] text-ink focus:aro-2 outline-none transition-shadow" />
           </div>
-          <label className="flex items-center gap-2 text-[13px] text-ink-2">
-            <input type="checkbox" checked={recordar} onChange={e => setRecordar(e.target.checked)} />
+          <label className="flex items-center gap-2 text-[13px] text-ink-2 select-none cursor-pointer">
+            <input type="checkbox" checked={recordar} onChange={e => setRecordar(e.target.checked)}
+                   className="accent-[var(--color-acento)]" />
             Recordarme
           </label>
-          {error && <p className="text-[12px] text-bad font-medium">{error}</p>}
+          {error && <p className="text-[12.5px] text-bad font-medium">{error}</p>}
           <button onClick={() => entrar()} disabled={cargando}
-                  className="w-full rounded-md bg-negro text-white py-2.5 text-[14px] font-bold disabled:opacity-60">
+                  className="w-full rounded-md bg-acento text-white py-2.5 text-[14px] font-bold disabled:opacity-60
+                             hover:bg-acento-hi transition-colors">
             {cargando ? "Ingresando…" : "Ingresar"}
           </button>
         </div>
-        <p className="text-center text-[10px] uppercase tracking-widest text-white/30 font-semibold mt-6">Tussy · Métricas</p>
       </div>
     </div>
   );

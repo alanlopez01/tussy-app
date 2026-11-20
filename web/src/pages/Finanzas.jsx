@@ -35,7 +35,7 @@ export default function Finanzas() {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Finanzas</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Finanzas</h1>
           <p className="text-[12px] text-ink-3">Caja en efectivo · se carga en Cajas</p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />
@@ -61,8 +61,8 @@ export default function Finanzas() {
         <Card><p className="text-[13px] text-bad py-6 text-center">No pude leer la caja: {error}</p></Card>
       ) : !data ? <Spinner texto="Cargando la caja…" /> : (
         <>
-          <div className="bg-negro text-white rounded-lg p-6">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/50">Saldo total en caja</div>
+          <div className="bg-negro text-surface-1 rounded-lg p-6">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-surface-1/50">Saldo total en caja</div>
             <div className="text-[32px] leading-tight font-bold mt-1.5 tabular-nums">{fmtPesos(data.saldoActual || 0)}</div>
           </div>
 

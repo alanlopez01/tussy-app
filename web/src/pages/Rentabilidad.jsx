@@ -352,7 +352,7 @@ function Costos() {
                          className={inputCls} />
                   <button onClick={() => guardar(m.producto)}
                           disabled={guardando[m.producto] || !edicion[m.producto]}
-                          className="rounded-md bg-negro text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
+                          className="rounded-md bg-acento text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
                     {guardando[m.producto] ? "…" : "Guardar"}
                   </button>
                 </div>
@@ -698,7 +698,7 @@ function Fijos() {
                     <div className="flex items-center gap-2">
                       {guardado === l.local && <span className="text-[11px] text-ok font-semibold">Guardado ✓</span>}
                       <button onClick={() => guardar(l)} disabled={!cambiado}
-                              className="rounded-md bg-negro text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
+                              className="rounded-md bg-acento text-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
                         Guardar
                       </button>
                     </div>
@@ -1355,7 +1355,7 @@ export default function Rentabilidad({ rol = "admin" } = {}) {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Rentabilidad</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Rentabilidad</h1>
           <p className="text-[12px] text-ink-3">Costos, márgenes e inventario del negocio</p>
         </div>
         {rol === "admin" && (

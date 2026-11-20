@@ -253,7 +253,7 @@ function FacturasRecibidas({ mes }) {
                onKeyDown={e => e.key === "Enter" && buscar(q)}
                placeholder="Buscar por proveedor, CUIT o N° de factura (en todo el historial)…"
                className="flex-1 rounded-md border border-borde bg-surface-1 px-3 py-2 text-[13px] text-ink" />
-        <button onClick={() => buscar(q)} className="rounded-md bg-negro text-white px-3.5 text-[12px] font-semibold">Buscar</button>
+        <button onClick={() => buscar(q)} className="rounded-md bg-acento text-white px-3.5 text-[12px] font-semibold">Buscar</button>
         {data?.q && <button onClick={() => { setQ(""); buscar(""); }} className="text-[12px] font-semibold text-ink-3 underline">Limpiar</button>}
       </div>
       {cargando ? <Spinner /> : !data?.facturas.length ? (
@@ -511,7 +511,7 @@ function LiquidacionContadora({ mes, ivaMes, onGuardado }) {
                  className="rounded-md border border-borde bg-surface-1 px-3 py-2 text-[13px] text-ink w-44 tabular-nums" />
         </label>
         <button onClick={guardar} disabled={estado === "guardando"}
-                className="rounded-md bg-negro text-white px-4 py-2 text-[12px] font-semibold disabled:opacity-50">
+                className="rounded-md bg-acento text-white px-4 py-2 text-[12px] font-semibold disabled:opacity-50">
           {estado === "guardando" ? "Guardando…" : "Guardar"}
         </button>
         {estado === "ok" && <span className="text-[12px] text-ok font-semibold">✓ guardado</span>}
@@ -612,7 +612,7 @@ export default function Contabilidad() {
     <div className="space-y-4">
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[22px] font-bold text-ink">Contabilidad</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Contabilidad</h1>
           <p className="text-[13px] text-ink-3">IVA, facturación, gastos y conciliación</p>
         </div>
         <BotonActualizar onClick={() => cargar()} cargando={cargando} />
@@ -965,7 +965,7 @@ export default function Contabilidad() {
                             <div key={`${m.origen}-${m.id}`}
                                  className="flex justify-between items-baseline gap-2 text-[12px] py-1.5 border-b border-borde last:border-0">
                               <span className="text-ink-2 shrink-0 w-11">{m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}</span>
-                              <span className={`text-[9px] font-semibold uppercase tracking-wide shrink-0 px-1.5 py-0.5 rounded ${m.origen === "Galicia" ? "bg-negro text-white" : "bg-borde text-ink-2"}`}>
+                              <span className={`text-[9px] font-semibold uppercase tracking-wide shrink-0 px-1.5 py-0.5 rounded ${m.origen === "Galicia" ? "bg-negro text-surface-1" : "bg-borde text-ink-2"}`}>
                                 {m.origen === "Galicia" ? "GAL" : "MP"}
                               </span>
                               <span className="text-ink-3 truncate flex-1">
@@ -1112,7 +1112,7 @@ export default function Contabilidad() {
             {data?.arca && (
               <div className="mt-3">
                 <button onClick={sincronizar} disabled={sync?.corriendo}
-                        className="rounded-md bg-negro text-white px-3.5 py-2 text-[12px] font-semibold disabled:opacity-50">
+                        className="rounded-md bg-acento text-white px-3.5 py-2 text-[12px] font-semibold disabled:opacity-50">
                   {sync?.corriendo ? "Sincronizando…" : "Traer emitidos ahora"}
                 </button>
                 {sync && !sync.corriendo && (

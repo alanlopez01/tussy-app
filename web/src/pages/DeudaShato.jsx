@@ -135,23 +135,23 @@ export default function DeudaShato() {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Deuda Shato</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Deuda Shato</h1>
           <p className="text-[12px] text-ink-3">Préstamos cruzados Shato ↔ Tussy · pagos y tela</p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />
       </header>
 
-      <div className="bg-negro text-white rounded-lg px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-negro text-surface-1 rounded-lg px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">{data ? debe : "Balance"}</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-1/50">{data ? debe : "Balance"}</div>
           <div className="text-[26px] leading-tight font-bold tabular-nums">
             {data ? fmtPesos(Math.abs(data.balance)) : "…"}
           </div>
         </div>
         {data && (
-          <div className="text-right text-[12px] text-white/60 tabular-nums leading-relaxed">
-            <div>Prestado por Shato: <span className="text-white font-semibold">{fmtPesos(data.prestado_shato)}</span></div>
-            <div>Prestado por Tussy: <span className="text-white font-semibold">{fmtPesos(data.prestado_tussy)}</span></div>
+          <div className="text-right text-[12px] text-surface-1/60 tabular-nums leading-relaxed">
+            <div>Prestado por Shato: <span className="text-surface-1 font-semibold">{fmtPesos(data.prestado_shato)}</span></div>
+            <div>Prestado por Tussy: <span className="text-surface-1 font-semibold">{fmtPesos(data.prestado_tussy)}</span></div>
           </div>
         )}
       </div>
@@ -167,7 +167,7 @@ export default function DeudaShato() {
             {[["shato", "Pago / préstamo de Shato"], ["tussy", "Tela / préstamo de Tussy"]].map(([v, l]) => (
               <button key={v} onClick={() => setForm(f => ({ ...f, lado: v }))}
                 className={`rounded-lg px-3 py-3 text-[13px] font-bold border-2 transition-colors ${
-                  form.lado === v ? "bg-negro text-white border-negro" : "border-borde text-ink-3"
+                  form.lado === v ? "bg-acento text-white border-acento" : "border-borde text-ink-3"
                 }`}>
                 {l}
               </button>
@@ -203,7 +203,7 @@ export default function DeudaShato() {
 
           <div className="flex gap-2">
             <button onClick={guardar} disabled={guardando}
-                    className="flex-1 rounded-lg bg-negro text-white px-4 py-3.5 text-[15px] font-bold disabled:opacity-50">
+                    className="flex-1 rounded-lg bg-acento text-white px-4 py-3.5 text-[15px] font-bold disabled:opacity-50">
               {guardando ? "Guardando…" : form.id ? "Guardar cambios" : "Cargar"}
             </button>
             {form.id && (

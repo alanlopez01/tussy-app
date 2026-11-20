@@ -3,13 +3,9 @@
   "configurations": [
     {
       "name": "tussy-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--prefix",
-        "/Users/alanlopez/Desktop/Claudito/tussy-app/web"
-      ],
+      "cwd": "/Users/alanlopez/Desktop/Claudito/tussy-app/web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5180", "--strictPort"],
       "port": 5180
     }
   ]

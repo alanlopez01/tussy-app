@@ -133,7 +133,7 @@ export default function Ventas() {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Ventas</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Ventas</h1>
           <p className="text-[12px] text-ink-3">
             Operaciones por local · datos con hasta 5 min de demora
             {ultimaAct && ` · actualizado ${ultimaAct.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}

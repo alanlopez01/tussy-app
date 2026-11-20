@@ -49,7 +49,7 @@ export default function MeliConexion() {
             <button
               onClick={conectar}
               disabled={yendo}
-              className="bg-negro text-white rounded-md px-3.5 py-2 text-[12px] font-semibold disabled:opacity-50"
+              className="bg-negro text-surface-1 rounded-md px-3.5 py-2 text-[12px] font-semibold disabled:opacity-50"
             >
               {yendo ? "Abriendo Mercado Libre…" : ok ? "Volver a autorizar" : "Conectar Mercado Libre"}
             </button>

@@ -104,20 +104,20 @@ export default function Socios() {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Socios</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Socios</h1>
           <p className="text-[12px] text-ink-3">Pozos, retiros y cuenta corriente de cada socio</p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />
       </header>
 
-      <div className="bg-negro text-white rounded-lg px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-negro text-surface-1 rounded-lg px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">Saldo a retirar (todos)</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-1/50">Saldo a retirar (todos)</div>
           <div className="text-[26px] leading-tight font-bold tabular-nums">{data ? fmtPesos(saldoTotal) : "…"}</div>
         </div>
         {data && (
-          <div className="text-right text-[12px] text-white/60 tabular-nums">
-            Pozos declarados: <span className="text-white font-semibold">{fmtPesos(data.pozo_total)}</span>
+          <div className="text-right text-[12px] text-surface-1/60 tabular-nums">
+            Pozos declarados: <span className="text-surface-1 font-semibold">{fmtPesos(data.pozo_total)}</span>
           </div>
         )}
       </div>
@@ -294,7 +294,7 @@ export default function Socios() {
             {TIPOS.map(t => (
               <button key={t.v} onClick={() => setForm(f => ({ ...f, tipo: t.v, impactar_caja: t.v === "retiro" }))}
                 className={`rounded-lg px-3 py-2.5 text-[13px] font-bold border-2 transition-colors ${
-                  form.tipo === t.v ? "bg-negro text-white border-negro" : "border-borde text-ink-3"
+                  form.tipo === t.v ? "bg-acento text-white border-acento" : "border-borde text-ink-3"
                 }`}>
                 {t.l}
               </button>
@@ -307,7 +307,7 @@ export default function Socios() {
               {socios.map(s => (
                 <button key={s.socio} onClick={() => setForm(f => ({ ...f, socio: s.socio }))}
                   className={`rounded-full px-4 py-1.5 text-[13px] font-bold border transition-colors ${
-                    form.socio === s.socio ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde"
+                    form.socio === s.socio ? "bg-acento text-white border-acento" : "bg-surface-1 text-ink-2 border-borde"
                   }`}>
                   {s.socio}
                 </button>
@@ -348,7 +348,7 @@ export default function Socios() {
 
           <div className="flex gap-2">
             <button onClick={guardar} disabled={guardando}
-                    className="flex-1 rounded-lg bg-negro text-white px-4 py-3.5 text-[15px] font-bold disabled:opacity-50">
+                    className="flex-1 rounded-lg bg-acento text-white px-4 py-3.5 text-[15px] font-bold disabled:opacity-50">
               {guardando ? "Guardando…" : form.id ? "Guardar cambios" : "Cargar"}
             </button>
             {form.id && (
@@ -373,7 +373,7 @@ export default function Socios() {
             {(verPozos ? data.movimientos.filter(m => m.tipo === "pozo") : data.movimientos).map(m => (
               <li key={m.id} className="py-2.5 flex items-center gap-3">
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase border ${
-                  m.tipo === "pozo" ? "bg-negro text-white border-negro"
+                  m.tipo === "pozo" ? "bg-acento text-white border-acento"
                   : m.tipo === "retiro" ? "bg-bad/10 text-bad border-bad/30"
                   : m.tipo === "aporte" ? "bg-ok/10 text-ok border-ok/30"
                   : "bg-surface text-ink-2 border-borde"

@@ -124,7 +124,7 @@ export default function Pedidos({ rol }) {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Pedidos</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Pedidos</h1>
           <p className="text-[12px] text-ink-3">
             {periodo === "hoy" ? "Todas las ventas de hoy · se actualiza cada 1 min" : "Ventas del período"}
             {ultimaAct && ` · actualizado ${ultimaAct.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
@@ -135,7 +135,7 @@ export default function Pedidos({ rol }) {
             <span className="text-[12px] font-semibold text-ok">🔔 Notificaciones activas</span>
           ) : (
             <button onClick={activar}
-                    className="inline-flex items-center gap-2 rounded-md bg-negro text-white px-3 py-1.5 text-[12px] font-semibold">
+                    className="inline-flex items-center gap-2 rounded-md bg-acento text-white px-3 py-1.5 text-[12px] font-semibold">
               🔔 Activar notificaciones
             </button>
           )}
@@ -157,14 +157,14 @@ export default function Pedidos({ rol }) {
       </div>
 
       {resumen && rol === "admin" && (
-        <div className="bg-negro text-white rounded-lg px-5 py-4">
+        <div className="bg-negro text-surface-1 rounded-lg px-5 py-4">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-1/50">
                 Lo que queda {PERIODOS.find(p => p.value === periodo)?.label.toLowerCase()}
               </div>
               <div className="text-[28px] leading-tight font-bold tabular-nums">{fmtPesos(resumen.margen)}</div>
-              <div className="text-[11px] text-white/50">
+              <div className="text-[11px] text-surface-1/50">
                 {String(resumen.margen_pct).replace(".", ",")}% de {fmtPesos(resumen.total)} vendidos
               </div>
             </div>
@@ -176,17 +176,17 @@ export default function Pedidos({ rol }) {
                 ["Impuesto al cheque", resumen.cheque],
                 ["Comisiones MercadoPago", resumen.comisiones],
               ].map(([etiqueta, valor]) => (
-                <div key={etiqueta} className="flex justify-between gap-4 text-white/60">
+                <div key={etiqueta} className="flex justify-between gap-4 text-surface-1/60">
                   <span>− {etiqueta}</span>
-                  <span className="text-white/80">
+                  <span className="text-surface-1/80">
                     {fmtPesos(valor || 0)}
-                    <span className="text-white/40 ml-2 inline-block w-[42px] text-right">{pct(valor || 0, resumen.total)}</span>
+                    <span className="text-surface-1/40 ml-2 inline-block w-[42px] text-right">{pct(valor || 0, resumen.total)}</span>
                   </span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="text-[10px] text-white/40 mt-3 pt-3 border-t border-white/10">
+          <div className="text-[10px] text-surface-1/40 mt-3 pt-3 border-t border-surface-1/10">
             Antes de alquileres, sueldos y pauta. IVA calculado sobre el valor agregado ({resumen.iva_origen}).
             {resumen.con_dato_real > 0 && ` · ${resumen.con_dato_real} operaciones con la comisión real de MercadoPago.`}
           </div>

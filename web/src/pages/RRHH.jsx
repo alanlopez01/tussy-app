@@ -118,7 +118,7 @@ function Asistencia({ recargarKey }) {
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => marcar(e, editando.estado, editando.minutos, editando.motivo)}
-                                className="rounded-md bg-negro text-white px-4 py-2 text-[13px] font-bold">Guardar</button>
+                                className="rounded-md bg-acento text-white px-4 py-2 text-[13px] font-bold">Guardar</button>
                         {e.estado && (
                           <button onClick={() => desmarcar(e)}
                                   className="rounded-md border border-borde px-4 py-2 text-[13px] font-semibold text-ink-3">Quitar marca</button>
@@ -234,7 +234,7 @@ function Legajos() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <button onClick={() => setForm({ ...LEGAJO_VACIO })}
-                className="rounded-md bg-negro text-white px-4 py-2 text-[13px] font-bold">＋ Empleado</button>
+                className="rounded-md bg-acento text-white px-4 py-2 text-[13px] font-bold">＋ Empleado</button>
         <label className="flex items-center gap-2 text-[12px] font-semibold text-ink-3">
           <input type="checkbox" checked={verBajas} onChange={e => setVerBajas(e.target.checked)} />
           Ver bajas
@@ -287,7 +287,7 @@ function Legajos() {
             )}
             <div className="flex gap-2">
               <button onClick={guardar} disabled={guardando}
-                      className="flex-1 rounded-md bg-negro text-white px-4 py-2.5 text-[14px] font-bold disabled:opacity-50">
+                      className="flex-1 rounded-md bg-acento text-white px-4 py-2.5 text-[14px] font-bold disabled:opacity-50">
                 {guardando ? "Guardando…" : "Guardar"}
               </button>
               <button onClick={() => setForm(null)} className="rounded-md border border-borde px-4 py-2.5 text-[14px] font-semibold text-ink-2">Cancelar</button>
@@ -329,7 +329,7 @@ export default function RRHH() {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">RRHH</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">RRHH</h1>
           <p className="text-[12px] text-ink-3">Asistencias que marcan los encargados en el ERP · legajos del equipo</p>
         </div>
         {tab === "asistencia" && <BotonActualizar onClick={() => setRecargarKey(k => k + 1)} cargando={false} />}

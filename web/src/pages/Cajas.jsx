@@ -123,33 +123,33 @@ export default function Cajas() {
   for (let y = hoy.getFullYear(); y >= 2023; y--) anios.push(y);
   const catBtn = (activa) =>
     `rounded-full px-3 py-1.5 text-[12px] font-semibold border transition-colors ${
-      activa ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde hover:border-ink-3"
+      activa ? "bg-acento text-white border-acento" : "bg-surface-1 text-ink-2 border-borde hover:border-ink-3"
     }`;
 
   return (
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Cajas</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Cajas</h1>
           <p className="text-[12px] text-ink-3">La caja se carga acá · el Excel ya fue</p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />
       </header>
 
       {/* Marca + saldo en una sola franja */}
-      <div className="bg-negro text-white rounded-lg px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-negro text-surface-1 rounded-lg px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1.5">
           {[["tussy", "Tussy"], ["shato", "Shato"]].map(([v, l]) => (
             <button key={v} onClick={() => setMarca(v)}
               className={`rounded-full px-4 py-1.5 text-[13px] font-bold transition-colors ${
-                marca === v ? "bg-white text-negro" : "bg-white/10 text-white/60 hover:text-white"
+                marca === v ? "bg-white text-negro" : "bg-white/10 text-surface-1/60 hover:text-white"
               }`}>
               {l}
             </button>
           ))}
         </div>
         <div className="text-right">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">Saldo en caja</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-1/50">Saldo en caja</div>
           <div className="text-[26px] leading-tight font-bold tabular-nums">
             {resumen ? fmtPesos(resumen.saldoActual || 0) : "…"}
           </div>

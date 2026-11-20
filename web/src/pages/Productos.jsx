@@ -54,7 +54,7 @@ export default function Productos() {
     <div className="space-y-4">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-bold text-ink">Productos</h1>
+          <h1 className="text-[30px] md:text-[34px] font-semibold text-ink tracking-[-0.03em] leading-[1.08]">Productos</h1>
           <p className="text-[12px] text-ink-3">Modelos agrupados (sin distinguir variantes)</p>
         </div>
         <BotonActualizar onClick={cargar} cargando={cargando} />

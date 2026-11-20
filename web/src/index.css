@@ -1,39 +1,175 @@
+/* Urbanist: la tipografía de la estética que pidió Alan. Licencia SIL OFL. */
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
+/* ───────────────────────────────────────────────────────────────────────────
+   LOS TOKENS.
+   Los nombres son los de siempre (surface, ink, borde, ok…), así cada pantalla
+   cambia de estética sin tocarla. Lo que cambió son los VALORES.
+
+   Tres cosas definen el look:
+   1. Papel sobre papel: el fondo es un gris cálido (#f1f1f0) y la tarjeta es
+      un blanco roto más claro (#fbfbfa). Nunca blanco puro sobre gris frío.
+   2. El borde es un aro INTERIOR translúcido, no una línea opaca: no corre el
+      layout al aparecer y se apoya en el color que tiene debajo.
+   3. Radios grandes (20px la tarjeta, 24px el panel) y tipografía apretada en
+      los números: cuanto más grande el número, más negativo el tracking.
+   ─────────────────────────────────────────────────────────────────────────── */
+
 @theme {
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Urbanist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* Marca */
-  --color-negro: #14141f;
-  --color-negro-2: #1c1c2b;
+  /* Superficies */
+  --color-surface: #f1f1f0;     /* el fondo de la página */
+  --color-surface-1: #fbfbfa;   /* la tarjeta */
+  --color-panel: #fdfdfc;       /* lo que flota por encima de una tarjeta */
+  --color-negro: #16181d;       /* la tinta, para lo que tiene que pesar */
+  --color-negro-2: #22252c;
 
-  /* Superficies y texto (modo claro, sobrio) */
-  --color-surface: #f2f3f5;
-  --color-surface-1: #ffffff;
-  --color-ink: #14141f;
-  --color-ink-2: #4b4b57;
-  --color-ink-3: #83838e;
-  --color-borde: #e3e4e8;
+  /* Texto */
+  --color-ink: #16181d;
+  --color-ink-2: #353841;
+  --color-ink-3: #5d616b;       /* el apagado: más oscuro que antes, se lee */
 
-  /* Paleta categórica validada — un color FIJO por local, nunca cambia */
-  --color-s-palermo: #2a78d6;  /* azul     */
-  --color-s-laplata: #eb6834;  /* naranja  */
-  --color-s-online: #1baf7a;   /* aqua     */
-  --color-s-dot: #eda100;      /* ámbar    */
-  --color-s-abasto: #e87ba4;   /* magenta  */
-  --color-s-cordoba: #008300;  /* verde    */
-  --color-s-meli: #8b5cf6;     /* violeta  */
+  /* Líneas: translúcidas, para que valgan sobre cualquier superficie */
+  --color-borde: rgba(20, 22, 28, 0.09);
+  --color-borde-2: rgba(20, 22, 28, 0.17);
+
+  /* El acento: un solo azul que manda, con su versión de texto y su fondo suave */
+  --color-acento: #2348d0;
+  --color-acento-hi: #1d3fc0;
+  --color-acento-texto: #1d3fbf;
+  --color-acento-suave: rgba(35, 72, 208, 0.12);
 
   /* Estado */
-  --color-ok: #008300;
-  --color-warn: #b87a00;
-  --color-bad: #c53030;
+  --color-ok: #157a46;
+  --color-warn: #965200;
+  --color-bad: #b42f2b;
+  --color-info: #0b6c7c;
+
+  /* Paleta categórica — un color FIJO por local, nunca cambia.
+     Los mismos de siempre: ya estaban validados y no se tocan por estética. */
+  --color-s-palermo: #2a78d6;
+  --color-s-laplata: #eb6834;
+  --color-s-online: #1baf7a;
+  --color-s-dot: #eda100;
+  --color-s-abasto: #e87ba4;
+  --color-s-cordoba: #008300;
+  --color-s-meli: #8b5cf6;
+
+  /* Radios: rounded-md son los controles, rounded-lg las tarjetas,
+     rounded-xl los paneles que flotan. */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* El modo oscuro es el mismo sistema con otros valores: no hay una sola regla
+   de componente duplicada. Lo pone App.jsx en el <html>. */
+:root[data-theme="dark"] {
+  --color-surface: #0f1012;
+  --color-surface-1: #18191d;
+  --color-panel: #1c1d22;
+  --color-negro: #eceef3;
+  --color-negro-2: #c9ccd5;
+  --color-ink: #eceef3;
+  --color-ink-2: #c9ccd5;
+  --color-ink-3: #9a9ea9;
+  --color-borde: rgba(225, 232, 255, 0.1);
+  --color-borde-2: rgba(225, 232, 255, 0.18);
+  --color-acento: #5b82ff;
+  --color-acento-hi: #6d90ff;
+  --color-acento-texto: #8ea8ff;
+  --color-acento-suave: rgba(91, 130, 255, 0.18);
+  --color-ok: #3fbf7f;
+  --color-warn: #d9a33c;
+  --color-bad: #ef6b63;
+  --color-info: #4fb6c8;
+  --sombra-tarjeta: inset 0 0 0 1px rgba(225, 232, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.4),
+                    0 14px 32px -20px rgba(0, 0, 0, 0.8);
+  --sombra-flotante: inset 0 0 0 1px rgba(225, 232, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.5),
+                     0 34px 80px -26px rgba(0, 0, 0, 0.9);
+}
+
+:root {
+  /* El aro interior + dos sombras: una pegada que da el canto, otra larga y
+     muy difusa que despega la tarjeta del papel sin ensuciarla. */
+  --sombra-tarjeta: inset 0 0 0 1px rgba(20, 22, 28, 0.08), 0 1px 2px rgba(20, 22, 28, 0.05),
+                    0 10px 26px -18px rgba(20, 24, 40, 0.3);
+  --sombra-flotante: inset 0 0 0 1px rgba(20, 22, 28, 0.08), 0 2px 6px rgba(20, 22, 28, 0.08),
+                     0 30px 64px -26px rgba(20, 24, 40, 0.36);
+  color-scheme: light;
+}
+:root[data-theme="dark"] { color-scheme: dark; }
 
 body {
   background-color: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "tnum";
 }
+
+/* ── Utilidades del sistema ─────────────────────────────────────────────── */
+
+/* La superficie elevada. Reemplaza al `border border-borde`: el aro va por
+   dentro, así no corre nada cuando aparece o se saca. */
+@utility elevado {
+  background-color: var(--color-surface-1);
+  box-shadow: var(--sombra-tarjeta);
+}
+@utility flotante {
+  background-color: var(--color-panel);
+  box-shadow: var(--sombra-flotante);
+}
+/* El aro solo, para controles chicos que no quieren sombra. */
+@utility aro {
+  box-shadow: inset 0 0 0 1px var(--color-borde);
+}
+@utility aro-2 {
+  box-shadow: inset 0 0 0 1px var(--color-borde-2);
+}
+
+/* Los números grandes van apretados: a mayor tamaño, más negativo el tracking.
+   Sin esto un total de siete cifras se lee como una matrícula. */
+@utility cifra {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+@utility cifra-xl {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+/* La entrada escalonada de la demo: cada tarjeta sube un poco después de la
+   anterior. Se respeta a quien pidió menos movimiento. */
+@keyframes sube {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@utility sube {
+  animation: sube 0.42s var(--ease-suave) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sube { animation: none; }
+}
+
+/* El punto que respira de "abierto / en vivo". */
+@keyframes respira {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+@utility respira {
+  animation: respira 2.2s ease-in-out infinite;
+}
+
+::selection { background: var(--color-acento-suave); }
+
+/* La barra de scroll, discreta, para que el panel lateral no corte el aire. */
+* { scrollbar-width: thin; scrollbar-color: var(--color-borde-2) transparent; }

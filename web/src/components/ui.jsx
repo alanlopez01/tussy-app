@@ -1,12 +1,17 @@
 // Piezas compartidas del dashboard — estilo sobrio
 import { fmtPesos } from "../lib/api.js";
 
-export function Card({ title, children, right, className = "" }) {
+export function Card({ title, sub, children, right, className = "" }) {
   return (
-    <section className={`bg-surface-1 rounded-lg border border-borde p-5 ${className}`}>
+    <section className={`elevado rounded-lg px-5 pt-[18px] pb-5 ${className}`}>
       {(title || right) && (
-        <header className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-          {title && <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{title}</h2>}
+        <header className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+          {title && (
+            <div className="min-w-0">
+              <h2 className="text-[15px] font-semibold text-ink leading-tight tracking-[-0.01em]">{title}</h2>
+              {sub && <p className="text-[12px] text-ink-3 mt-0.5">{sub}</p>}
+            </div>
+          )}
           {right}
         </header>
       )}
@@ -19,9 +24,9 @@ export function StatTile({ label, value, sub, delta }) {
   const deltaColor = delta > 0 ? "text-ok" : delta < 0 ? "text-bad" : "text-ink-3";
   const deltaIcon = delta > 0 ? "▲" : delta < 0 ? "▼" : "—";
   return (
-    <div className="bg-surface-1 rounded-lg border border-borde p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{label}</div>
-      <div className="text-[26px] leading-tight font-bold text-ink mt-1.5 tabular-nums">{value}</div>
+    <div className="elevado rounded-lg px-5 py-4">
+      <div className="text-[12px] font-medium text-ink-3">{label}</div>
+      <div className="text-[26px] leading-[1.15] text-ink mt-1 cifra-xl">{value}</div>
       {(sub || (delta != null && !isNaN(delta))) && (
         <div className="flex items-center gap-2 mt-1 text-[12px]">
           {delta != null && !isNaN(delta) && (
@@ -39,7 +44,7 @@ export function BotonActualizar({ onClick, cargando }) {
     <button
       onClick={onClick}
       disabled={cargando}
-      className="inline-flex items-center gap-2 rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[12px] font-semibold text-ink-2 hover:bg-surface disabled:opacity-50 transition-colors"
+      className="inline-flex items-center gap-2 rounded-md aro bg-surface-1 px-3 py-1.5 text-[12.5px] font-semibold text-ink-2 hover:text-ink hover:bg-surface disabled:opacity-50 transition-colors"
     >
       <span className={cargando ? "animate-spin inline-block" : ""}>⟳</span>
       {cargando ? "Actualizando…" : "Actualizar"}
@@ -47,6 +52,8 @@ export function BotonActualizar({ onClick, cargando }) {
   );
 }
 
+// El chip de filtro: activo = fondo del acento en suave y texto del acento.
+// Nunca negro sólido, que compite con los números.
 export function Chips({ opciones, valor, onChange }) {
   return (
     <div className="flex gap-1.5 flex-wrap">
@@ -54,14 +61,17 @@ export function Chips({ opciones, valor, onChange }) {
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`px-3 py-1.5 rounded-md text-[12px] font-semibold border transition-colors inline-flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 rounded-md text-[12.5px] font-semibold transition-colors inline-flex items-center gap-1.5 ${
             valor === o.value
-              ? "bg-negro text-white border-negro"
-              : "bg-surface-1 text-ink-2 border-borde hover:bg-surface"
+              ? "bg-acento-suave text-acento-texto"
+              : "aro bg-surface-1 text-ink-2 hover:text-ink hover:bg-surface"
           }`}
         >
-          {o.color && <span className="w-2 h-2 rounded-[2px]" style={{ background: o.color }} />}
+          {o.color && <span className="w-2 h-2 rounded-[3px]" style={{ background: o.color }} />}
           {o.label}
+          {o.cuenta != null && (
+            <span className={`text-[11px] tabular-nums ${valor === o.value ? "opacity-70" : "text-ink-3"}`}>{o.cuenta}</span>
+          )}
         </button>
       ))}
     </div>
@@ -71,8 +81,8 @@ export function Chips({ opciones, valor, onChange }) {
 export function Spinner({ texto = "Cargando…" }) {
   return (
     <div className="flex flex-col items-center justify-center py-10 gap-3 text-ink-3">
-      <div className="w-6 h-6 rounded-full border-2 border-borde border-t-negro animate-spin" />
-      <div className="text-[12px]">{texto}</div>
+      <div className="w-6 h-6 rounded-full border-2 border-borde border-t-acento animate-spin" />
+      <div className="text-[12.5px]">{texto}</div>
     </div>
   );
 }
@@ -125,27 +135,27 @@ export function SelectorFechas({ rango, onChange, opciones = RANGOS_DEF }) {
       {opciones.map(o => (
         <button key={o.key}
           onClick={() => { setAbierto(false); onChange({ key: o.key, ...rangoDe(o.key) }); }}
-          className={`px-3 py-1.5 rounded-md text-[12px] font-semibold border transition-colors ${
-            rango.key === o.key ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde hover:bg-surface"
+          className={`px-3 py-1.5 rounded-md text-[12.5px] font-semibold transition-colors ${
+            rango.key === o.key ? "bg-acento-suave text-acento-texto" : "aro bg-surface-1 text-ink-2 hover:text-ink hover:bg-surface"
           }`}>
           {o.label}
         </button>
       ))}
       <button onClick={() => setAbierto(!abierto)}
-        className={`px-3 py-1.5 rounded-md text-[12px] font-semibold border transition-colors ${
-          rango.key === "custom" ? "bg-negro text-white border-negro" : "bg-surface-1 text-ink-2 border-borde hover:bg-surface"
+        className={`px-3 py-1.5 rounded-md text-[12.5px] font-semibold transition-colors ${
+          rango.key === "custom" ? "bg-acento-suave text-acento-texto" : "aro bg-surface-1 text-ink-2 hover:text-ink hover:bg-surface"
         }`}>
         Personalizado
       </button>
       {abierto && (
         <span className="inline-flex items-center gap-1.5">
           <input type="date" value={desde} onChange={e => setDesde(e.target.value)}
-                 className="rounded-md border border-borde bg-surface-1 px-2 py-1 text-[12px] text-ink-2" />
+                 className="rounded-md aro bg-surface-1 px-2 py-1 text-[12px] text-ink-2" />
           <span className="text-[12px] text-ink-3">a</span>
           <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
-                 className="rounded-md border border-borde bg-surface-1 px-2 py-1 text-[12px] text-ink-2" />
+                 className="rounded-md aro bg-surface-1 px-2 py-1 text-[12px] text-ink-2" />
           <button onClick={() => { if (desde && hasta && desde <= hasta) { setAbierto(false); onChange({ key: "custom", desde, hasta }); } }}
-                  className="px-3 py-1.5 rounded-md text-[12px] font-semibold bg-negro text-white">
+                  className="px-3 py-1.5 rounded-md text-[12.5px] font-semibold bg-acento text-white">
             Aplicar
           </button>
         </span>
@@ -159,12 +169,12 @@ export function Paginacion({ pagina, totalPaginas, onChange }) {
   return (
     <div className="flex items-center justify-center gap-3 pt-3 border-t border-borde mt-2">
       <button onClick={() => onChange(pagina - 1)} disabled={pagina <= 1}
-              className="px-3 py-1 rounded-md border border-borde text-[12px] font-semibold text-ink-2 disabled:opacity-40 hover:bg-surface">
+              className="px-3 py-1 rounded-md aro text-[12px] font-semibold text-ink-2 disabled:opacity-40 hover:bg-surface">
         ‹ Anterior
       </button>
       <span className="text-[12px] text-ink-3 tabular-nums">{pagina} / {totalPaginas}</span>
       <button onClick={() => onChange(pagina + 1)} disabled={pagina >= totalPaginas}
-              className="px-3 py-1 rounded-md border border-borde text-[12px] font-semibold text-ink-2 disabled:opacity-40 hover:bg-surface">
+              className="px-3 py-1 rounded-md aro text-[12px] font-semibold text-ink-2 disabled:opacity-40 hover:bg-surface">
         Siguiente ›
       </button>
     </div>
@@ -175,11 +185,11 @@ export function Paginacion({ pagina, totalPaginas, onChange }) {
 export function TooltipPesos({ active, payload, label, labelFormatter }) {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-negro text-white rounded-md px-3.5 py-2.5 shadow-lg text-[12px] min-w-[170px]">
+    <div className="bg-negro text-surface-1 rounded-md px-3.5 py-2.5 shadow-lg text-[12px] min-w-[170px]">
       <div className="font-semibold mb-1.5">{labelFormatter ? labelFormatter(label) : label}</div>
       {payload.filter(p => p.value > 0).map(p => (
         <div key={p.dataKey} className="flex items-center justify-between gap-4 leading-relaxed">
-          <span className="inline-flex items-center gap-1.5 text-white/80">
+          <span className="inline-flex items-center gap-1.5 text-surface-1/75">
             <span className="w-2 h-2 rounded-[2px]" style={{ background: p.color || p.fill }} />
             {p.name}
           </span>
@@ -187,8 +197,8 @@ export function TooltipPesos({ active, payload, label, labelFormatter }) {
         </div>
       ))}
       {payload.length > 1 && (
-        <div className="flex items-center justify-between gap-4 border-t border-white/20 mt-1.5 pt-1.5">
-          <span className="text-white/80">Total</span>
+        <div className="flex items-center justify-between gap-4 border-t border-surface-1/20 mt-1.5 pt-1.5">
+          <span className="text-surface-1/75">Total</span>
           <span className="font-bold tabular-nums">{fmtPesos(payload.reduce((a, p) => a + (p.value || 0), 0))}</span>
         </div>
       )}
@@ -224,7 +234,7 @@ export function DatosDelMes({ mes }) {
   };
 
   return (
-    <section className={`rounded-lg border p-4 ${faltan.length ? "border-warn/40 bg-surface-1" : "border-borde bg-surface-1"}`}>
+    <section className={`rounded-lg p-4 ${faltan.length ? "bg-surface-1 aro-2" : "elevado"}`}>
       <button onClick={() => setAbierto(!abierto)} className="w-full text-left flex items-center justify-between gap-3">
         <span className="text-[12px] font-semibold text-ink">
           {faltan.length === 0
