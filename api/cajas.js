@@ -159,16 +159,39 @@ async function borrar(req, res) {
 // Ledger de préstamos cruzados que vivía en la hoja "deuda" del Excel de Shato.
 // balance = prestado por Shato − prestado por Tussy (negativo: Shato le debe a Tussy).
 async function deuda(req, res) {
-  const [tot, movs] = await Promise.all([
+  // La tela sale de dos lugares y no se solapan: hasta el último cargo a mano
+  // (el 20/08) la dice deuda_shato; desde el día siguiente la dicen los cortes
+  // del sistema de producción, que lib/telas.js espeja en telas_consumidas.
+  const [tot, movs, tela, telas] = await Promise.all([
     sql`SELECT COALESCE(SUM(monto) FILTER (WHERE lado='shato'),0)::float s,
                COALESCE(SUM(monto) FILTER (WHERE lado='tussy'),0)::float t
         FROM deuda_shato`,
     sql`SELECT id, fecha::text, lado, detalle, kilos::float, precio::float, monto::float, usuario, origen
         FROM deuda_shato ORDER BY fecha DESC, creado_en DESC LIMIT 300`,
+    sql`SELECT COALESCE(SUM(monto),0)::float monto, COALESCE(SUM(cantidad),0)::float cantidad,
+               COUNT(*)::int n, COUNT(*) FILTER (WHERE precio IS NULL)::int sin_precio,
+               MAX(fecha)::text hasta, MAX(sincronizado_en)::text sincronizado
+        FROM telas_consumidas`,
+    sql`SELECT linea_id AS id, fecha::text, 'tussy' AS lado,
+               CASE WHEN corte IS NOT NULL THEN 'Corte ' || corte || ' · ' || tela ELSE tela END AS detalle,
+               cantidad::float kilos, precio::float, monto::float, unidad,
+               (precio IS NULL) AS sin_precio, 'produccion' AS fuente
+        FROM telas_consumidas ORDER BY fecha DESC LIMIT 300`,
   ]);
+
+  const prestado_tussy = tot[0].t + tela[0].monto;
+  const movimientos = [...movs, ...telas]
+    .sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0))
+    .slice(0, 300);
+
   res.status(200).json({
-    prestado_shato: tot[0].s, prestado_tussy: tot[0].t,
-    balance: tot[0].s - tot[0].t, movimientos: movs,
+    prestado_shato: tot[0].s, prestado_tussy,
+    balance: tot[0].s - prestado_tussy,
+    tela_produccion: {
+      monto: tela[0].monto, cantidad: tela[0].cantidad, consumos: tela[0].n,
+      sin_precio: tela[0].sin_precio, hasta: tela[0].hasta, sincronizado: tela[0].sincronizado,
+    },
+    movimientos,
   });
 }
 

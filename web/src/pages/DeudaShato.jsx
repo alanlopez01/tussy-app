@@ -1,6 +1,10 @@
 // Deuda Shato ↔ Tussy (solo admin) — ledger de préstamos cruzados que vivía en
 // la hoja "deuda" del Excel de Shato. Pagos/préstamos de Shato de un lado, tela
 // y préstamos de Tussy del otro. balance = Shato − Tussy (negativo: Shato debe).
+//
+// La tela ya no se carga a mano: hasta el 20/08 está cargada acá y desde el
+// día siguiente la trae el sistema de producción, corte por corte (lib/telas.js).
+// Esas filas se muestran pero no se editan: se arreglan en producción.
 import { useCallback, useEffect, useState } from "react";
 import { getJSON, postJSON, fmtPesos, hoyISO } from "../lib/api.js";
 import { Card, Spinner, Chips, BotonActualizar } from "../components/ui.jsx";
@@ -23,6 +27,39 @@ function formatearMiles(s) {
 const aNum = s => { const n = Number(String(s ?? "").replace(/\./g, "").replace(",", ".")); return Number.isFinite(n) ? n : 0; };
 
 const FORM_VACIO = { id: null, lado: "shato", fecha: hoyISO(), detalle: "", kilos: "", precio: "", monto: "" };
+
+const diaCorto = f => new Date(f + "T12:00:00Z").toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+
+// La tela que viene de producción. Si no viene nada, lo dice: es la diferencia
+// entre "Shato no consumió tela" y "el dato no está llegando".
+function TelaDeProduccion({ t }) {
+  if (!t.consumos) {
+    return (
+      <Card>
+        <div className="py-2 text-[12px] text-ink-3 leading-relaxed">
+          <span className="font-semibold text-ink-2">La tela de producción todavía no llega.</span>{" "}
+          Lo cargado a mano acá termina el 20/08. Desde el 21/08 la tela la miden los cortes
+          del sistema de producción, y ese balance no la incluye hasta que el dato entre.
+        </div>
+      </Card>
+    );
+  }
+  return (
+    <Card>
+      <div className="py-1 flex items-start justify-between gap-4 flex-wrap">
+        <div className="text-[12px] text-ink-3 leading-relaxed">
+          <span className="font-semibold text-ink-2">Tela medida en producción</span>{" "}
+          · {t.consumos} consumos hasta el {diaCorto(t.hasta)}
+          {t.sin_precio ? <> · <span className="text-warn font-semibold">{t.sin_precio} sin precio de transferencia, valen cero</span></> : null}
+        </div>
+        <div className="text-right tabular-nums">
+          <div className="text-[15px] font-bold text-ink">{fmtPesos(t.monto)}</div>
+          <div className="text-[11px] text-ink-3">{t.cantidad.toLocaleString("es-AR")} kg/mt</div>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export default function DeudaShato() {
   const [data, setData] = useState(null);
@@ -119,6 +156,8 @@ export default function DeudaShato() {
         )}
       </div>
 
+      {data?.tela_produccion && <TelaDeProduccion t={data.tela_produccion} />}
+
       {error && <Card><p className="text-[13px] text-bad py-3 text-center">{error}</p></Card>}
       {flash && <div className="rounded-lg bg-ok/10 border border-ok/40 text-ok px-4 py-3 text-[13px] font-semibold">{flash}</div>}
 
@@ -184,29 +223,37 @@ export default function DeudaShato() {
           <p className="text-[13px] text-ink-3 py-4 text-center">Sin movimientos</p>
         ) : (
           <ul className="divide-y divide-borde">
-            {movs.map(m => (
-              <li key={m.id} className="py-2.5 flex items-center gap-3">
+            {movs.map(m => {
+              const dePro = m.fuente === "produccion";
+              return (
+              <li key={(dePro ? "p" : "d") + m.id} className="py-2.5 flex items-center gap-3">
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
-                  m.lado === "shato" ? "bg-surface text-ink-2 border border-borde" : "bg-ok/10 text-ok border border-ok/30"
+                  dePro ? "bg-surface-1 text-ink-3 border border-borde"
+                        : m.lado === "shato" ? "bg-surface text-ink-2 border border-borde" : "bg-ok/10 text-ok border border-ok/30"
                 }`}>
-                  {m.lado === "shato" ? "Shato" : "Tussy"}
+                  {dePro ? "Corte" : m.lado === "shato" ? "Shato" : "Tussy"}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium text-ink truncate">{m.detalle || (m.lado === "shato" ? "Préstamo Shato" : "Préstamo Tussy")}</div>
                   <div className="text-[11px] text-ink-3">
                     {new Date(m.fecha + "T12:00:00Z").toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
-                    {m.kilos ? ` · ${String(m.kilos).replace(".", ",")} kg × ${fmtPesos(m.precio || 0)}` : ""}
+                    {m.kilos ? ` · ${String(m.kilos).replace(".", ",")} ${m.unidad || "kg"}${m.precio ? ` × ${fmtPesos(m.precio)}` : ""}` : ""}
+                    {m.sin_precio ? " · sin precio de transferencia" : ""}
                   </div>
                 </div>
                 <div className="text-[13px] font-bold tabular-nums">{fmtPesos(m.monto)}</div>
-                <div className="flex gap-1 shrink-0">
-                  <button onClick={() => editarMov(m)} title="Editar"
-                          className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-ink">✎</button>
-                  <button onClick={() => borrarMov(m)} title="Borrar"
-                          className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-bad">🗑</button>
-                </div>
+                {dePro ? (
+                  <span className="shrink-0 text-[10px] text-ink-3 px-2" title="Lo mide producción: se corrige allá">producción</span>
+                ) : (
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => editarMov(m)} title="Editar"
+                            className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-ink">✎</button>
+                    <button onClick={() => borrarMov(m)} title="Borrar"
+                            className="text-[12px] px-2 py-1 rounded-md border border-borde text-ink-3 hover:text-bad">🗑</button>
+                  </div>
+                )}
               </li>
-            ))}
+            );})}
           </ul>
         )}
       </Card>

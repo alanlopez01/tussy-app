@@ -29,6 +29,7 @@ const { snapshotStock } = require("../scripts/db-snapshot-stock");
 const { reponerVentasFaltantes } = require("../lib/erp");
 const { arcaConfigurada, sincronizarEmitidos, NOMBRES_TIPO } = require("../lib/arca");
 const { sincronizarRecibidos } = require("../lib/kalyz");
+const { sincronizarTelas } = require("../lib/telas");
 const { esCuentaPropia, CATEGORIA_PROPIA, parsearGalicia, categorizar } = require("../lib/bancos");
 const { metaConfigurada, sincronizarMeta, actualizarConjuntoNewIn } = require("../lib/meta");
 const { procesarMP, procesarTN, guardarMixPagos } = require("../lib/reportes");
@@ -646,6 +647,14 @@ async function cierreDiario(req, res) {
       const r = await sincronizarRecibidos(sql, desde);
       console.log("[recibidos]", JSON.stringify(r));
     })().catch(e => console.error("[recibidos] error:", e))
+  );
+  // La tela que consumió Shato tampoco se carga más a mano: la mide producción,
+  // corte por corte, y de ahí se lee (lib/telas.js explica la regla). Si KALYZ
+  // todavía no da el permiso, sincronizarTelas se retira solo.
+  waitUntil(
+    sincronizarTelas(sql)
+      .then(r => console.log("[telas]", JSON.stringify(r)))
+      .catch(e => console.error("[telas] error:", e))
   );
   // Y re-ingestamos la última semana para capturar pagos que se acreditaron tarde
   waitUntil(
