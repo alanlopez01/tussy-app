@@ -39,11 +39,101 @@ function fechaLinda(iso) {
   return new Date(iso + "T12:00:00Z").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "short" });
 }
 
+// ── Detalle de una categoría ──
+// Un total no sirve si no se puede abrir. Los movimientos los filtra el server
+// por marca, tipo y categoría (el endpoint de movimientos ya sabía hacerlo) y
+// acá se ordenan por monto, que es como uno mira un gasto que le llamó la
+// atención: primero el grande. El mes anterior está a un toque, porque la
+// pregunta que sigue a "qué fue esto" siempre es "y el mes pasado qué fue".
+function DetalleCategoria({ marca, categoria, tipo, fila, mes, anio, onCerrar }) {
+  const anterior = mes === 1 ? { mes: 12, anio: anio - 1 } : { mes: mes - 1, anio };
+  // Si este mes no tuvo nada pero el pasado sí, abre directo donde hay algo.
+  const [cual, setCual] = useState(fila.total === 0 && fila.totalAnt > 0 ? "anterior" : "actual");
+  const [orden, setOrden] = useState("monto");
+  const [movs, setMovs] = useState(null);
+  const [error, setError] = useState(null);
+  const ver = cual === "actual" ? { mes, anio } : anterior;
+
+  useEffect(() => {
+    const onKey = e => { if (e.key === "Escape") onCerrar(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCerrar]);
+
+  useEffect(() => {
+    setMovs(null);
+    setError(null);
+    getJSON(`/api/cajas?action=movimientos&marca=${marca}&mes=${ver.mes}&anio=${ver.anio}` +
+            `&tipo=${tipo}&categoria=${encodeURIComponent(categoria)}`)
+      .then(r => setMovs(r.movimientos))
+      .catch(e => setError(e.message));
+  }, [marca, categoria, tipo, ver.mes, ver.anio]);
+
+  const lista = [...(movs || [])].sort((a, b) =>
+    orden === "monto" ? b.monto - a.monto : a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0);
+  const total = lista.reduce((a, m) => a + m.monto, 0);
+  const esGasto = tipo === "egreso";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <button className="absolute inset-0 bg-black/50" onClick={onCerrar} aria-label="Cerrar" />
+      <div role="dialog" aria-modal="true"
+           className="relative bg-surface-1 rounded-t-2xl sm:rounded-lg w-full sm:max-w-xl max-h-[88vh] overflow-y-auto p-5">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <h3 className="text-[16px] font-bold text-ink">{categoria}</h3>
+            <p className="text-[11px] text-ink-3">
+              {marca === "shato" ? "Shato" : "Tussy"} · {esGasto ? "gastos" : "ingresos"} de {MESES[ver.mes - 1]} {ver.anio}
+            </p>
+          </div>
+          <button onClick={onCerrar} className="text-ink-3 text-2xl leading-none px-1" aria-label="Cerrar">×</button>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap mb-3">
+          <Chips opciones={[{ value: "actual", label: MESES[mes - 1] }, { value: "anterior", label: MESES[anterior.mes - 1] }]}
+                 valor={cual} onChange={setCual} />
+          <span className="ml-auto">
+            <Chips opciones={[{ value: "monto", label: "Por monto" }, { value: "fecha", label: "Por fecha" }]}
+                   valor={orden} onChange={setOrden} />
+          </span>
+        </div>
+
+        <div className="flex items-baseline gap-3 pb-3 mb-1 border-b border-borde">
+          <span className={`text-[22px] font-bold tabular-nums ${esGasto ? "text-bad" : "text-ok"}`}>{fmtPesos(total)}</span>
+          <span className="text-[12px] text-ink-3">{lista.length} movimiento{lista.length === 1 ? "" : "s"}</span>
+        </div>
+
+        {error ? <p className="text-[13px] text-bad py-6 text-center">{error}</p>
+          : !movs ? <Spinner texto="Buscando los movimientos…" />
+          : !lista.length ? <p className="text-[13px] text-ink-3 py-8 text-center">Sin movimientos en {MESES[ver.mes - 1]}</p>
+          : (
+            <ul className="divide-y divide-borde">
+              {lista.map(m => (
+                <li key={m.id} className="py-2.5 flex items-center gap-3">
+                  <span className="text-[11px] text-ink-3 tabular-nums w-[52px] shrink-0">
+                    {m.fecha.slice(8, 10)}/{m.fecha.slice(5, 7)}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-ink truncate">{m.detalle || <span className="text-ink-3">sin detalle</span>}</div>
+                    {m.medio === "Transferencia" && <div className="text-[11px] text-ink-3">transferencia</div>}
+                  </div>
+                  <div className={`text-[13px] font-bold tabular-nums shrink-0 ${esGasto ? "text-bad" : "text-ok"}`}>
+                    {fmtPesos(m.monto)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+      </div>
+    </div>
+  );
+}
+
 // ── Solapa Resumen ──
 // Una tabla por marca con el gasto (y el ingreso) por categoría, y el mes
 // anterior pegado a cada fila. La barrita es la proporción dentro de la marca:
 // sirve para ver de un vistazo quién se come la caja, no para medir.
-function TablaCats({ filas, mesAnt, tono, malSube = false }) {
+function TablaCats({ filas, mesAnt, tono, malSube = false, onElegir }) {
   if (!filas.length) return <p className="text-[12px] text-ink-3 py-3">Sin movimientos este mes</p>;
   const max = Math.max(...filas.map(f => f.total), 1);
   const total = filas.reduce((a, f) => a + f.total, 0);
@@ -65,7 +155,10 @@ function TablaCats({ filas, mesAnt, tono, malSube = false }) {
         </thead>
         <tbody className="divide-y divide-borde">
           {filas.map(f => (
-            <tr key={f.categoria}>
+            <tr key={f.categoria} onClick={() => onElegir(f)} tabIndex={0} role="button"
+                title={`Ver los movimientos de ${f.categoria}`}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onElegir(f); } }}
+                className="cursor-pointer hover:bg-pista focus:bg-pista outline-none">
               <td className="py-2 pr-2 min-w-[110px]">
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-medium text-ink">{f.categoria}</span>
@@ -96,6 +189,7 @@ function TablaCats({ filas, mesAnt, tono, malSube = false }) {
 
 function Resumen({ mes, anio, setMes, setAnio, anios }) {
   const [data, setData] = useState(null);
+  const [detalle, setDetalle] = useState(null);
   const [error, setError] = useState(null);
   const [cargando, setCargando] = useState(false);
 
@@ -154,18 +248,27 @@ function Resumen({ mes, anio, setMes, setAnio, anios }) {
                     }>
                 <div className="space-y-5">
                   <div>
-                    <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1.5">Gastos</div>
-                    <TablaCats filas={d.gasto} mesAnt={mesAnt} tono="bg-bad/70" malSube />
+                    <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1.5">
+                      Gastos <span className="normal-case tracking-normal text-ink-3/70">· tocá una categoría para ver los movimientos</span>
+                    </div>
+                    <TablaCats filas={d.gasto} mesAnt={mesAnt} tono="bg-bad/70" malSube
+                               onElegir={f => setDetalle({ marca: k, tipo: "egreso", fila: f })} />
                   </div>
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1.5">Ingresos</div>
-                    <TablaCats filas={d.ingreso} mesAnt={mesAnt} tono="bg-ok/70" />
+                    <TablaCats filas={d.ingreso} mesAnt={mesAnt} tono="bg-ok/70"
+                               onElegir={f => setDetalle({ marca: k, tipo: "ingreso", fila: f })} />
                   </div>
                 </div>
               </Card>
             );
           })}
         </div>
+      )}
+
+      {detalle && (
+        <DetalleCategoria marca={detalle.marca} categoria={detalle.fila.categoria} tipo={detalle.tipo}
+                          fila={detalle.fila} mes={mes} anio={anio} onCerrar={() => setDetalle(null)} />
       )}
     </div>
   );
