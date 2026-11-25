@@ -39,6 +39,138 @@ function fechaLinda(iso) {
   return new Date(iso + "T12:00:00Z").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "short" });
 }
 
+// ── Solapa Resumen ──
+// Una tabla por marca con el gasto (y el ingreso) por categoría, y el mes
+// anterior pegado a cada fila. La barrita es la proporción dentro de la marca:
+// sirve para ver de un vistazo quién se come la caja, no para medir.
+function TablaCats({ filas, mesAnt, tono, malSube = false }) {
+  if (!filas.length) return <p className="text-[12px] text-ink-3 py-3">Sin movimientos este mes</p>;
+  const max = Math.max(...filas.map(f => f.total), 1);
+  const total = filas.reduce((a, f) => a + f.total, 0);
+  const totalAnt = filas.reduce((a, f) => a + f.totalAnt, 0);
+  // Que un gasto suba es malo y que un ingreso suba es bueno: el color se da
+  // vuelta según el lado, si no el verde y el rojo mienten.
+  const difCls = d => (d === 0 ? "text-ink-3" : d > 0 === malSube ? "text-bad" : "text-ok");
+  const conSigno = d => (d === 0 ? "=" : (d > 0 ? "+" : "−") + fmtPesos(Math.abs(d)));
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-[12px] tabular-nums">
+        <thead>
+          <tr className="text-left text-ink-3 uppercase text-[10px] tracking-[0.05em]">
+            <th className="py-1.5 pr-2 font-semibold">Categoría</th>
+            <th className="py-1.5 px-2 font-semibold text-right">Este mes</th>
+            <th className="py-1.5 px-2 font-semibold text-right hidden sm:table-cell">{mesAnt}</th>
+            <th className="py-1.5 pl-2 font-semibold text-right">Dif.</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-borde">
+          {filas.map(f => (
+            <tr key={f.categoria}>
+              <td className="py-2 pr-2 min-w-[110px]">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-medium text-ink">{f.categoria}</span>
+                  {f.n > 0 && <span className="text-[10px] text-ink-3">{f.n} mov.</span>}
+                </div>
+                <div className="mt-1 h-1 rounded-full bg-pista-2 overflow-hidden">
+                  <div className={`h-full rounded-full ${tono}`} style={{ width: `${(f.total / max) * 100}%` }} />
+                </div>
+              </td>
+              <td className="py-2 px-2 text-right font-semibold text-ink">{f.total ? fmtPesos(f.total) : "—"}</td>
+              <td className="py-2 px-2 text-right text-ink-3 hidden sm:table-cell">{f.totalAnt ? fmtPesos(f.totalAnt) : "—"}</td>
+              <td className={`py-2 pl-2 text-right font-semibold ${difCls(f.total - f.totalAnt)}`}>{conSigno(f.total - f.totalAnt)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="font-bold">
+            <td className="pt-2.5 pr-2 text-ink border-t-2 border-borde">Total</td>
+            <td className="pt-2.5 px-2 text-right text-ink border-t-2 border-borde">{fmtPesos(total)}</td>
+            <td className="pt-2.5 px-2 text-right text-ink-3 border-t-2 border-borde hidden sm:table-cell">{fmtPesos(totalAnt)}</td>
+            <td className={`pt-2.5 pl-2 text-right border-t-2 border-borde ${difCls(total - totalAnt)}`}>{conSigno(total - totalAnt)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+function Resumen({ mes, anio, setMes, setAnio, anios }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  const cargar = useCallback(() => {
+    setCargando(true);
+    setError(null);
+    getJSON(`/api/cajas?action=resumenCategorias&mes=${mes}&anio=${anio}`)
+      .then(setData)
+      .catch(e => setError(e.message))
+      .finally(() => setCargando(false));
+  }, [mes, anio]);
+  useEffect(() => { setData(null); cargar(); }, [cargar]);
+
+  const mesAnt = data ? MESES[parseInt(data.mesAnterior.slice(5), 10) - 1] : "Mes ant.";
+  const saldoTotal = data ? (data.saldos.tussy || 0) + (data.saldos.shato || 0) : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Las dos cajas juntas: es lo único que la solapa de carga no puede mostrar */}
+      <div className="bg-negro text-surface-1 rounded-lg px-5 py-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {[["tussy", "Caja Tussy"], ["shato", "Caja Shato"]].map(([k, l]) => (
+          <div key={k}>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-1/50">{l}</div>
+            <div className="text-[20px] leading-tight font-bold tabular-nums">{data ? fmtPesos(data.saldos[k] || 0) : "…"}</div>
+          </div>
+        ))}
+        <div className="col-span-2 sm:col-span-1 sm:text-right border-t sm:border-t-0 border-surface-1/15 pt-3 sm:pt-0">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-surface-1/50">Las dos juntas</div>
+          <div className="text-[26px] leading-tight font-bold tabular-nums">{data ? fmtPesos(saldoTotal) : "…"}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <select value={mes} onChange={e => setMes(parseInt(e.target.value))} className={selectCls}>
+          {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+        </select>
+        <select value={anio} onChange={e => setAnio(parseInt(e.target.value))} className={selectCls}>
+          {anios.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <span className="ml-auto"><BotonActualizar onClick={cargar} cargando={cargando} /></span>
+      </div>
+
+      {error && <Card><p className="text-[13px] text-bad py-3 text-center">{error}</p></Card>}
+      {!data ? <Spinner texto="Armando el resumen…" /> : (
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+          {[["tussy", "Tussy"], ["shato", "Shato"]].map(([k, l]) => {
+            const d = data.marcas[k];
+            const neto = d.totales.ingreso - d.totales.gasto;
+            return (
+              <Card key={k} title={l}
+                    sub={`entró ${fmtPesos(d.totales.ingreso)} · salió ${fmtPesos(d.totales.gasto)}`}
+                    right={
+                      <span className={`text-[16px] font-bold tabular-nums ${neto >= 0 ? "text-ok" : "text-bad"}`}>
+                        {neto >= 0 ? "+" : "−"}{fmtPesos(Math.abs(neto))}
+                      </span>
+                    }>
+                <div className="space-y-5">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1.5">Gastos</div>
+                    <TablaCats filas={d.gasto} mesAnt={mesAnt} tono="bg-bad/70" malSube />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.06em] text-ink-3 mb-1.5">Ingresos</div>
+                    <TablaCats filas={d.ingreso} mesAnt={mesAnt} tono="bg-ok/70" />
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const FORM_VACIO = { id: null, tipo: "egreso", fecha: hoyISO(), categoria: "", nuevaCat: "", detalle: "", monto: "", medio: "Efectivo" };
 
 export default function Cajas({ soloLectura = false }) {
@@ -50,6 +182,9 @@ export default function Cajas({ soloLectura = false }) {
   const [movs, setMovs] = useState(null);
   const [cats, setCats] = useState({ gasto: [], ingreso: [] });
   const [filtroTipo, setFiltroTipo] = useState("todos");
+  const [tab, setTab] = useState("caja");
+  const [busca, setBusca] = useState("");
+  const [filtroCat, setFiltroCat] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [form, setForm] = useState(FORM_VACIO);
@@ -76,6 +211,8 @@ export default function Cajas({ soloLectura = false }) {
 
   useEffect(() => { setResumen(null); setMovs(null); cargar(); }, [cargar]);
   useEffect(() => { setForm(f => ({ ...FORM_VACIO, tipo: f.tipo })); setFormError(null); setMasFechaMedio(false); }, [marca]);
+  // Las categorías no son las mismas en las dos marcas: el filtro no sobrevive al cambio.
+  useEffect(() => { setFiltroCat(""); }, [marca]);
 
   const esGasto = form.tipo === "egreso";
   const listaCats = esGasto ? cats.gasto : cats.ingreso;
@@ -116,8 +253,27 @@ export default function Cajas({ soloLectura = false }) {
     catch (e) { setError(e.message); }
   };
 
+  // Buscador: una sola caja contra todo lo que se ve del movimiento — detalle,
+  // categoría, medio y el monto escrito de las dos formas (16000000 y
+  // $16.000.000) — porque uno busca "hernan", "16.000.000" o "transf" sin
+  // pensar en columnas. Se filtra en el navegador sobre el mes ya cargado: son
+  // 500 movimientos como mucho, pedirle al server por cada tecla no tiene sentido.
+  const q = busca.trim().toLowerCase();
+  const coincide = m =>
+    `${m.detalle || ""} ${m.categoria} ${m.medio || ""} ${m.monto} ${fmtPesos(m.monto)}`.toLowerCase().includes(q);
+  const movsFiltrados = (movs || []).filter(m =>
+    (filtroTipo === "todos" || m.tipo === filtroTipo) &&
+    (!filtroCat || m.categoria === filtroCat) &&
+    (!q || coincide(m)));
+  const filtrando = !!q || !!filtroCat || filtroTipo !== "todos";
+  const totalFiltrado = movsFiltrados.reduce((a, m) => a + (m.tipo === "egreso" ? -m.monto : m.monto), 0);
+  // El selector lista las categorías que existen este mes, no el catálogo
+  // entero: filtrar por una categoría sin movimientos no sirve de nada.
+  const catsDelMes = Object.entries(
+    (movs || []).reduce((c, m) => ((c[m.categoria] = (c[m.categoria] || 0) + 1), c), {})
+  ).sort((a, b) => a[0].localeCompare(b[0], "es"));
+
   // Movimientos agrupados por día para leer de un vistazo
-  const movsFiltrados = (movs || []).filter(m => filtroTipo === "todos" || m.tipo === filtroTipo);
   const porDia = [];
   for (const m of movsFiltrados) {
     if (!porDia.length || porDia[porDia.length - 1].fecha !== m.fecha) porDia.push({ fecha: m.fecha, items: [] });
@@ -140,8 +296,13 @@ export default function Cajas({ soloLectura = false }) {
             {soloLectura ? "Todo lo que entra y sale de la caja · la carga Alan" : "La caja se carga acá · el Excel ya fue"}
           </p>
         </div>
-        <BotonActualizar onClick={cargar} cargando={cargando} />
+        {tab === "caja" && <BotonActualizar onClick={cargar} cargando={cargando} />}
       </header>
+
+      <Chips opciones={[{ value: "caja", label: "Caja" }, { value: "resumen", label: "Resumen" }]}
+             valor={tab} onChange={setTab} />
+
+      {tab === "resumen" ? <Resumen mes={mes} anio={anio} setMes={setMes} setAnio={setAnio} anios={anios} /> : <>
 
       {/* Marca + saldo en una sola franja */}
       <div className="bg-negro text-surface-1 rounded-lg px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
@@ -273,17 +434,48 @@ export default function Cajas({ soloLectura = false }) {
             <span className={`ml-auto ${resumen.neto >= 0 ? "text-ok" : "text-bad"}`}>= {fmtPesos(resumen.neto)}</span>
           </div>
         )}
-        <div className="py-2">
-          <Chips opciones={[{ value: "todos", label: "Todo" }, { value: "egreso", label: "Gastos" }, { value: "ingreso", label: "Ingresos" }]}
-                 valor={filtroTipo} onChange={setFiltroTipo} />
+        <div className="py-2 space-y-2">
+          <div className="flex gap-2 flex-wrap">
+            <input type="search" value={busca} onChange={e => setBusca(e.target.value)}
+                   placeholder="Buscar detalle, categoría o monto…"
+                   className="flex-1 min-w-[170px] rounded-md border border-borde bg-surface-1 px-3 py-1.5 text-[12.5px] text-ink placeholder:text-ink-3/70" />
+            <select value={filtroCat} onChange={e => setFiltroCat(e.target.value)} className={selectCls}>
+              <option value="">Todas las categorías</option>
+              {catsDelMes.map(([c, n]) => <option key={c} value={c}>{c} ({n})</option>)}
+            </select>
+            {filtrando && (
+              <button onClick={() => { setBusca(""); setFiltroCat(""); setFiltroTipo("todos"); }}
+                      className="rounded-md border border-borde px-3 py-1.5 text-[12px] font-semibold text-ink-3 hover:text-ink">
+                Limpiar
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Chips opciones={[
+                     { value: "todos", label: "Todo", cuenta: movs ? movs.length : undefined },
+                     { value: "egreso", label: "Gastos", cuenta: movs ? movs.filter(m => m.tipo === "egreso").length : undefined },
+                     { value: "ingreso", label: "Ingresos", cuenta: movs ? movs.filter(m => m.tipo === "ingreso").length : undefined },
+                   ]}
+                   valor={filtroTipo} onChange={setFiltroTipo} />
+            {filtrando && movs && (
+              <span className="ml-auto text-[11.5px] text-ink-3 tabular-nums">
+                {movsFiltrados.length} de {movs.length} ·{" "}
+                <strong className={`font-bold ${totalFiltrado >= 0 ? "text-ok" : "text-bad"}`}>
+                  {totalFiltrado >= 0 ? "+" : "−"}{fmtPesos(Math.abs(totalFiltrado))}
+                </strong>
+              </span>
+            )}
+          </div>
         </div>
         {!movs ? <Spinner texto="Cargando movimientos…" /> : porDia.length === 0 ? (
-          <p className="text-[13px] text-ink-3 py-4 text-center">Sin movimientos este mes</p>
+          <p className="text-[13px] text-ink-3 py-4 text-center">
+            {filtrando ? "Ningún movimiento coincide con la búsqueda" : "Sin movimientos este mes"}
+          </p>
         ) : (
           porDia.map(dia => {
             const netoDia = dia.items.reduce((a, m) => a + (m.tipo === "egreso" ? -m.monto : m.monto), 0);
             return (
-            <details key={dia.fecha} open={dia.fecha === hoyISO()} className="group">
+            <details key={dia.fecha} open={filtrando || dia.fecha === hoyISO()} className="group">
               <summary className="flex items-center gap-2 cursor-pointer select-none pt-3 pb-1 list-none [&::-webkit-details-marker]:hidden">
                 <span className="text-[10px] text-ink-3 transition-transform group-open:rotate-90">▶</span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-ink-3">{fechaLinda(dia.fecha)}</span>
@@ -320,6 +512,8 @@ export default function Cajas({ soloLectura = false }) {
           })
         )}
       </Card>
+
+      </>}
     </div>
   );
 }

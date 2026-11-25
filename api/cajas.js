@@ -4,6 +4,8 @@
 //      Lo lee cualquier sesión: es el saldo y el total del mes, nada más.
 // GET  ?action=movimientos&marca=&mes=&anio=[&tipo=][&categoria=]
 // GET  ?action=categorias&marca=  → { gasto: [...], ingreso: [...] }
+// GET  ?action=resumenCategorias&mes=&anio=  → las DOS marcas por categoría,
+//      con el mes anterior al lado. Es la solapa Resumen.
 //      El detalle movimiento por movimiento: admin, o el socio que lo tenga
 //      habilitado en lib/usuarios.js (`ve: ["cajas"]`).
 // POST ?action=crear|editar|borrar  (solo admin)
@@ -95,6 +97,60 @@ async function movimientos(req, res) {
       AND (${categoria}::text IS NULL OR categoria = ${categoria})
     ORDER BY fecha DESC, creado_en DESC LIMIT 500`;
   res.status(200).json({ movimientos: filas });
+}
+
+// En qué se va la plata, por categoría y por las dos marcas a la vez.
+//
+// La carga es siempre por marca separada y así tiene que quedar, pero las
+// categorías se repiten (Sueldos, Talleres, Tela, Alquiler) y la pregunta "en
+// qué gastamos" sólo se contesta viéndolas al lado. Cada categoría va con el
+// mes anterior pegado: un número solo no dice si subió o bajó.
+//
+// Una categoría que este mes no tuvo nada pero el pasado sí igual aparece, en
+// cero: que algo haya DEJADO de gastarse es tan informativo como lo que subió.
+async function resumenCategorias(req, res) {
+  const mes = parseInt(req.query.mes) || new Date().getMonth() + 1;
+  const anio = parseInt(req.query.anio) || new Date().getFullYear();
+  const desdeAnt = mes === 1 ? `${anio - 1}-12-01` : `${anio}-${String(mes - 1).padStart(2, "0")}-01`;
+  const hasta = mes === 12 ? `${anio + 1}-01-01` : `${anio}-${String(mes + 1).padStart(2, "0")}-01`;
+  const mesActual = `${anio}-${String(mes).padStart(2, "0")}`;
+
+  const [filas, saldos] = await Promise.all([
+    sql`SELECT marca, tipo, categoria, to_char(fecha, 'YYYY-MM') AS mes,
+               SUM(monto)::float AS total, COUNT(*)::int AS n
+        FROM caja_movimientos
+        WHERE fecha >= ${desdeAnt} AND fecha < ${hasta}
+        GROUP BY 1, 2, 3, 4`,
+    // El saldo es de toda la historia, no del mes: es lo que hay en la lata hoy.
+    sql`SELECT marca, COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END), 0)::float AS saldo
+        FROM caja_movimientos GROUP BY 1`,
+  ]);
+
+  const acum = { tussy: { gasto: {}, ingreso: {} }, shato: { gasto: {}, ingreso: {} } };
+  for (const f of filas) {
+    const m = acum[f.marca];
+    if (!m) continue;
+    const lado = f.tipo === "egreso" ? m.gasto : m.ingreso;
+    const fila = lado[f.categoria] || (lado[f.categoria] = { categoria: f.categoria, total: 0, totalAnt: 0, n: 0 });
+    if (f.mes === mesActual) { fila.total += f.total; fila.n += f.n; }
+    else fila.totalAnt += f.total;
+  }
+
+  const ordenar = obj => Object.values(obj).sort((a, b) => b.total - a.total || b.totalAnt - a.totalAnt);
+  const out = { mes: mesActual, mesAnterior: desdeAnt.slice(0, 7), marcas: {}, saldos: {} };
+  for (const marca of ["tussy", "shato"]) {
+    const gasto = ordenar(acum[marca].gasto), ingreso = ordenar(acum[marca].ingreso);
+    const suma = (lista, campo) => lista.reduce((a, x) => a + x[campo], 0);
+    out.marcas[marca] = {
+      gasto, ingreso,
+      totales: {
+        gasto: suma(gasto, "total"), gastoAnt: suma(gasto, "totalAnt"),
+        ingreso: suma(ingreso, "total"), ingresoAnt: suma(ingreso, "totalAnt"),
+      },
+    };
+    out.saldos[marca] = saldos.find(s => s.marca === marca)?.saldo || 0;
+  }
+  res.status(200).json(out);
 }
 
 async function categorias(req, res) {
@@ -367,10 +423,12 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
       if (action === "resumen") return await resumen(req, res);
-      if (action === "movimientos" || action === "categorias") {
+      if (action === "movimientos" || action === "categorias" || action === "resumenCategorias") {
         // El detalle de la caja no es de todos los socios: lo habilita `ve`.
         if (!puedeVer(sesion, "cajas")) return res.status(403).json({ error: "no tenés habilitada la caja" });
-        return action === "movimientos" ? await movimientos(req, res) : await categorias(req, res);
+        if (action === "movimientos") return await movimientos(req, res);
+        if (action === "categorias") return await categorias(req, res);
+        return await resumenCategorias(req, res);
       }
       if (action === "deuda" || action === "socios") {
         if (sesion.rol !== "admin") return res.status(403).json({ error: "solo admin" });
