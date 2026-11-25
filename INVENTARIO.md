@@ -46,6 +46,7 @@ una o más *actions* de los endpoints de `/api`.
 | `api/auth.js` | 34 | Login. Devuelve un token HMAC firmado. |
 | `api/tussy-erp/ventas.js` | 98 | Webhook: cada venta confirmada de Palermo y La Plata. |
 | `api/tussy-erp/rrhh.js` | 83 | Webhook: marcas de asistencia de los encargados. |
+| `api/tussy-erp/sobres.js` | 70 | Webhook: la recaudación de un local que el dueño ya contó, como ingreso de Cajas. |
 | `api/proxy.js` · `proxy-operaciones.js` | 39 · 71 | Puentes hacia los Apps Script heredados. |
 | `api/resumen-diario.js` | 34 | Suscripciones a notificaciones push. El resumen que le daba nombre ya no existe; la ruta se conserva porque las PWA instaladas apuntan ahí. |
 
@@ -523,8 +524,18 @@ Los únicos seis dominios externos a los que llama el sistema:
 | canal | sistema | cómo entra |
 |---|---|---|
 | Tiendanube | web | pull por API, cada 5 minutos |
-| **Palermo**, **La Plata** | Tussy ERP (Supabase) | **push** por webhook `/api/tussy-erp/ventas`, en el momento del cobro |
-| **Abasto**, **Dot**, **Córdoba** | Dragonfish | pull por API, cada 5 minutos |
+| **Palermo**, **La Plata**, **Dot**, **Abasto**, **Córdoba** | Tussy ERP (Supabase) | **push** por webhook `/api/tussy-erp/ventas`, en el momento del cobro |
+
+Dot y Abasto pasaron al ERP el **19 de noviembre de 2026** y Córdoba el **20**, así
+que los cinco locales entran por el mismo webhook y Dragonfish ya no alimenta nada.
+Esta tabla decía hasta hoy que esos tres venían por pull de Dragonfish.
+
+La recaudación en efectivo de los locales también entra por webhook: el ERP la
+empuja a `/api/tussy-erp/sobres` cuando el dueño termina de contar los sobres, y
+cae en Cajas como un ingreso en la categoría del local ("Local Palermo"), la misma
+que se usaba cargándolo a mano. Es idempotente por `caja_movimientos.origen`
+(`erp-sobre-<id>`): si después se corrige el conteo de un día, el ERP reenvía y la
+fila se ACTUALIZA, no se duplica.
 
 Palermo y La Plata migraron de WooCommerce al ERP propio el **19 de agosto de 2026**.
 Las credenciales de Woo siguen en el entorno y responden 200 con lista vacía: **cero
