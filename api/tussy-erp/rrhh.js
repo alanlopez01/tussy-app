@@ -12,6 +12,7 @@
 // o lote: { "evento": "asistencia", "asistencias": [ {fecha, local, empleado, estado, ...}, ... ] }
 // Idempotente: una marca por (empleado, fecha); la última pisa a la anterior.
 const { neon } = require("@neondatabase/serverless");
+const { localCanonico } = require("../../lib/normalizar");
 
 const sql = neon(process.env.DATABASE_URL);
 const ESTADOS = ["presente", "tarde", "ausente", "franco", "vacaciones"];
@@ -22,7 +23,10 @@ async function procesarMarca(m) {
   const estado = String(m.estado || "").toLowerCase();
   if (!ESTADOS.includes(estado)) return { error: `estado inválido: ${m.estado}` };
   const nombre = String(m.empleado || "").trim();
-  const local = String(m.local || "").trim();
+  // El ERP escribe "Cordoba" sin tilde y el resto del sistema con tilde. El match
+  // de abajo es insensible a mayúsculas pero no a tildes, así que sin canonizar
+  // acá cada asistencia de Córdoba crearía un empleado duplicado.
+  const local = localCanonico(String(m.local || "").trim());
   if (!nombre || !local) return { error: "faltan empleado o local" };
 
   let [emp] = await sql`

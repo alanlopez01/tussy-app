@@ -10,7 +10,7 @@
 // Dinero: el ERP manda SIEMPRE centavos enteros; acá se divide por 100.
 const { neon } = require("@neondatabase/serverless");
 const webpush = require("web-push");
-const { normalizarProducto } = require("../../lib/normalizar");
+const { normalizarProducto, localCanonico } = require("../../lib/normalizar");
 
 // Copia mínima del envío de push de la ingesta: ventas sueltas van a los socios
 // (excepto Alan, que solo recibe pauta y resumen semanal), de 9 a 23 ARG.
@@ -48,6 +48,10 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: "payload inválido: se espera evento venta_nueva con sale_id, local e items" });
   }
 
+  // El ERP nombra a Córdoba sin tilde; el resto del sistema la escribe con tilde.
+  // Sin esto la base guarda dos locales con el mismo nombre.
+  const local = localCanonico(v.local);
+
   const sql = neon(process.env.DATABASE_URL);
 
   // Idempotencia: el mismo sale_id puede llegar de nuevo por reintentos del ERP
@@ -79,7 +83,7 @@ module.exports = async (req, res) => {
 
   for (const f of filas) {
     await sql`INSERT INTO ventas (fecha, local, sistema, orden_id, hora, producto, producto_norm, sku, color, talle, cantidad, precio_unit, total)
-      VALUES (${fecha}, ${v.local}, 'erp', ${v.sale_id}, ${hora}, ${f.producto}, ${normalizarProducto(f.producto).nombre},
+      VALUES (${fecha}, ${local}, 'erp', ${v.sale_id}, ${hora}, ${f.producto}, ${normalizarProducto(f.producto).nombre},
               ${f.sku}, ${f.color}, ${f.talle}, ${f.cantidad}, ${f.precio_unit}, ${f.total})`;
   }
 
@@ -88,11 +92,11 @@ module.exports = async (req, res) => {
   const medio = v.medio_pago === "efectivo" ? "efectivo"
     : (v.medio_pago === "tarjeta" || v.medio_pago === "mixto") ? "electronico" : "otro";
   await sql`INSERT INTO cobros (fecha, local, orden_id, item, medio, detalle, monto, sistema)
-    VALUES (${fecha}, ${v.local}, ${v.sale_id}, 0, ${medio}, ${"erp " + (v.medio_pago || "")}, ${totalVenta}, 'erp')
+    VALUES (${fecha}, ${local}, ${v.sale_id}, 0, ${medio}, ${"erp " + (v.medio_pago || "")}, ${totalVenta}, 'erp')
     ON CONFLICT (local, orden_id, item) DO NOTHING`;
 
   const unidades = filas.reduce((a, f) => a + (["DESCUENTO", "AJUSTE", "ENVIO"].includes(f.producto) ? 0 : f.cantidad), 0);
   res.status(200).json({ ok: true, filas: filas.length, total: totalVenta });
   // La notificación sale después de responder (el ERP exige 200 en <3s)
-  await notificarVenta(v.local, totalVenta, unidades, hora);
+  await notificarVenta(local, totalVenta, unidades, hora);
 };

@@ -3,10 +3,15 @@
 // Idempotente: borra e inserta por (fecha, local), se puede re-correr.
 // Registra el resultado de cada (fecha, local) en sync_estado.
 //
-// Uso: node scripts/db-backfill.js [desde] [hasta]   (default: 2026-03-01 → ayer)
+// Uso: node scripts/db-backfill.js [desde] [hasta] [force] [--solo=fuente,...]
+//   force              recarga los días que ya están ok en sync_estado
+//   --solo=dragonfish  corre sólo ese grupo (dragonfish | woo | tiendanube |
+//                      mercadolibre, separados por coma). Sin el flag, van todas.
+// A ninguna fuente se le piden días anteriores a su primera venta (FUENTE_DESDE),
+// así que un rango viejo no gasta horas pidiéndole 2025 a una fuente de 2026.
 const fs = require("fs");
 const path = require("path");
-const { ERP_DESDE, enERP, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchDFRango, diaSiguiente } = require("../lib/fuentes");
+const { ERP_DESDE, enERP, fuenteTieneHistoria, wooLocales, dfLocales, fetchWooDia, fetchTNDia, fetchMeliDia, fetchDFRango, diaSiguiente } = require("../lib/fuentes");
 const { normalizarProducto } = require("../lib/normalizar");
 
 function loadEnv() {
@@ -79,14 +84,19 @@ async function main() {
   const sql = neon(process.env.DATABASE_URL);
 
   const hoy = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
-  const desde = process.argv[2] || "2026-03-01";
-  const hasta = process.argv[3] || listaDias("2026-01-01", hoy).slice(-2)[0]; // ayer
+  const flagSolo = process.argv.find(a => a.startsWith("--solo="));
+  const solo = flagSolo ? new Set(flagSolo.slice(7).split(",").map(x => x.trim().toLowerCase())) : null;
+  const corre = grupo => !solo || solo.has(grupo);
+  const posicionales = process.argv.slice(2).filter(a => !a.startsWith("--") && a !== "force");
+  const desde = posicionales[0] || "2026-03-01";
+  const hasta = posicionales[1] || listaDias("2026-01-01", hoy).slice(-2)[0]; // ayer
+  if (solo) console.log(`(sólo ${[...solo].join(", ")})`);
   const dias = listaDias(desde, hasta);
   console.log(`Backfill desde fuentes reales: ${desde} → ${hasta} (${dias.length} días)\n`);
 
   // Reanudación: saltear (fecha, local) que ya están ok en sync_estado.
   // Con "force" como 3er argumento se recargan igual (ej. para poblar columnas nuevas).
-  const force = process.argv[4] === "force";
+  const force = process.argv.includes("force");
   const yaOk = force ? new Set() : new Set(
     (await conReintentos(() => sql`SELECT fecha::text, local FROM sync_estado WHERE estado = 'ok' AND fecha BETWEEN ${desde} AND ${hasta}`))
       .map(r => `${r.fecha}|${r.local}`)
@@ -99,10 +109,10 @@ async function main() {
     const fuentes = [
       // Woo sólo para días anteriores al pase al ERP. Después de esa fecha
       // devuelve vacío y escribirlo borraría las ventas que entraron por webhook.
-      ...(dia < ERP_DESDE ? wooLocales().map(l => ({ nombre: l.nombre, fn: () => fetchWooDia(l, dia) })) : []),
-      { nombre: "Tiendanube", fn: () => fetchTNDia(dia) },
-      { nombre: "MercadoLibre", fn: () => fetchMeliDia(dia) },
-    ].filter(f => !yaOk.has(`${dia}|${f.nombre}`));
+      ...(dia < ERP_DESDE && corre("woo") ? wooLocales().map(l => ({ nombre: l.nombre, fn: () => fetchWooDia(l, dia) })) : []),
+      ...(corre("tiendanube") ? [{ nombre: "Tiendanube", fn: () => fetchTNDia(dia) }] : []),
+      ...(corre("mercadolibre") ? [{ nombre: "MercadoLibre", fn: () => fetchMeliDia(dia) }] : []),
+    ].filter(f => !yaOk.has(`${dia}|${f.nombre}`) && fuenteTieneHistoria(f.nombre, dia));
     if (!fuentes.length) continue;
 
     const resultados = await Promise.all(fuentes.map(f => f.fn().then(r => ({ local: f.nombre, ...r }))));
@@ -124,10 +134,11 @@ async function main() {
   }
 
   // ── Dragonfish: un sweep por local (pagina de hoy hacia atrás) ──
-  for (const local of dfLocales()) {
+  for (const local of (corre("dragonfish") ? dfLocales() : [])) {
     // Desde el pase al ERP, Dragonfish devuelve vacío para ese local y sus ventas
     // entran por webhook: ni se le piden esos días.
-    const diasFaltantes = dias.filter(d => !yaOk.has(`${d}|${local.nombre}`) && !enERP(local.nombre, d));
+    const diasFaltantes = dias.filter(d => !yaOk.has(`${d}|${local.nombre}`) && !enERP(local.nombre, d)
+                                           && fuenteTieneHistoria(local.nombre, d));
     if (!diasFaltantes.length) { console.log(`\nDragonfish ${local.nombre}: ya completo, salteado`); continue; }
     const desdeL = diasFaltantes[0], hastaL = diasFaltantes[diasFaltantes.length - 1];
     console.log(`\nDragonfish ${local.nombre}: sweep ${desdeL} → ${hastaL} (${diasFaltantes.length} días faltantes)...`);
